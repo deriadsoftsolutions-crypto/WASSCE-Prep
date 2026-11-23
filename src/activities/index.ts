@@ -36,7 +36,7 @@ for (const [id, s] of Object.entries(sorting)) {
 }
 
 /** Render an activity inside `host`, with a title bar showing the learner's best score. */
-export async function mountActivity(host: HTMLElement, id: string, topicId?: number, opts: { heading?: boolean } = {}): Promise<() => void> {
+export async function mountActivity(host: HTMLElement, id: string, topicId?: number, opts: { heading?: boolean; param?: string } = {}): Promise<() => void> {
   const entry = ACTIVITIES[id];
   if (!entry) {
     host.innerHTML = `<p class="muted">Activity "${esc(id)}" not found.</p>`;
@@ -74,7 +74,7 @@ export async function mountActivity(host: HTMLElement, id: string, topicId?: num
   try {
     const mod = await entry.load();
     body.innerHTML = '';
-    const c = mod.mount(body, ctx, entry.param);
+    const c = mod.mount(body, ctx, opts.param ?? entry.param);
     return typeof c === 'function' ? c : () => {};
   } catch (e) {
     console.error(e);
