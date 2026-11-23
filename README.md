@@ -83,6 +83,14 @@ The first run asks to create the project. After that, `npm run deploy` does the 
 - **Caching**: `public/_headers` makes `sw.js` always revalidate and lets hashed files in `/assets/` cache forever. After a new deploy, tablets download the update in the background and show "A new version of the site is ready. Reload".
 - **Custom domain**: Pages project > Custom domains.
 
+### If new pushes stop deploying
+
+If the Cloudflare **Deployments** tab shows "This project is disconnected from your Git account" (or new commits never appear there):
+
+1. On GitHub open **Settings > Applications > Installed GitHub Apps > Cloudflare Workers and Pages > Configure** and make sure **WASSCE-Prep** is included under **Repository access**. Save.
+2. In Cloudflare open the project > **Settings > Build > Git repository > Manage** and reconnect if asked.
+3. Push any new commit. Retrying an old deployment only rebuilds that old commit.
+
 ## Editing questions and content
 
 All content is JSON in `src/data/`. Edit, then rebuild or redeploy. No code changes are needed.
