@@ -28,7 +28,7 @@ export function mountPracticeQuiz(el: HTMLElement, questions: Paper1Question[], 
   let order = questions.slice();
   let i = 0;
   let answers: (Letter | undefined)[] = [];
-  const startedAt = Date.now();
+  let qStart = Date.now();
 
   const render = () => {
     if (i >= order.length) return renderSummary();
@@ -58,18 +58,22 @@ export function mountPracticeQuiz(el: HTMLElement, questions: Paper1Question[], 
           <button class="btn" data-act="retry-wrong" type="button" ${score === order.length ? 'disabled' : ''}>Retry the ones I missed</button>
         </div>
       </div>`;
-    void saveResult({
-      kind: 'topic-quiz', itemId: `quiz:${topicId}`, topicId, score, max: order.length,
-      durationSec: Math.round((Date.now() - startedAt) / 1000),
-      details: { answers: order.map((q, k) => ({ n: q.n, chosen: answers[k] ?? null, correct: answers[k] === q.answer })) },
-    });
+    // Each answer was already saved as it was given (see onClick), so nothing more to save here.
   };
 
   const onClick = (e: Event) => {
     const t = e.target as HTMLElement;
     const opt = t.closest<HTMLElement>('[data-opt]');
     if (opt && answers[i] === undefined) {
+      const q = order[i];
       answers[i] = opt.dataset.opt as Letter;
+      // Save every answer straight away so partial progress counts.
+      void saveResult({
+        kind: 'topic-quiz', itemId: `quiz:${topicId}`, topicId, score: answers[i] === q.answer ? 1 : 0, max: 1,
+        durationSec: Math.round((Date.now() - qStart) / 1000),
+        details: { n: q.n, chosen: answers[i] },
+      });
+      qStart = Date.now();
       render();
       return;
     }

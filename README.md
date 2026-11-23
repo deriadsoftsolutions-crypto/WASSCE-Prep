@@ -5,7 +5,7 @@ An interactive, offline-capable practice micro-site for the WASSCE Robotics mock
 - **Vite + vanilla TypeScript**, no framework. About 35 kB of gzipped JavaScript on first load; each activity loads on demand.
 - **Tablet first**: 48px minimum tap targets, portrait and landscape, touch drag-and-drop with Pointer Events (plus tap-to-place as a fallback).
 - **Offline PWA**: the service worker precaches the whole site, so it keeps working when the Wi-Fi drops. It can be installed to the home screen.
-- **Firebase accounts**: learners sign in with name, class and a 6-digit PIN, so progress follows them to any device. Teachers see the whole class. All storage goes through a `StorageAdapter` interface, with an on-device (`localStorage`) mode as a fallback.
+- **Storage**: progress is saved on each device (`localStorage`) through a `StorageAdapter` interface. Firebase accounts (learners sign in with name, class and a 6-digit PIN; teachers see the whole class) are built in and switched off until the Firebase setup is finished.
 
 ## Contents
 
@@ -72,7 +72,7 @@ npm run preview      # serves dist/ at http://localhost:4173
 ```bash
 npm run build
 npx wrangler login                                    # first time only, opens the browser
-npx wrangler pages deploy dist --project-name wassce-robotics
+npx wrangler pages deploy dist --project-name kostechrobotics
 ```
 
 The first run asks to create the project. After that, `npm run deploy` does the build and upload in one step.
@@ -105,21 +105,37 @@ Rules to keep in mind:
 
 `src/config.ts`:
 
-- `STORAGE`: `'firebase'` (sign-in, progress in the cloud) or `'local'` (no sign-in, progress stays on each tablet).
-- `TEACHER_PIN`: PIN for `/teacher`, used only in `'local'` mode (currently `5454`).
+- `STORAGE`: `'local'` (current: no sign-in, progress stays on each device) or `'firebase'` (sign-in, progress in the cloud; see "Firebase" below).
+- `TEACHER_PIN`: PIN for `/teacher` in `'local'` mode (currently `5454`).
 - `DEFAULT_MOCK_MINUTES`, `DEFAULT_SHUFFLE`: defaults until a teacher changes them.
 - `CALC_TOLERANCE`: accepted error in the calculation checker.
 
-`src/firebase/config.ts` holds the Firebase web config. These values are public by design; the data is protected by `firestore.rules`.
+### Changing the teacher PIN
+
+1. Open `src/config.ts` and change `TEACHER_PIN: '5454'` to the new PIN (keep the quotes).
+2. Commit and push. Cloudflare Pages rebuilds and redeploys automatically.
+3. Tablets pick up the new version the next time they are online (they show "A new version of the site is ready", tap Reload).
+
+**The PIN is not real security.** It is part of the JavaScript sent to every browser, so anyone who opens the browser's developer tools or reads the repository can find it. It only discourages learners from wandering into the teacher page. Do not reuse a PIN that protects anything else. For real teacher accounts, switch to Firebase mode, where `/teacher` uses a proper sign-in and the database rules decide who can see class data.
 
 ## Teacher page
 
-Go to `/teacher` and sign in with the teacher account (see "Firebase" below for the one-time approval). You can:
+Go to `/teacher` and enter the PIN (in Firebase mode: sign in with the teacher account). You can:
 
-- set the Paper 1 mock timer in minutes (0 = no timer) and turn shuffle on or off for the whole class;
+- set the Paper 1 mock timer in minutes (0 = no timer) and turn shuffle on or off (per device in local mode, for the whole class in Firebase mode);
 - see every learner, their best mock and topic scores (under 50% in red);
-- export a **summary CSV** (one row per learner) and an **all attempts CSV** (one row per quiz, activity, mock or Paper 2 part), which open in Excel or Google Sheets;
+- export a **summary CSV** (one row per learner) and an **all attempts CSV** (one row per quiz answer, activity, mock or Paper 2 part), which open in Excel or Google Sheets;
 - delete all learner results.
+
+### How topic scores are calculated
+
+Each topic's score (the rings on the home page, My Progress and the T1 to T10 columns on the teacher page) is the average of:
+
+- the **topic quiz**: the share of that topic's Paper 1 questions the learner has answered correctly on the topic page (saved after every answer);
+- the **Paper 1 mock**: the learner's best mock result on that topic's questions;
+- each of the topic's **activities**: the learner's best score.
+
+Anything not tried yet counts as 0.
 
 ## Project structure
 
@@ -151,6 +167,13 @@ firestore.rules         Firestore security rules (publish in the Firebase consol
 ## Firebase (learner and teacher accounts)
 
 Project: `roboticsclass-b0eaf`. Firestore location: europe-west1.
+
+**Status: built and tested, switched off.** To switch on:
+
+1. In the Firebase console, paste `firestore.rules` into **Firestore Database > Rules** and tap **Publish** (it adds the class settings rule).
+2. Set `STORAGE: 'firebase'` in `src/config.ts`, commit and push.
+3. Create and approve your teacher account (below).
+4. Before switching, export CSVs from `/teacher` on each tablet: results saved on devices in local mode are not moved to Firebase.
 
 ### How sign-in works
 

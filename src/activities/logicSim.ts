@@ -59,6 +59,9 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
   let mode: 'explore' | 'predict' = 'explore';
   let round = 0, score = 0, hidden = false;
   const ROUNDS = 6;
+  /** Input combinations seen in Explore mode, e.g. "101". Trying all 8 records an attempt. */
+  const seen = new Set<string>();
+  let exploreSaved = false;
 
   el.innerHTML = `
     <div class="tabs" role="tablist">
@@ -73,11 +76,28 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     </div>
     <p style="margin-top:12px"><span class="expr">F = XY' ⊕ YZ</span></p>
     <p class="mono" data-working style="font-size:1.05rem"></p>
+    <div data-explore>
+      <p style="margin:0"><b data-seen>Combinations tried: 1 / 8</b> <span class="muted small">Try all 8 combinations of X, Y and Z.</span></p>
+      <div data-explorefb></div>
+    </div>
     <div data-predict hidden></div>`;
 
   const svg = el.querySelector('svg')!;
   const working = el.querySelector('[data-working]') as HTMLElement;
   const predictBox = el.querySelector('[data-predict]') as HTMLElement;
+  const exploreBox = el.querySelector('[data-explore]') as HTMLElement;
+
+  const trackExplore = () => {
+    if (mode !== 'explore') return;
+    seen.add(`${v.X}${v.Y}${v.Z}`);
+    (el.querySelector('[data-seen]') as HTMLElement).textContent = `Combinations tried: ${seen.size} / 8`;
+    if (seen.size === 8 && !exploreSaved) {
+      exploreSaved = true;
+      void ctx.save(1, 1, { mode: 'explore' });
+      (el.querySelector('[data-explorefb]') as HTMLElement).innerHTML = feedbackHTML('ok', 'You have tried all 8 combinations!',
+        "<p>F is 1 for XYZ = 011, 100, 101 and 111. Check these against your truth table. Now try the Predict F challenge.</p>");
+    }
+  };
 
   const draw = () => {
     const r = compute(v.X, v.Y, v.Z);
@@ -131,15 +151,17 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     mode = m;
     el.querySelectorAll('[data-mode]').forEach((t) => t.setAttribute('aria-selected', String((t as HTMLElement).dataset.mode === m)));
     predictBox.hidden = m !== 'predict';
+    exploreBox.hidden = m !== 'explore';
     hidden = false;
     if (m === 'predict') { round = 0; score = 0; newRound(); }
-    else draw();
+    else { draw(); trackExplore(); }
   };
 
   const toggle = (k: 'X' | 'Y' | 'Z') => {
     if (mode === 'predict') return;
     v[k] = (v[k] ? 0 : 1) as Bit;
     draw();
+    trackExplore();
   };
 
   el.addEventListener('click', (e) => {
@@ -177,4 +199,5 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     if (inp && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggle(inp.dataset.in as 'X' | 'Y' | 'Z'); }
   });
   draw();
+  trackExplore();
 }

@@ -126,7 +126,7 @@
       "bins": [
         { "id": "1", "label": "1st: steam (from about 1760)" },
         { "id": "2", "label": "2nd: electricity (from about 1870)" },
-        { "id": "3", "label": "3rd: computers (from about 1969)" },
+        { "id": "3", "label": "3rd: computers and automation (from the 1960s)" },
         { "id": "4", "label": "4th: smart systems (today)" }
       ],
       "items": [
@@ -137,8 +137,8 @@
         { "text": "Bessemer steel process", "bin": "2", "why": "Cheap steel made large machines and buildings possible." },
         { "text": "Telephone and telegraph", "bin": "2", "why": "Fast communication arrived in the second revolution." },
         { "text": "Internal combustion engine", "bin": "2", "why": "Petrol and diesel engines powered cars and machines." },
-        { "text": "Programmable logic controllers (PLCs)", "bin": "3", "why": "PLCs brought computer control to factory machines." },
-        { "text": "First industrial robot (Unimate)", "bin": "3", "why": "Unimate began work at General Motors in 1961, leading into the automation age." },
+        { "text": "Programmable logic controllers (PLCs)", "bin": "3", "why": "PLCs (first used in 1969) brought computer control to factory machines." },
+        { "text": "First industrial robot (Unimate)", "bin": "3", "why": "Unimate began work at General Motors in 1961: the start of robots and computer-controlled automation in factories." },
         { "text": "Personal computers and the internet", "bin": "3", "why": "Digital electronics and IT define the third revolution." },
         { "text": "Artificial intelligence", "bin": "4", "why": "AI lets machines learn and make decisions." },
         { "text": "Internet of Things (IoT)", "bin": "4", "why": "Connected sensors and devices share data over the internet." },

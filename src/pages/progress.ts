@@ -3,7 +3,7 @@ import type { Topic } from '../types';
 import { esc, fmtDate, fmtTime } from '../lib/dom';
 import { confirmDialog, ring, toast } from '../lib/ui';
 import { learner, signOutOrSwitch } from '../lib/session';
-import { storage, usingFirebase } from '../storage';
+import { storage, usingFirebase, topicItemIds } from '../storage';
 import { ACTIVITIES } from '../activities';
 
 const topics = topicsData as Topic[];
@@ -33,14 +33,17 @@ export async function progressPage(el: HTMLElement) {
       : prog.totalAttempts ? '<div class="feedback ok" style="margin-bottom:16px"><strong>Great work!</strong>No topic is below 60%. Try a full mock to test yourself.</div>' : ''}
     <div class="card">
       <h2>Scores per topic</h2>
-      <p class="muted small">Each topic score is the average of your best scores on its quiz and activities. Paper 1 shows how many objective questions you have answered correctly for that topic.</p>
+      <p class="muted small">Each topic score is the average of three kinds of work: the topic quiz on the topic page (questions you have got right), your best Paper 1 mock result on that topic's questions, and your best score on each of the topic's activities. Anything not tried yet counts as 0. The Paper 1 line shows all your answers to that topic's objective questions, from topic quizzes and mocks together.</p>
       ${topics.map((t) => {
         const tp = prog.topics[t.id];
         const weak = weakIds.has(t.id);
-        const items = [`quiz:${t.id}`, ...t.activities.map((a) => `activity:${a}`)].map((id) => {
+        const items = topicItemIds(t).map((id) => {
           const it = tp.items[id];
-          const name = id.startsWith('quiz:') ? 'Topic quiz' : ACTIVITIES[id.slice(9)]?.title.replace(/\s*\(.*\)$/, '') ?? id;
-          return `<span class="pill ${it ? (it.best >= 0.8 ? 'ok' : '') : ''}" style="margin:2px 4px 2px 0">${esc(name)}: ${it ? `${Math.round(it.best * 100)}%` : 'not tried'}</span>`;
+          const name = id.startsWith('quiz:') ? 'Topic quiz' : id.startsWith('mock:') ? 'Paper 1 mock' : ACTIVITIES[id.slice(9)]?.title.replace(/\s*\(.*\)$/, '') ?? id;
+          const value = !it ? 'not tried'
+            : it.total ? `${it.answered} / ${it.total} answered, ${it.correct} correct`
+            : `${Math.round(it.best * 100)}%`;
+          return `<span class="pill ${it ? (it.best >= 0.8 ? 'ok' : '') : ''}" style="margin:2px 4px 2px 0">${esc(name)}: ${value}</span>`;
         }).join('');
         return `<div class="prog-row ${weak ? 'weak' : ''}">
           <div><a href="/topic/${t.id}" style="font-weight:700">${t.icon} ${t.id}. ${esc(t.short)}</a>

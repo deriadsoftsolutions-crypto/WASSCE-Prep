@@ -36,7 +36,7 @@ async function boot() {
   initTheme();
   initPWA();
   route('/', homePage, 'home');
-  route('/topic/:id', topicPage, 'home');
+  route('/topic/:id', topicPage);
   route('/mock', mockPage, 'mock');
   route('/paper2', paper2ListPage, 'paper2');
   route('/paper2/:id', paper2QuestionPage, 'paper2');

@@ -119,8 +119,8 @@ async function renderDashboard(el: HTMLElement) {
     }
     if (act === 'csv-all') {
       downloadText(`wassce-attempts-${stamp()}.csv`, csv([
-        ['learner', 'class', 'type', 'item', 'topic', 'score', 'max', 'percent', 'duration_sec', 'date_time'],
-        ...attempts.map((a) => [a.learnerName, a.className, a.kind, a.itemId, a.topicId ?? '', a.score, a.max,
+        ['learner', 'class', 'type', 'item', 'question', 'topic', 'score', 'max', 'percent', 'duration_sec', 'date_time'],
+        ...attempts.map((a) => [a.learnerName, a.className, a.kind, a.itemId, typeof a.details?.n === 'number' ? `Q${a.details.n}` : '', a.topicId ?? '', a.score, a.max,
           a.max ? Math.round((a.score / a.max) * 100) : '', a.durationSec ?? '', new Date(a.timestamp).toISOString()]),
       ]));
     }

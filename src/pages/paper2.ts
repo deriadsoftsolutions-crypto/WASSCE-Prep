@@ -62,6 +62,9 @@ export async function paper2QuestionPage(el: HTMLElement, params: Record<string,
   const d = drafts();
   const l = learner();
   const draftKey = (p: Part) => `${l?.id ?? ''}|${q.id}:${p.id}`;
+  /** Ticked marking points are kept on the device too, so the checklist survives a reload. */
+  const ticks = (p: Part): number[] => { try { return JSON.parse(d[`${draftKey(p)}#ticks`] ?? '[]') as number[]; } catch { return []; } };
+  const tickTotal = (p: Part) => Math.min(p.marks, ticks(p).reduce((sum, k) => sum + (p.points[k]?.marks ?? 0), 0));
 
   el.innerHTML = `
     <a class="crumb" href="/paper2">← All Paper 2 questions</a>
@@ -79,13 +82,14 @@ export async function paper2QuestionPage(el: HTMLElement, params: Record<string,
         ${p.type === 'calc' ? `<button class="btn btn-accent" data-tool="calc-checker" data-param="${esc(p.calcId ?? '')}" type="button">🧮 Check my working step by step</button>` : ''}
         ${p.type === 'activity' ? `<button class="btn btn-accent" data-tool="${esc(p.activity ?? '')}" type="button">🧪 Open the interactive activity</button>` : ''}
         <div data-toolhost></div>
-        <div class="row" style="margin-top:12px"><button class="btn btn-primary" data-reveal type="button">Reveal model answer</button></div>
-        <div data-modelbox hidden>
+        <div class="row" style="margin-top:12px"><button class="btn btn-primary" data-reveal type="button">${ticks(p).length ? 'Hide model answer' : 'Reveal model answer'}</button></div>
+        <div data-modelbox ${ticks(p).length ? '' : 'hidden'}>
           <div class="model"><b>Model answer</b><p style="white-space:pre-line;margin:6px 0 0">${esc(p.model)}</p></div>
           <p style="margin:14px 0 6px"><b>Self-mark: tick each marking point you got</b></p>
-          ${p.points.map((pt, k) => `<label class="check"><input type="checkbox" data-pt="${k}" data-m="${pt.marks}" /><span>${esc(pt.text)} <b>(${pt.marks})</b></span></label>`).join('')}
-          <div class="row" style="margin-top:8px"><b data-tally>0 / ${p.marks}</b><span class="spacer"></span>
+          ${p.points.map((pt, k) => `<label class="check"><input type="checkbox" data-pt="${k}" data-m="${pt.marks}" ${ticks(p).includes(k) ? 'checked' : ''} /><span>${esc(pt.text)} <b>(${pt.marks})</b></span></label>`).join('')}
+          <div class="row" style="margin-top:8px"><b data-tally>${tickTotal(p)} / ${p.marks}</b><span class="spacer"></span>
             <button class="btn btn-primary" data-savemarks type="button">Save my marks</button></div>
+          <p class="muted small" style="margin:6px 0 0">Your marks save automatically when you tick or untick a point.</p>
           <div data-fb></div>
         </div>
       </div>`;
@@ -96,6 +100,32 @@ export async function paper2QuestionPage(el: HTMLElement, params: Record<string,
     </div>`;
 
   const cleanups: (() => void)[] = [];
+  const timers = new Map<string, number>();
+  const lastSaved = new Map<string, number>();
+  /** Saves still waiting for their timer; run them at once if the learner leaves the page. */
+  const pending = new Map<string, () => void>();
+  const flushAll = () => { pending.forEach((flush) => flush()); pending.clear(); };
+  window.addEventListener('pagehide', flushAll);
+  cleanups.push(() => { flushAll(); window.removeEventListener('pagehide', flushAll); });
+
+  const setSaveState = (card: HTMLElement, state: 'pending' | 'saved') => {
+    const b = card.querySelector('[data-savemarks]') as HTMLButtonElement;
+    b.textContent = state === 'saved' ? 'Saved ✓' : 'Save my marks';
+    b.classList.toggle('btn-primary', state !== 'saved');
+  };
+
+  const saveMarks = async (card: HTMLElement, p: Part) => {
+    clearTimeout(timers.get(p.id));
+    pending.delete(p.id);
+    const got = tally(card, p);
+    if (lastSaved.get(p.id) !== got) {
+      lastSaved.set(p.id, got);
+      await saveResult({ kind: 'paper2', itemId: `paper2:${q.id}:${p.id}`, topicId: p.topic, score: got, max: p.marks });
+    }
+    setSaveState(card, 'saved');
+    (card.querySelector('[data-fb]') as HTMLElement).innerHTML = feedbackHTML(got === p.marks ? 'ok' : 'info', `Saved: ${got} / ${p.marks}`,
+      got === p.marks ? '<p>Full marks!</p>' : '<p>Compare your answer with the model answer and note the points you missed.</p>');
+  };
   const tally = (card: HTMLElement, p: Part) => {
     const got = Array.from(card.querySelectorAll<HTMLInputElement>('[data-pt]:checked')).reduce((s, c) => s + Number(c.dataset.m), 0);
     return Math.min(got, p.marks);
@@ -111,6 +141,13 @@ export async function paper2QuestionPage(el: HTMLElement, params: Record<string,
     const card = t.closest<HTMLElement>('[data-part]')!;
     const p = q.parts.find((x) => x.id === card.dataset.part)!;
     (card.querySelector('[data-tally]') as HTMLElement).textContent = `${tally(card, p)} / ${p.marks}`;
+    const ticked = Array.from(card.querySelectorAll<HTMLInputElement>('[data-pt]:checked')).map((c) => Number(c.dataset.pt));
+    saveDraft(`${draftKey(p)}#ticks`, JSON.stringify(ticked));
+    setSaveState(card, 'pending');
+    // Auto-save shortly after the last change (so ticking three boxes saves once, not three times).
+    clearTimeout(timers.get(p.id));
+    pending.set(p.id, () => void saveMarks(card, p));
+    timers.set(p.id, window.setTimeout(() => void saveMarks(card, p), 900));
   });
   el.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
@@ -133,12 +170,7 @@ export async function paper2QuestionPage(el: HTMLElement, params: Record<string,
       host.appendChild(div);
       cleanups.push(await mountActivity(div, tool.dataset.tool!, p.topic, { param: tool.dataset.param || undefined }));
     }
-    if (t.closest('[data-savemarks]')) {
-      const got = tally(card, p);
-      await saveResult({ kind: 'paper2', itemId: `paper2:${q.id}:${p.id}`, topicId: p.topic, score: got, max: p.marks });
-      (card.querySelector('[data-fb]') as HTMLElement).innerHTML = feedbackHTML(got === p.marks ? 'ok' : 'info', `Saved: ${got} / ${p.marks}`,
-        got === p.marks ? '<p>Full marks!</p>' : '<p>Compare your answer with the model answer and note the points you missed.</p>');
-    }
+    if (t.closest('[data-savemarks]')) await saveMarks(card, p);
   });
   return () => cleanups.forEach((c) => c());
 }

@@ -56,11 +56,18 @@ export interface ItemProgress {
   last: number;
   attempts: number;
   lastAt: number;
+  /** Topic quizzes only: questions answered at least once, answered correctly at least once, and total in the topic. */
+  answered?: number;
+  correct?: number;
+  total?: number;
 }
 
 export interface TopicProgress {
   topicId: number;
-  /** 0..100, average of best scores over the topic's items (unattempted items count as 0) */
+  /**
+   * 0..100, average over the topic's components (unattempted ones count as 0):
+   * the topic quiz, the best Paper 1 mock score on this topic's questions, and each activity.
+   */
   percent: number;
   items: Record<string, ItemProgress>;
   /** Paper 1 objective questions answered for this topic (topic quizzes and mocks combined) */
