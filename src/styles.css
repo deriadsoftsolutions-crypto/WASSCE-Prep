@@ -699,3 +699,23 @@ body.focus-mode #toast { bottom: 100px; }
 .act-card .ac-blurb { color: var(--muted); font-size: 0.95rem; flex: 1; }
 .act-card .ac-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
 .act-card .ac-go { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: var(--radius); background: var(--primary); color: var(--primary-ink); font-weight: 700; }
+
+/* ---------- Lessons ---------- */
+.lesson { max-width: 760px; }
+.lesson-summary { font-size: 1.15rem; color: var(--muted); }
+.lesson-text { font-size: 1.08rem; line-height: 1.65; }
+.lesson-text h2 { margin: 1.2em 0 0.4em; font-size: 1.4rem; }
+.lesson-text h3 { margin: 1em 0 0.3em; font-size: 1.2rem; }
+.lesson-text h4 { margin: 1em 0 0.3em; }
+.lesson-text code { background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.lesson-fig, .lesson-video { margin: 18px 0; }
+.lesson-fig img { display: block; max-width: 100%; height: auto; border: 1.5px solid var(--ink); border-radius: var(--radius); background: var(--surface); }
+.lesson-fig figcaption, .lesson-video figcaption { margin-top: 6px; color: var(--muted); font-size: 0.95rem; }
+.lesson-video .btn { width: 100%; min-height: 120px; border-style: dashed; }
+.lesson-frame { display: block; width: 100%; aspect-ratio: 16 / 9; border: 1.5px solid var(--ink); border-radius: var(--radius); background: #000; }
+.lesson-act { margin: 18px 0; max-width: 520px; }
+.lesson-check { margin: 18px 0; }
+.lesson-end { max-width: 760px; margin-top: 24px; }
+.lesson-end .mark-ok { display: flex; gap: 8px; align-items: center; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

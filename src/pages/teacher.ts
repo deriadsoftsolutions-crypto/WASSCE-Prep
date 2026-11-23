@@ -11,6 +11,7 @@ import { auth } from '../firebase/app';
 import { saveRemoteSettings } from '../firebase/settings';
 import { mountTeacherAssignments } from './teacherAssignments';
 import { mountTeacherTests } from './teacherTests';
+import { mountTeacherLessons } from './teacherLessons';
 
 const topics = topicsData as Topic[];
 const UNLOCK_KEY = 'wassce.teacher.unlocked';
@@ -62,7 +63,7 @@ async function renderDashboard(el: HTMLElement) {
   let tab = 'overview';
   try { tab = sessionStorage.getItem(TAB_KEY) ?? 'overview'; } catch { /* ignore */ }
   if (!usingFirebase) tab = 'overview';
-  const tabs = [['overview', 'Overview'], ['tests', 'Tests'], ['assignments', 'Assignments']];
+  const tabs = [['overview', 'Overview'], ['lessons', 'Lessons'], ['tests', 'Tests'], ['assignments', 'Assignments']];
   const me = learner();
   el.innerHTML = `
     <div class="t-layout">
@@ -94,6 +95,7 @@ async function renderDashboard(el: HTMLElement) {
   if (usingFirebase) void menuCounts(el);
   if (tab === 'assignments') await mountTeacherAssignments(body);
   else if (tab === 'tests') await mountTeacherTests(body);
+  else if (tab === 'lessons') await mountTeacherLessons(body);
   else await renderOverview(body);
 }
 

@@ -208,6 +208,15 @@ The shell (`mountActivity` in `src/activities/index.ts`) keeps activities simple
 - `data-bar-status` on an element whose text should show on the left of the bar (for example "Round 3 of 6").
 - `<span data-steps="Read|Offset|Verify" data-step="1" hidden></span>` for a step indicator; change `data-step` as the learner moves on.
 
+## Lessons
+
+On `/teacher` > **Lessons** the teacher writes lessons from blocks: **Text** (with simple formatting: `# Heading`, `**bold**`, `*italic*`, `- bullet`, `1. numbered`, `[link](https://...)`), **Image** (uploaded to R2 under `lessons/`, shrunk on the device first), **YouTube video** (learners tap to play, so it only uses data when they choose), **Activity** (opens one of the 13 activities), **Quick check** (multiple choice with an explanation) and **Link**. Each lesson has a topic (or General), a class (or all classes) and a **Published** switch; the list shows how many learners have finished each lesson.
+
+Learners find lessons on **Classwork**, on the matching **topic page**, and as the first step of **Today's circuit** when a lesson is new and nothing is due. **Mark as finished** saves an attempt of kind `lesson` (item `lesson:<id>`) with the quick-check score, so it appears in the teacher's CSV. Lesson text is escaped before formatting, so a lesson can never run code on a learner's tablet. Lessons and their images stay readable offline once opened.
+
+- Firestore: `lessons/{id}` (readable when signed in, written by teachers).
+- Functions: `POST /api/lesson-upload` (teachers only, images up to 5 MB) and `GET /api/lesson-file/lessons/...` (public, cached forever: addresses are unguessable and never reused).
+
 ## Project structure
 
 ```
@@ -233,7 +242,7 @@ scripts/
   make-icons.cjs        regenerates PNG icons from public/icons/icon.svg
 public/                 manifest, icons, Cloudflare _headers
 firestore.rules         Firestore security rules (publish in the Firebase console)
-functions/              Cloudflare Pages Functions: /api/upload and /api/file (R2)
+functions/              Cloudflare Pages Functions: uploads and files (R2), lesson images
 wrangler.toml           Cloudflare Pages config: R2 bucket binding
 ```
 

@@ -106,6 +106,12 @@ service cloud.firestore {
       allow read: if isTeacher();
     }
 
+    // Lessons: written by teachers, readable by everyone signed in.
+    match /lessons/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+
     // Assignments: set by teachers, visible to everyone signed in.
     match /assignments/{id} {
       allow read: if signedIn();

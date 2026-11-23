@@ -16,6 +16,7 @@ import { paper2ListPage, paper2QuestionPage } from './pages/paper2';
 import { progressPage } from './pages/progress';
 import { assignmentsPage, assignmentPage } from './pages/assignments';
 import { testPage } from './pages/tests';
+import { lessonPage } from './pages/lessons';
 import { initPWA } from './lib/pwa';
 import { icon } from './lib/icons';
 import { dueWork } from './lib/due';
@@ -59,6 +60,7 @@ async function boot() {
   route('/assignments', assignmentsPage, 'assignments');
   route('/assignments/:id', assignmentPage, 'assignments');
   route('/tests/:id', testPage, 'assignments');
+  route('/lessons/:id', lessonPage, 'assignments');
   // Teacher pages load only when opened, so learners never download them.
   route('/teacher', async (el) => (await import('./pages/teacher')).teacherPage(el), 'teacher');
   await loadLearner();

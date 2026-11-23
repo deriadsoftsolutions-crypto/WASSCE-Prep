@@ -18,12 +18,14 @@ const APP_ROUTES = [
   /^\/assignments\/?$/,
   /^\/assignments\/[A-Za-z0-9_-]+\/?$/,
   /^\/tests\/[A-Za-z0-9_-]+\/?$/,
+  /^\/lessons\/[A-Za-z0-9_-]+\/?$/,
   /^\/teacher\/?$/,
 ];
 const isAppRoute = (path) => APP_ROUTES.some((re) => re.test(path));
 
 /** Files that may be added to the cache at runtime (built assets and icons only). */
-const RUNTIME_CACHEABLE = /^\/(assets|icons)\//;
+// Lesson images never change at the same address, so they can be kept for offline reading.
+const RUNTIME_CACHEABLE = /^\/(assets|icons|api\/lesson-file)\//;
 
 /**
  * Fill the new cache. Files under /assets/ have a fingerprint in their name, so if an older

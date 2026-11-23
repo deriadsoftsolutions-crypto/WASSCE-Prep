@@ -5,6 +5,7 @@ import { esc } from '../lib/dom';
 import { learner } from '../lib/session';
 import { storage } from '../storage';
 import { ACTIVITIES } from '../activities';
+import { finishedLessons, lessonCardsHTML, myLessons } from './lessons';
 import { mountPracticeQuiz } from '../quiz/quiz';
 import { topicIcon } from '../lib/icons';
 import { ledHTML, masteryLevel } from './home';
@@ -30,6 +31,7 @@ export async function topicPage(el: HTMLElement, params: Record<string, string>)
   const prev = topics.find((x) => x.id === id - 1);
   const next = topics.find((x) => x.id === id + 1);
   const qs = (paper1 as Paper1Question[]).filter((q) => q.topic === id);
+  const [topicLessons, doneLessons] = await Promise.all([myLessons(id), finishedLessons()]);
 
   el.innerHTML = `
     <a class="crumb" href="/">← All topics</a>
@@ -53,6 +55,7 @@ export async function topicPage(el: HTMLElement, params: Record<string, string>)
         <ul class="key-ideas">${t.keyIdeas.map((k) => `<li>${esc(k)}</li>`).join('')}</ul>
       </div>
     </div>
+    ${topicLessons.length ? `<section><h2>Lessons</h2>${lessonCardsHTML(topicLessons, doneLessons, false)}</section>` : ''}
     <section>
       <h2>Activities</h2>
       <div class="act-cards">

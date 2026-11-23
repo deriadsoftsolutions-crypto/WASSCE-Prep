@@ -6,6 +6,8 @@ import { storage, usingFirebase } from '../storage';
 import { dueLabel, dueWork, type DueItem } from '../lib/due';
 import { icon } from '../lib/icons';
 import { CONFIG } from '../config';
+import { finishedLessons, myLessons } from './lessons';
+import type { Lesson } from '../firebase/lessons';
 
 const topics = topicsData as Topic[];
 const LEVELS = ['Not started', 'Learning', 'Practising', 'Nearly there', 'Mastered'];
@@ -42,7 +44,7 @@ function weakestTopic(prog: Progress | null, skip: Set<number>): { t: Topic; tri
   return { t: fresh ?? topics.find((t) => !skip.has(t.id)) ?? topics[0], tried: !fresh };
 }
 
-function buildCircuit(prog: Progress | null, attempts: Attempt[], due: DueItem[]): Step[] {
+function buildCircuit(prog: Progress | null, attempts: Attempt[], due: DueItem[], unread: Lesson[]): Step[] {
   const today = startOfToday();
   const todays = attempts.filter((a) => a.timestamp >= today);
   const steps: Step[] = [];
@@ -51,6 +53,10 @@ function buildCircuit(prog: Progress | null, attempts: Attempt[], due: DueItem[]
   if (due.length) {
     const d = due[0];
     steps.push({ tag: d.kind === 'test' ? 'Test' : 'Assignment', title: d.title, detail: dueLabel(d).text, href: d.href, action: 'Open', done: false });
+  } else if (unread.length) {
+    const ls = unread[0];
+    if (ls.topicId) used.add(ls.topicId);
+    steps.push({ tag: 'New lesson', title: ls.title, detail: ls.summary || 'From your teacher', href: `/lessons/${ls.id}`, action: 'Read', done: false });
   } else {
     const last = attempts.find((a) => a.topicId != null);
     if (last && last.topicId != null && masteryLevel(prog, last.topicId) < 4) {
@@ -90,15 +96,18 @@ function buildCircuit(prog: Progress | null, attempts: Attempt[], due: DueItem[]
 export async function homePage(el: HTMLElement) {
   el.innerHTML = '<div class="skel" aria-label="Loading"><span class="tall"></span><span></span><span class="tall"></span><span></span><span></span></div>';
   const l = learner();
-  const [prog, attempts, due] = await Promise.all([
+  const [prog, attempts, due, lessons, doneLessons] = await Promise.all([
     l ? storage.getProgress(l.id) : Promise.resolve(null),
     l ? storage.getAttempts({ learnerId: l.id }) : Promise.resolve([] as Attempt[]),
     dueWork().catch(() => [] as DueItem[]),
+    myLessons().catch(() => [] as Lesson[]),
+    finishedLessons().catch(() => new Map<string, number>()),
   ]);
+  const unread = lessons.filter((x) => !doneLessons.has(x.id)).sort((a, b) => b.updatedAt - a.updatedAt);
 
   const weeks = Math.max(0, Math.ceil((new Date(CONFIG.WASSCE_DATE).getTime() - Date.now()) / (7 * 86_400_000)));
   const days = new Set(attempts.filter((a) => a.timestamp >= Date.now() - 7 * 86_400_000).map((a) => new Date(a.timestamp).toDateString())).size;
-  const steps = buildCircuit(prog, attempts, due);
+  const steps = buildCircuit(prog, attempts, due, unread);
   const doneCount = steps.filter((s) => s.done).length;
   const nowIndex = steps.findIndex((s) => !s.done);
   const line = !attempts.length ? 'Start with the first step of today\'s circuit below.'

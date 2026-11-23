@@ -28,7 +28,7 @@ export interface Learner {
   createdAt: number;
 }
 
-export type AttemptKind = 'topic-quiz' | 'mock' | 'activity' | 'paper2';
+export type AttemptKind = 'topic-quiz' | 'mock' | 'activity' | 'paper2' | 'lesson';
 
 /** One finished attempt at a quiz, mock, activity or Paper 2 question. */
 export interface Attempt {

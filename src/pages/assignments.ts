@@ -4,6 +4,7 @@ import { learner } from '../lib/session';
 import { usingFirebase } from '../storage';
 import { navigate } from '../router';
 import { testsListHTML } from './tests';
+import { finishedLessons, lessonCardsHTML, myLessons } from './lessons';
 import { refreshDue } from '../lib/due';
 import { icon } from '../lib/icons';
 import { isTeacher } from '../firebase/account';
@@ -43,9 +44,11 @@ export async function assignmentsPage(el: HTMLElement) {
   const l = learner()!;
   let list: Assignment[];
   let testsHTML: string;
+  let lessonsList: Awaited<ReturnType<typeof myLessons>> = [];
+  let doneLessons = new Map<string, number>();
   const teacher = await isTeacher().catch(() => false);
   try {
-    [list, testsHTML] = await Promise.all([assignmentsFor(l.className, teacher), testsListHTML(l.className, teacher)]);
+    [list, testsHTML, lessonsList, doneLessons] = await Promise.all([assignmentsFor(l.className, teacher), testsListHTML(l.className, teacher), myLessons(), finishedLessons()]);
   } catch {
     el.innerHTML = '<h1>Classwork</h1><p class="mark-bad">Could not load your classwork. Check your internet connection.</p>';
     return;
@@ -57,7 +60,9 @@ export async function assignmentsPage(el: HTMLElement) {
   el.innerHTML = `
     <div class="page-head"><h1>Classwork</h1><span class="muted">${esc(l.className)}</span></div>
     ${teacher ? feedbackHTML('info', 'You are signed in as the teacher.', '<p style="margin:6px 0">Learners only see the tests and assignments set for their own class. Below is everything that is published, so you can preview it. To create, edit or mark work, use the Teacher page.</p><a class="btn btn-primary" href="/teacher">Go to the Teacher page</a>') : ''}
-    <h2>Tests</h2>
+    <h2>Lessons</h2>
+    ${lessonsList.length ? lessonCardsHTML(lessonsList, doneLessons) : `<div class="card"><p style="margin:0">${teacher ? 'No published lessons yet.' : 'No lessons for your class yet.'}</p></div>`}
+    <h2 style="margin-top:24px">Tests</h2>
     ${testsHTML}
     <h2 style="margin-top:24px">Assignments</h2>
     ${list.length ? `<div class="qlist">${list.map((a, i) => {
