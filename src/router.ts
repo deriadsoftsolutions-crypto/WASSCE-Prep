@@ -46,7 +46,10 @@ export async function render() {
   const path = location.pathname;
   window.dispatchEvent(new CustomEvent('route-changed', { detail: path }));
   let nav = '';
+  // Each page gets a fresh container, so listeners a page adds never pile up across visits.
   app.innerHTML = '';
+  const page = document.createElement('div');
+  app.appendChild(page);
   for (const r of routes) {
     const m = path.match(r.re);
     if (m) {
@@ -54,13 +57,13 @@ export async function render() {
       r.keys.forEach((k, i) => (params[k] = decodeURIComponent(m[i + 1])));
       nav = r.nav ?? '';
       document.querySelectorAll<HTMLAnchorElement>('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === nav));
-      cleanup = await r.handler(app, params);
+      cleanup = await r.handler(page, params);
       window.scrollTo(0, 0);
       return;
     }
   }
   document.querySelectorAll('[data-nav]').forEach((a) => a.classList.remove('active'));
-  cleanup = await notFound(app, {});
+  cleanup = await notFound(page, {});
 }
 
 export function startRouter() {

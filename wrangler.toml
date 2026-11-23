@@ -1,0 +1,12 @@
+# Cloudflare Pages configuration. The dashboard reads bindings from this file.
+name = "kostechrobotics"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-01-01"
+
+# Assignment uploads. Create this bucket in Cloudflare > R2 before deploying.
+[[r2_buckets]]
+binding = "SUBMISSIONS"
+bucket_name = "wassce-submissions"
+
+[vars]
+FIREBASE_PROJECT_ID = "roboticsclass-b0eaf"

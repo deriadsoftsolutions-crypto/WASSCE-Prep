@@ -9,6 +9,7 @@ import { refreshLearner } from '../lib/session';
 import * as acct from '../firebase/account';
 import { auth } from '../firebase/app';
 import { saveRemoteSettings } from '../firebase/settings';
+import { mountTeacherAssignments } from './teacherAssignments';
 
 const topics = topicsData as Topic[];
 const UNLOCK_KEY = 'wassce.teacher.unlocked';
@@ -53,7 +54,42 @@ function renderLock(el: HTMLElement) {
   });
 }
 
+const TAB_KEY = 'wassce.teacher.tab';
+
+/** Teacher dashboard shell: header, tabs (Firebase mode) and the active tab. */
 async function renderDashboard(el: HTMLElement) {
+  let tab = 'overview';
+  try { tab = sessionStorage.getItem(TAB_KEY) ?? 'overview'; } catch { /* ignore */ }
+  if (!usingFirebase) tab = 'overview';
+  const tabs = [['overview', 'Overview'], ['assignments', 'Assignments']];
+  el.innerHTML = `
+    <div class="page-head"><h1>Teacher page</h1><button class="btn" data-act="lock" type="button">${usingFirebase ? 'Sign out' : 'Lock'}</button></div>
+    ${usingFirebase ? `<div class="tabs" role="tablist">${tabs.map(([id, label]) => `<button class="tab" role="tab" type="button" data-tab="${id}" aria-selected="${tab === id}">${label}</button>`).join('')}</div>` : ''}
+    <div data-tabbody></div>`;
+  const body = el.querySelector('[data-tabbody]') as HTMLElement;
+  el.onclick = async (e) => {
+    const t = e.target as HTMLElement;
+    const next = t.closest<HTMLElement>('[data-tab]')?.dataset.tab;
+    if (next && next !== tab) {
+      try { sessionStorage.setItem(TAB_KEY, next); } catch { /* ignore */ }
+      void renderDashboard(el);
+      return;
+    }
+    if (t.closest<HTMLElement>('[data-act]')?.dataset.act === 'lock' && !body.contains(t)) {
+      if (usingFirebase) {
+        await acct.signOut();
+        await refreshLearner();
+        return void firebaseGate(el);
+      }
+      try { sessionStorage.removeItem(UNLOCK_KEY); } catch { /* ignore */ }
+      renderLock(el);
+    }
+  };
+  if (tab === 'assignments') await mountTeacherAssignments(body);
+  else await renderOverview(body);
+}
+
+async function renderOverview(el: HTMLElement) {
   const s = getSettings();
   const attempts = await storage.getAttempts();
   const learners = new Map<string, { name: string; cls: string; list: Attempt[] }>();
@@ -67,7 +103,6 @@ async function renderDashboard(el: HTMLElement) {
     .sort((a, b) => a.cls.localeCompare(b.cls) || a.name.localeCompare(b.name));
 
   el.innerHTML = `
-    <div class="page-head"><h1>Teacher page</h1><button class="btn" data-act="lock" type="button">${usingFirebase ? 'Sign out' : 'Lock'}</button></div>
     <div class="card">
       <h2>Mock settings ${usingFirebase ? 'for the whole class' : 'for this tablet'}</h2>
       <div class="grid-2">
@@ -135,7 +170,7 @@ async function renderDashboard(el: HTMLElement) {
     if (act === 'clear' && (await confirmDialog(`Delete every learner's saved results${usingFirebase ? ' for the whole class' : ' on this tablet'}? Export a CSV first if you need it.`, 'Delete everything', true))) {
       await storage.clearProgress();
       toast('All learner data deleted.');
-      void renderDashboard(el);
+      void renderOverview(el);
     }
   };
 }

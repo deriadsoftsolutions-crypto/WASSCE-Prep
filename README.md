@@ -145,6 +145,35 @@ Each topic's score (the rings on the home page, My Progress and the T1 to T10 co
 
 Anything not tried yet counts as 0.
 
+## Assignments (file uploads with Cloudflare R2)
+
+Teachers set assignments on `/teacher` > **Assignments** (title, instructions, class, due date, marks, typed answer and/or files). Learners see them on **Assignments** (only those for their class), type an answer and/or attach up to 5 files (photos, PDF, Word, PowerPoint, Excel, text; 10 MB each; large photos are shrunk on the device first), and submit. They can change their work until it is marked. The teacher opens each learner's files, gives a mark and a comment, and the learner sees it straight away.
+
+How it fits together:
+
+- Records (assignments, submissions, marks) are in Firestore: `assignments/{id}`, `learners/{uid}/submissions/{assignmentId}`, `learners/{uid}/feedback/{assignmentId}`.
+- Files are in the Cloudflare R2 bucket `wassce-submissions`, under `submissions/{uid}/{assignmentId}/`.
+- `functions/api/upload.ts` and `functions/api/file.ts` are Cloudflare Pages Functions. Every request must carry the learner's Firebase sign-in token, which the function checks against Google's public keys (`functions/_lib/auth.ts`). Learners can only upload, open and delete their own files; teachers (accounts in `teachers`) can open everyone's.
+- `wrangler.toml` binds the bucket to the site as `SUBMISSIONS`.
+
+### One-time setup
+
+1. Cloudflare dashboard > **R2 Object Storage**. If asked, add a payment method and activate the free R2 plan (10 GB storage free each month).
+2. **Create bucket**, name `wassce-submissions`, location **Automatic**. Leave public access off.
+3. Firebase console > Firestore > **Rules**: paste `firestore.rules` and **Publish** (it adds the assignment rules).
+4. Push to GitHub. The Pages build reads `wrangler.toml` and connects the bucket.
+
+### Testing locally
+
+```bash
+npx firebase-tools emulators:start --only auth,firestore          # terminal 1
+VITE_FIREBASE_EMULATOR=1 npm run build
+printf 'FIREBASE_AUTH_EMULATOR=1\nFIRESTORE_EMULATOR_HOST=127.0.0.1:8080\n' > .dev.vars
+npx wrangler pages dev dist                                         # terminal 2: site + functions + local R2
+```
+
+`.dev.vars` is for local testing only and is ignored by git. Never set `FIREBASE_AUTH_EMULATOR` on the live site.
+
 ## Project structure
 
 ```
@@ -159,7 +188,7 @@ src/
     FirebaseAdapter.ts  Firestore implementation (default)
     progress.ts         computeProgress(): same logic for every adapter
     index.ts            picks the adapter (one line to change)
-  firebase/             Firebase setup, sign-in helpers, class settings
+  firebase/             Firebase setup, sign-in helpers, class settings, assignments
   data/                 all question content (JSON)
   pages/                home, topic, mock, paper2, progress, teacher
   quiz/quiz.ts          Paper 1 engine (practice and mock modes)
@@ -170,6 +199,8 @@ scripts/
   make-icons.cjs        regenerates PNG icons from public/icons/icon.svg
 public/                 manifest, icons, Cloudflare _headers
 firestore.rules         Firestore security rules (publish in the Firebase console)
+functions/              Cloudflare Pages Functions: /api/upload and /api/file (R2)
+wrangler.toml           Cloudflare Pages config: R2 bucket binding
 ```
 
 ## Firebase (learner and teacher accounts)

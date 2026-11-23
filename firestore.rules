@@ -31,11 +31,39 @@ service cloud.firestore {
         allow delete: if signedIn() && (request.auth.uid == uid || isTeacher());
         allow update: if false;
       }
+
+      // A learner's work for an assignment. They can change it until it is marked.
+      match /submissions/{assignmentId} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow create, update: if signedIn() && request.auth.uid == uid
+                              && request.resource.data.learnerId == uid
+                              && request.resource.data.assignmentId == assignmentId
+                              && !exists(/databases/$(database)/documents/learners/$(uid)/feedback/$(assignmentId));
+        allow delete: if isTeacher();
+      }
+
+      // The teacher's mark and comment. Only teachers write it.
+      match /feedback/{assignmentId} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow write: if isTeacher();
+      }
     }
 
-    // Teacher page: read all learners' attempts at once.
+    // Teacher page: read all learners' attempts, submissions and feedback at once.
     match /{path=**}/attempts/{id} {
       allow read: if isTeacher();
+    }
+    match /{path=**}/submissions/{id} {
+      allow read: if isTeacher();
+    }
+    match /{path=**}/feedback/{id} {
+      allow read: if isTeacher();
+    }
+
+    // Assignments: set by teachers, visible to everyone signed in.
+    match /assignments/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
     }
   }
 }

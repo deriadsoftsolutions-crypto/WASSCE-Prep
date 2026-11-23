@@ -1,7 +1,7 @@
 /* Service worker generated at build time by vite.config.ts. Do not edit dist/sw.js directly. */
 
 // Bump SCHEMA when the caching rules change, so every device drops its old caches on activate.
-const SCHEMA = 2;
+const SCHEMA = 3;
 const VERSION = '__VERSION__';
 const CACHE = `wassce-v${SCHEMA}-${VERSION}`;
 const PRECACHE = __PRECACHE__;
@@ -14,6 +14,8 @@ const APP_ROUTES = [
   /^\/paper2\/?$/,
   /^\/paper2\/Q\d+\/?$/i,
   /^\/progress\/?$/,
+  /^\/assignments\/?$/,
+  /^\/assignments\/[A-Za-z0-9_-]+\/?$/,
   /^\/teacher\/?$/,
 ];
 const isAppRoute = (path) => APP_ROUTES.some((re) => re.test(path));

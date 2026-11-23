@@ -10,6 +10,7 @@ import { topicPage } from './pages/topic';
 import { paper2ListPage, paper2QuestionPage } from './pages/paper2';
 import { progressPage } from './pages/progress';
 import { teacherPage } from './pages/teacher';
+import { assignmentsPage, assignmentPage } from './pages/assignments';
 import { initPWA } from './lib/pwa';
 
 function initTheme() {
@@ -35,12 +36,15 @@ function updateChip() {
 async function boot() {
   initTheme();
   initPWA();
+  (document.querySelector('[data-nav="assignments"]') as HTMLElement).hidden = !usingFirebase;
   route('/', homePage, 'home');
   route('/topic/:id', topicPage);
   route('/mock', mockPage, 'mock');
   route('/paper2', paper2ListPage, 'paper2');
   route('/paper2/:id', paper2QuestionPage, 'paper2');
   route('/progress', progressPage, 'progress');
+  route('/assignments', assignmentsPage, 'assignments');
+  route('/assignments/:id', assignmentPage, 'assignments');
   route('/teacher', teacherPage);
   await loadLearner();
   updateChip();
