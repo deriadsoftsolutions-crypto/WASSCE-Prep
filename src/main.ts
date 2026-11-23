@@ -1,7 +1,9 @@
 import './styles.css';
-import { route, startRouter } from './router';
+import { route, startRouter, render } from './router';
 import { learner, loadLearner, askLearner } from './lib/session';
 import { mockPage } from './pages/mock';
+import { homePage } from './pages/home';
+import { topicPage } from './pages/topic';
 
 function initTheme() {
   const btn = document.getElementById('theme-toggle')!;
@@ -24,12 +26,13 @@ function updateChip() {
 
 async function boot() {
   initTheme();
-  route('/', (el) => { el.innerHTML = '<h1>Home</h1>'; }, 'home');
+  route('/', homePage, 'home');
+  route('/topic/:id', topicPage, 'home');
   route('/mock', mockPage, 'mock');
   await loadLearner();
   updateChip();
   document.getElementById('learner-chip')!.addEventListener('click', () => void askLearner(true));
-  window.addEventListener('learner-changed', updateChip);
+  window.addEventListener('learner-changed', () => { updateChip(); void render(); });
   startRouter();
   if (!learner() && location.pathname !== '/teacher') await askLearner();
 }
