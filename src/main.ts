@@ -1,6 +1,7 @@
 import './styles.css';
 import { route, startRouter } from './router';
 import { learner, loadLearner, askLearner } from './lib/session';
+import { mockPage } from './pages/mock';
 
 function initTheme() {
   const btn = document.getElementById('theme-toggle')!;
@@ -24,6 +25,7 @@ function updateChip() {
 async function boot() {
   initTheme();
   route('/', (el) => { el.innerHTML = '<h1>Home</h1>'; }, 'home');
+  route('/mock', mockPage, 'mock');
   await loadLearner();
   updateChip();
   document.getElementById('learner-chip')!.addEventListener('click', () => void askLearner(true));

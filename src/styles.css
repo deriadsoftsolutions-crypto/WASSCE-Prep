@@ -406,3 +406,4 @@ canvas { width: 100%; display: block; border-radius: 12px; background: var(--sur
 #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 60; display: grid; gap: 8px; }
 .toast { background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 12px; font-weight: 600; box-shadow: var(--shadow); max-width: 90vw; }
 .toast button { margin-left: 12px; }
+tr.weak td { background: var(--bad-soft); }
