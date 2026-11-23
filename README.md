@@ -5,7 +5,7 @@ An interactive, offline-capable practice micro-site for the WASSCE Robotics mock
 - **Vite + vanilla TypeScript**, no framework. About 35 kB of gzipped JavaScript on first load; each activity loads on demand.
 - **Tablet first**: 48px minimum tap targets, portrait and landscape, touch drag-and-drop with Pointer Events (plus tap-to-place as a fallback).
 - **Offline PWA**: the service worker precaches the whole site, so it keeps working when the Wi-Fi drops. It can be installed to the home screen.
-- **Storage**: progress is saved on each device (`localStorage`) through a `StorageAdapter` interface. Firebase accounts (learners sign in with name, class and a 6-digit PIN; teachers see the whole class) are built in and switched off until the Firebase setup is finished.
+- **Firebase accounts**: learners sign in with name, class and a 6-digit PIN, so progress follows them to any device; teachers see the whole class. All storage goes through a `StorageAdapter` interface, and an on-device (`localStorage`) mode remains available.
 
 ## Contents
 
@@ -105,7 +105,7 @@ Rules to keep in mind:
 
 `src/config.ts`:
 
-- `STORAGE`: `'local'` (current: no sign-in, progress stays on each device) or `'firebase'` (sign-in, progress in the cloud; see "Firebase" below).
+- `STORAGE`: `'firebase'` (current: sign-in, progress in the cloud; see "Firebase" below) or `'local'` (no sign-in, progress stays on each device).
 - `TEACHER_PIN`: PIN for `/teacher` in `'local'` mode (currently `5454`).
 - `DEFAULT_MOCK_MINUTES`, `DEFAULT_SHUFFLE`: defaults until a teacher changes them.
 - `CALC_TOLERANCE`: accepted error in the calculation checker.
@@ -168,12 +168,7 @@ firestore.rules         Firestore security rules (publish in the Firebase consol
 
 Project: `roboticsclass-b0eaf`. Firestore location: europe-west1.
 
-**Status: built and tested, switched off.** To switch on:
-
-1. In the Firebase console, paste `firestore.rules` into **Firestore Database > Rules** and tap **Publish** (it adds the class settings rule).
-2. Set `STORAGE: 'firebase'` in `src/config.ts`, commit and push.
-3. Create and approve your teacher account (below).
-4. Before switching, export CSVs from `/teacher` on each tablet: results saved on devices in local mode are not moved to Firebase.
+**Status: switched on** (`STORAGE: 'firebase'`). Rules published, `kostechrobotics.pages.dev` added to Authorized domains. Results saved on devices before the switch stay on those devices and are not moved to Firebase.
 
 ### How sign-in works
 

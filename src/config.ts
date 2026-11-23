@@ -7,7 +7,7 @@ export const CONFIG = {
    *   'firebase': learners sign in (name, class, 6-digit PIN); progress follows them to any device.
    *   'local':    no sign-in; progress stays on each tablet (localStorage).
    */
-  STORAGE: 'local' as 'firebase' | 'local',
+  STORAGE: 'firebase' as 'firebase' | 'local',
   /** PIN for the hidden /teacher page in 'local' mode. In 'firebase' mode teachers sign in instead. */
   TEACHER_PIN: '5454',
   /** Default Paper 1 mock timer in minutes (0 = no timer). The teacher page can override this per tablet. */
