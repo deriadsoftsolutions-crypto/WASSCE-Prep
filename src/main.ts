@@ -4,6 +4,7 @@ import { learner, loadLearner, askLearner } from './lib/session';
 import { mockPage } from './pages/mock';
 import { homePage } from './pages/home';
 import { topicPage } from './pages/topic';
+import { paper2ListPage, paper2QuestionPage } from './pages/paper2';
 
 function initTheme() {
   const btn = document.getElementById('theme-toggle')!;
@@ -29,6 +30,8 @@ async function boot() {
   route('/', homePage, 'home');
   route('/topic/:id', topicPage, 'home');
   route('/mock', mockPage, 'mock');
+  route('/paper2', paper2ListPage, 'paper2');
+  route('/paper2/:id', paper2QuestionPage, 'paper2');
   await loadLearner();
   updateChip();
   document.getElementById('learner-chip')!.addEventListener('click', () => void askLearner(true));
