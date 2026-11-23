@@ -11,6 +11,7 @@ import { paper2ListPage, paper2QuestionPage } from './pages/paper2';
 import { progressPage } from './pages/progress';
 import { teacherPage } from './pages/teacher';
 import { assignmentsPage, assignmentPage } from './pages/assignments';
+import { testPage } from './pages/tests';
 import { initPWA } from './lib/pwa';
 
 function initTheme() {
@@ -45,6 +46,7 @@ async function boot() {
   route('/progress', progressPage, 'progress');
   route('/assignments', assignmentsPage, 'assignments');
   route('/assignments/:id', assignmentPage, 'assignments');
+  route('/tests/:id', testPage, 'assignments');
   route('/teacher', teacherPage);
   await loadLearner();
   updateChip();

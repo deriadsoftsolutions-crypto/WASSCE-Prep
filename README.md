@@ -174,6 +174,20 @@ npx wrangler pages dev dist                                         # terminal 2
 
 `.dev.vars` is for local testing only and is ignored by git. Never set `FIREBASE_AUTH_EMULATOR` on the live site.
 
+## Tests (teacher-made assessments)
+
+On `/teacher` > **Tests** the teacher builds a test from multiple-choice questions (auto-marked), calculation questions (auto-marked, accepts answers within a set percentage, fractions and `pi`) and short written answers (teacher-marked). **From Paper 1 questions** adds any of the 40 Paper 1 questions with their answers and explanations in one tap. Each test has a class, an optional opening and closing time, an optional time limit, and a results setting: straight after submitting, after it closes, or only when the teacher releases them. Leave **Published** off while building.
+
+Learners find tests on **Classwork**. They take each test once; answers are kept on the device as they go, and a timed test submits itself when time runs out. The **Results** view shows who has started and submitted, time taken, auto-marked scores and a per-question success rate; the teacher marks written answers, adds a comment and releases results (or **Release all** for fully auto-marked tests), exports a CSV, or uses **Allow retake**.
+
+Protection against cheating, enforced by `firestore.rules` rather than the browser:
+
+- Questions are stored apart from the test settings and cannot be read before the test opens. The answer key is stored separately again and a learner can read it only after submitting, and only if the results setting allows it.
+- The start time is stamped by Firebase's server clock. A submission is accepted only within the time limit (plus 2 minutes' grace for slow connections) and before the closing time (plus 2 minutes).
+- Answers can be submitted once and never changed; only teachers can write results or allow a retake.
+
+Data: `assessments/{id}`, `assessments/{id}/content/questions`, `assessments/{id}/content/key`, and per learner `assessmentStarts`, `assessmentAttempts`, `assessmentResults` under `learners/{uid}/`.
+
 ## Project structure
 
 ```

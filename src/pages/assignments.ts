@@ -3,6 +3,7 @@ import { feedbackHTML, toast } from '../lib/ui';
 import { learner } from '../lib/session';
 import { usingFirebase } from '../storage';
 import { navigate } from '../router';
+import { testsListHTML } from './tests';
 import {
   assignmentsFor, deleteFile, fmtSize, getAssignment, myFeedback, mySubmission, openFile, shrinkImage, submit, uploadFile,
   type Assignment, type Submission, type SubmittedFile,
@@ -29,19 +30,20 @@ export function dueText(a: Assignment): string {
 
 function needsFirebase(el: HTMLElement): boolean {
   if (usingFirebase && learner()) return false;
-  el.innerHTML = `<h1>Assignments</h1><p class="muted">${usingFirebase ? 'Sign in to see your assignments.' : 'Assignments need learner accounts (Firebase mode).'}</p>`;
+  el.innerHTML = `<h1>Classwork</h1><p class="muted">${usingFirebase ? 'Sign in to see your classwork.' : 'Classwork needs learner accounts (Firebase mode).'}</p>`;
   return true;
 }
 
 export async function assignmentsPage(el: HTMLElement) {
   if (needsFirebase(el)) return;
-  el.innerHTML = '<h1>Assignments</h1><p class="muted">Loading...</p>';
+  el.innerHTML = '<h1>Classwork</h1><p class="muted">Loading...</p>';
   const l = learner()!;
   let list: Assignment[];
+  let testsHTML: string;
   try {
-    list = await assignmentsFor(l.className);
+    [list, testsHTML] = await Promise.all([assignmentsFor(l.className), testsListHTML(l.className)]);
   } catch {
-    el.innerHTML = '<h1>Assignments</h1><p class="mark-bad">Could not load assignments. Check your internet connection.</p>';
+    el.innerHTML = '<h1>Classwork</h1><p class="mark-bad">Could not load your classwork. Check your internet connection.</p>';
     return;
   }
   const status = await Promise.all(list.map(async (a) => {
@@ -49,7 +51,10 @@ export async function assignmentsPage(el: HTMLElement) {
     return { s, f };
   }));
   el.innerHTML = `
-    <div class="page-head"><h1>Assignments</h1><span class="muted">${esc(l.className)}</span></div>
+    <div class="page-head"><h1>Classwork</h1><span class="muted">${esc(l.className)}</span></div>
+    <h2>Tests</h2>
+    ${testsHTML}
+    <h2 style="margin-top:24px">Assignments</h2>
     ${list.length ? `<div class="qlist">${list.map((a, i) => {
       const { s, f } = status[i];
       const overdue = !!a.dueAt && a.dueAt < Date.now();
@@ -58,7 +63,7 @@ export async function assignmentsPage(el: HTMLElement) {
         : overdue ? '<span class="pill" style="background:var(--bad-soft);color:var(--bad)">Not submitted</span>'
         : '<span class="pill accent">To do</span>';
       return `<a class="topic-card" href="/assignments/${a.id}" style="flex-direction:column;align-items:flex-start">
-        <div class="row" style="width:100%"><b style="font-size:1.15rem">${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
+        <div class="row" style="width:100%"><b style="font-size:1.15rem">📎 ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
         <div class="muted small">${esc(dueText(a))} · ${a.maxMarks} marks</div>
       </a>`;
     }).join('')}</div>` : '<div class="card"><p style="margin:0">No assignments for your class yet.</p></div>'}`;
@@ -85,7 +90,7 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
   const locked = !!fb;
 
   el.innerHTML = `
-    <a class="crumb" href="/assignments">← All assignments</a>
+    <a class="crumb" href="/assignments">← Classwork</a>
     <div class="page-head"><h1>${esc(a.title)}</h1><span class="pill">${a.maxMarks} marks</span></div>
     <p class="muted" style="margin-top:-8px">${esc(dueText(a))}</p>
     ${fb ? feedbackHTML(fb.mark >= fb.maxMarks * 0.5 ? 'ok' : 'info', `Your teacher marked this: ${fb.mark} / ${fb.maxMarks}`,

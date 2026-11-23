@@ -10,6 +10,7 @@ import * as acct from '../firebase/account';
 import { auth } from '../firebase/app';
 import { saveRemoteSettings } from '../firebase/settings';
 import { mountTeacherAssignments } from './teacherAssignments';
+import { mountTeacherTests } from './teacherTests';
 
 const topics = topicsData as Topic[];
 const UNLOCK_KEY = 'wassce.teacher.unlocked';
@@ -61,7 +62,7 @@ async function renderDashboard(el: HTMLElement) {
   let tab = 'overview';
   try { tab = sessionStorage.getItem(TAB_KEY) ?? 'overview'; } catch { /* ignore */ }
   if (!usingFirebase) tab = 'overview';
-  const tabs = [['overview', 'Overview'], ['assignments', 'Assignments']];
+  const tabs = [['overview', 'Overview'], ['tests', 'Tests'], ['assignments', 'Assignments']];
   el.innerHTML = `
     <div class="page-head"><h1>Teacher page</h1><button class="btn" data-act="lock" type="button">${usingFirebase ? 'Sign out' : 'Lock'}</button></div>
     ${usingFirebase ? `<div class="tabs" role="tablist">${tabs.map(([id, label]) => `<button class="tab" role="tab" type="button" data-tab="${id}" aria-selected="${tab === id}">${label}</button>`).join('')}</div>` : ''}
@@ -86,6 +87,7 @@ async function renderDashboard(el: HTMLElement) {
     }
   };
   if (tab === 'assignments') await mountTeacherAssignments(body);
+  else if (tab === 'tests') await mountTeacherTests(body);
   else await renderOverview(body);
 }
 

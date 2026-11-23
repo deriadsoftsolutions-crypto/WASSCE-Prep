@@ -16,6 +16,7 @@ const APP_ROUTES = [
   /^\/progress\/?$/,
   /^\/assignments\/?$/,
   /^\/assignments\/[A-Za-z0-9_-]+\/?$/,
+  /^\/tests\/[A-Za-z0-9_-]+\/?$/,
   /^\/teacher\/?$/,
 ];
 const isAppRoute = (path) => APP_ROUTES.some((re) => re.test(path));

@@ -189,7 +189,11 @@ export async function mountTeacherAssignments(host: HTMLElement) {
     const edit = t.closest<HTMLElement>('[data-edit]')?.dataset.edit;
     if (edit) return renderForm(assignments.find((x) => x.id === edit));
     const open = t.closest<HTMLElement>('[data-open]')?.dataset.open;
-    if (open) renderMarking(assignments.find((x) => x.id === open)!);
+    if (open) {
+      // Fetch fresh: learners may have submitted since the list was opened.
+      host.innerHTML = '<p class="muted">Loading submissions...</p>';
+      void load().then(() => renderMarking(assignments.find((x) => x.id === open)!));
+    }
   };
 
   try {

@@ -5,6 +5,29 @@ service cloud.firestore {
     function isTeacher() {
       return signedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
     }
+    function test(aid) {
+      return get(/databases/$(database)/documents/assessments/$(aid)).data;
+    }
+    function testOpen(aid) {
+      let a = test(aid);
+      return a.published == true
+        && (a.opensAt == null || request.time >= a.opensAt)
+        && (a.closesAt == null || request.time <= a.closesAt);
+    }
+    // Learners may see the answer key only after submitting, and only if the teacher allows it.
+    function keyVisible(aid) {
+      let a = test(aid);
+      return exists(/databases/$(database)/documents/learners/$(request.auth.uid)/assessmentAttempts/$(aid))
+        && (a.showResults == 'immediately'
+            || (a.showResults == 'after-close' && a.closesAt != null && request.time > a.closesAt));
+    }
+    // Submissions must arrive within the time limit (plus 2 minutes' grace) and before closing (plus 2 minutes).
+    function inTime(uid, aid) {
+      let a = test(aid);
+      let started = get(/databases/$(database)/documents/learners/$(uid)/assessmentStarts/$(aid)).data.startedAt;
+      return (a.timeLimitMin == 0 || request.time <= started + duration.value(a.timeLimitMin * 60 + 120, 's'))
+        && (a.closesAt == null || request.time <= a.closesAt + duration.value(120, 's'));
+    }
 
     // Only you add teachers, by hand in the Firebase console.
     match /teachers/{uid} {
@@ -47,6 +70,29 @@ service cloud.firestore {
         allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
         allow write: if isTeacher();
       }
+
+      // Tests: the start time is stamped by the server, answers can be sent once, within time.
+      match /assessmentStarts/{aid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow create: if signedIn() && request.auth.uid == uid
+                      && request.resource.data.startedAt == request.time
+                      && testOpen(aid);
+        allow delete: if isTeacher();
+      }
+      match /assessmentAttempts/{aid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow create: if signedIn() && request.auth.uid == uid
+                      && request.resource.data.learnerId == uid
+                      && request.resource.data.assessmentId == aid
+                      && request.resource.data.submittedAt == request.time
+                      && exists(/databases/$(database)/documents/learners/$(uid)/assessmentStarts/$(aid))
+                      && inTime(uid, aid);
+        allow delete: if isTeacher();
+      }
+      match /assessmentResults/{aid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow write: if isTeacher();
+      }
     }
 
     // Teacher page: read all learners' attempts, submissions and feedback at once.
@@ -64,6 +110,22 @@ service cloud.firestore {
     match /assignments/{id} {
       allow read: if signedIn();
       allow write: if isTeacher();
+    }
+    match /{path=**}/assessmentStarts/{id} { allow read: if isTeacher(); }
+    match /{path=**}/assessmentAttempts/{id} { allow read: if isTeacher(); }
+    match /{path=**}/assessmentResults/{id} { allow read: if isTeacher(); }
+
+    // Tests: settings visible to everyone signed in; questions once open; answers per keyVisible.
+    match /assessments/{aid} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+      match /content/{part} {
+        allow read: if isTeacher()
+          || (part == 'questions' && signedIn() && test(aid).published == true
+              && (test(aid).opensAt == null || request.time >= test(aid).opensAt))
+          || (part == 'key' && signedIn() && keyVisible(aid));
+        allow write: if isTeacher();
+      }
     }
   }
 }
