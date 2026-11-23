@@ -4,6 +4,7 @@ import { feedbackHTML } from '../lib/ui';
 import { learner, saveResult } from '../lib/session';
 import { storage } from '../storage';
 import { mountActivity } from '../activities';
+import { icon } from '../lib/icons';
 
 interface Part {
   id: string; label: string; topic: number; marks: number;
@@ -79,8 +80,8 @@ export async function paper2QuestionPage(el: HTMLElement, params: Record<string,
         ${prev !== undefined ? `<p class="small" style="margin:6px 0 0"><span class="pill ok">Last self-mark: ${Math.round(prev * p.marks)} / ${p.marks}</span></p>` : ''}
         <label class="field" style="margin-top:12px"><span>Your answer</span>
           <textarea data-draft="${esc(draftKey(p))}" placeholder="Write your answer here before revealing the model answer.">${esc(d[draftKey(p)] ?? '')}</textarea></label>
-        ${p.type === 'calc' ? `<button class="btn btn-accent" data-tool="calc-checker" data-param="${esc(p.calcId ?? '')}" type="button">🧮 Check my working step by step</button>` : ''}
-        ${p.type === 'activity' ? `<button class="btn btn-accent" data-tool="${esc(p.activity ?? '')}" type="button">🧪 Open the interactive activity</button>` : ''}
+        ${p.type === 'calc' ? `<button class="btn btn-accent" data-tool="calc-checker" data-param="${esc(p.calcId ?? '')}" type="button">${icon('calc', 20)} Check my working step by step</button>` : ''}
+        ${p.type === 'activity' ? `<button class="btn btn-accent" data-tool="${esc(p.activity ?? '')}" type="button">${icon('lab', 20)} Open the interactive activity</button>` : ''}
         <div data-toolhost></div>
         <div class="row" style="margin-top:12px"><button class="btn btn-primary" data-reveal type="button">${ticks(p).length ? 'Hide model answer' : 'Reveal model answer'}</button></div>
         <div data-modelbox ${ticks(p).length ? '' : 'hidden'}>

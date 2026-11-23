@@ -16,6 +16,12 @@ export const CONFIG = {
   DEFAULT_SHUFFLE: false,
   /** Accepted relative tolerance for calculation answers (0.01 = plus or minus 1%). */
   CALC_TOLERANCE: 0.01,
+  /**
+   * First day of the WASSCE Robotics papers, for the countdown on the home page (YYYY-MM-DD).
+   * ESTIMATE: replace with the date on the official WAEC timetable when it is published.
+   */
+  WASSCE_DATE: '2027-05-03',
+  WASSCE_LABEL: 'Robotics, May/June 2027',
   SCHOOL: 'Koase STEM SHS',
   APP_NAME: 'WASSCE Robotics Practice',
 } as const;

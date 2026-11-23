@@ -24,8 +24,30 @@ const isAppRoute = (path) => APP_ROUTES.some((re) => re.test(path));
 /** Files that may be added to the cache at runtime (built assets and icons only). */
 const RUNTIME_CACHEABLE = /^\/(assets|icons)\//;
 
+/**
+ * Fill the new cache. Files under /assets/ have a fingerprint in their name, so if an older
+ * cache already holds the same name it is the same file: copy it instead of downloading it
+ * again. After an update, tablets only download what actually changed (saves mobile data).
+ */
+async function precache() {
+  const cache = await caches.open(CACHE);
+  const oldNames = (await caches.keys()).filter((k) => k !== CACHE && k.startsWith('wassce-'));
+  const olds = await Promise.all(oldNames.map((k) => caches.open(k)));
+  await Promise.all(PRECACHE.map(async (url) => {
+    if (url.startsWith('/assets/')) {
+      for (const old of olds) {
+        const hit = await old.match(url);
+        if (hit) { await cache.put(url, hit); return; }
+      }
+    }
+    const res = await fetch(url, { cache: 'reload' });
+    if (!res.ok) throw new Error(`Could not cache ${url}`);
+    await cache.put(url, res);
+  }));
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
+  event.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {

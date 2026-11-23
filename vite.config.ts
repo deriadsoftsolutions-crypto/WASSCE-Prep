@@ -22,7 +22,8 @@ function precacheServiceWorker(): Plugin {
         for (const f of readdirSync(dir)) {
           const p = join(dir, f);
           if (statSync(p).isDirectory()) walk(p);
-          else if (!skip.has(relative(outDir, p)) && !f.endsWith('.map')) files.push(p);
+          // .woff copies are fallbacks for very old browsers; every supported tablet uses .woff2.
+          else if (!skip.has(relative(outDir, p)) && !f.endsWith('.map') && !f.endsWith('.woff')) files.push(p);
         }
       };
       walk(outDir);
@@ -40,6 +41,20 @@ function precacheServiceWorker(): Plugin {
 }
 
 export default defineConfig({
-  build: { target: 'es2020', outDir: 'dist', assetsInlineLimit: 4096 },
+  build: {
+    target: 'es2020',
+    outDir: 'dist',
+    assetsInlineLimit: 4096,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        // Firebase in its own file: its name only changes when Firebase is upgraded,
+        // so tablets keep their cached copy across our updates.
+        manualChunks(id) {
+          if (/node_modules\/(firebase|@firebase)\//.test(id)) return 'firebase';
+        },
+      },
+    },
+  },
   plugins: [precacheServiceWorker()],
 });

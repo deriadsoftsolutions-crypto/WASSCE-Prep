@@ -7,6 +7,8 @@ import {
   type Assessment, type Attempt, type KeyEntry, type Question, type Response, type Result,
 } from '../firebase/assessments';
 import { richText } from './assignments';
+import { refreshDue } from '../lib/due';
+import { icon } from '../lib/icons';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -32,7 +34,7 @@ export async function testsListHTML(className: string, all = false): Promise<str
       : st === 'upcoming' ? '<span class="pill">Upcoming</span>'
       : '<span class="pill" style="background:var(--bad-soft);color:var(--bad)">Closed</span>';
     return `<a class="topic-card" href="/tests/${a.id}" style="flex-direction:column;align-items:flex-start">
-      <div class="row" style="width:100%"><b style="font-size:1.15rem">📝 ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
+      <div class="row" style="width:100%"><b style="font-size:1.15rem;display:inline-flex;gap:8px;align-items:center">${icon('test', 22)} ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
       <div class="muted small">${all ? `${esc(a.className || 'All classes')} · ` : ''}${a.questionCount} questions · ${a.totalMarks} marks · ${esc(windowText(a))}</div></a>`;
   }));
   return `<div class="qlist">${rows.join('')}</div>`;
@@ -133,6 +135,7 @@ async function renderTaking(el: HTMLElement, head: string, a: Assessment, starte
         new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 20_000)),
       ]);
       clearInterval(timer);
+      refreshDue();
       try { localStorage.removeItem(saveKey); } catch { /* ignore */ }
       toast(auto ? 'Time is up. Your test was submitted.' : 'Test submitted.');
       navigate(`/tests/${a.id}`, true);

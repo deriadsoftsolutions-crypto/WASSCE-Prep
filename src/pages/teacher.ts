@@ -5,7 +5,7 @@ import { esc, fmtDate } from '../lib/dom';
 import { addRevealToggles, confirmDialog, downloadText, toast } from '../lib/ui';
 import { getSettings, saveSettings } from '../lib/settings';
 import { storage, usingFirebase } from '../storage';
-import { refreshLearner } from '../lib/session';
+import { learner, refreshLearner } from '../lib/session';
 import * as acct from '../firebase/account';
 import { auth } from '../firebase/app';
 import { saveRemoteSettings } from '../firebase/settings';
@@ -57,16 +57,21 @@ function renderLock(el: HTMLElement) {
 
 const TAB_KEY = 'wassce.teacher.tab';
 
-/** Teacher dashboard shell: header, tabs (Firebase mode) and the active tab. */
+/** Teacher dashboard shell: side menu (Firebase mode) and the active section. */
 async function renderDashboard(el: HTMLElement) {
   let tab = 'overview';
   try { tab = sessionStorage.getItem(TAB_KEY) ?? 'overview'; } catch { /* ignore */ }
   if (!usingFirebase) tab = 'overview';
   const tabs = [['overview', 'Overview'], ['tests', 'Tests'], ['assignments', 'Assignments']];
+  const me = learner();
   el.innerHTML = `
-    <div class="page-head"><h1>Teacher page</h1><button class="btn" data-act="lock" type="button">${usingFirebase ? 'Sign out' : 'Lock'}</button></div>
-    ${usingFirebase ? `<div class="tabs" role="tablist">${tabs.map(([id, label]) => `<button class="tab" role="tab" type="button" data-tab="${id}" aria-selected="${tab === id}">${label}</button>`).join('')}</div>` : ''}
-    <div data-tabbody></div>`;
+    <div class="t-layout">
+      <nav class="t-menu" aria-label="Teacher">
+        ${(usingFirebase ? tabs : tabs.slice(0, 1)).map(([id, label]) => `<button type="button" data-tab="${id}" ${tab === id ? 'aria-current="page"' : ''}>${label}<span class="t-count" data-count="${id}" hidden></span></button>`).join('')}
+        <div class="t-foot">${me ? `<b>${esc(me.name)}</b><br>` : ''}<button type="button" data-act="lock" style="min-height:40px;padding:0;color:var(--accent)">${usingFirebase ? 'Sign out' : 'Lock'}</button></div>
+      </nav>
+      <div class="t-main" data-tabbody></div>
+    </div>`;
   const body = el.querySelector('[data-tabbody]') as HTMLElement;
   el.onclick = async (e) => {
     const t = e.target as HTMLElement;
@@ -86,9 +91,34 @@ async function renderDashboard(el: HTMLElement) {
       renderLock(el);
     }
   };
+  if (usingFirebase) void menuCounts(el);
   if (tab === 'assignments') await mountTeacherAssignments(body);
   else if (tab === 'tests') await mountTeacherTests(body);
   else await renderOverview(body);
+}
+
+/** Live counts in the side menu: tests open now, submissions waiting for a mark. */
+async function menuCounts(el: HTMLElement) {
+  try {
+    const c = await classworkCounts();
+    const set = (id: string, text: string, urgent = false) => {
+      const b = el.querySelector<HTMLElement>(`[data-count="${id}"]`);
+      if (!b) return;
+      b.hidden = !text;
+      b.textContent = text;
+      b.classList.toggle('urgent', urgent);
+    };
+    set('tests', c.openTests ? `${c.openTests} open` : '');
+    set('assignments', c.toMark ? `${c.toMark} to mark` : '', true);
+  } catch { /* counts are optional */ }
+}
+
+async function classworkCounts() {
+  const [asg, tst] = await Promise.all([import('../firebase/assignments'), import('../firebase/assessments')]);
+  const [{ subs, feedback }, tests, tdata] = await Promise.all([asg.allSubmissions(), tst.listAssessments(), tst.allAttempts()]);
+  const toMark = subs.filter((s) => !feedback.some((f) => f.assignmentId === s.assignmentId && f.learnerId === s.learnerId)).length;
+  const open = tests.filter((t) => tst.statusOf(t) === 'open');
+  return { toMark, openTests: open.length, open, tdata };
 }
 
 async function renderOverview(el: HTMLElement) {
@@ -104,7 +134,76 @@ async function renderOverview(el: HTMLElement) {
   const rows = [...learners.entries()].map(([id, e], k) => ({ id, ...e, prog: progs[k] }))
     .sort((a, b) => a.cls.localeCompare(b.cls) || a.name.localeCompare(b.name));
 
+  // Class picture: average topic score over learners who have done anything in that topic.
+  const classAvg = topics.map((t) => {
+    const ps = rows.map((r) => r.prog.topics[t.id]).filter((tp) => Object.keys(tp.items).length || tp.mcqTotal);
+    return { t, avg: ps.length ? Math.round(ps.reduce((sum, tp) => sum + tp.percent, 0) / ps.length) : null };
+  });
+  const struggling = classAvg.filter((x) => x.avg !== null).sort((a, b) => a.avg! - b.avg!).slice(0, 3);
+  let mc = 0, mt = 0;
+  for (const r of rows) for (const t of topics) { mc += r.prog.topics[t.id].mcqCorrect; mt += r.prog.topics[t.id].mcqTotal; }
+  const cw = usingFirebase ? await classworkCounts().catch(() => null) : null;
+  const openTest = cw?.open[0];
+  const openTaken = openTest ? cw!.tdata.attempts.filter((a) => a.assessmentId === openTest.id).length : 0;
+  const heatClass = (tp: { percent: number; items: object; mcqTotal: number }) =>
+    !Object.keys(tp.items).length && !tp.mcqTotal ? 'none' : tp.percent >= 75 ? 'h3' : tp.percent >= 50 ? 'h2' : tp.percent >= 25 ? 'h1' : 'h0';
+  const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+
   el.innerHTML = `
+    <div class="page-head"><h1>Overview</h1><span class="muted">${today}</span></div>
+    <section class="t-summary" aria-label="Needs attention">
+      ${usingFirebase ? `
+      <div class="t-stat ${cw?.toMark ? 'urgent' : ''}">
+        <span class="num">${cw?.toMark ?? 0}</span>
+        <span class="lbl">submission${cw?.toMark === 1 ? '' : 's'} waiting for a mark</span>
+        <span class="sub">${cw?.toMark ? 'Open Assignments to mark them' : 'All marked'}</span>
+        ${cw?.toMark ? '<button class="btn btn-primary" type="button" data-goto="assignments">Mark now</button>' : ''}
+      </div>
+      <div class="t-stat">
+        ${openTest ? `<span class="num">${openTaken}</span>
+        <span class="lbl">have taken ${esc(openTest.title)}</span>
+        <span class="sub">${openTest.closesAt ? `Closes ${fmtDate(openTest.closesAt)}` : 'Open, no closing time'}${cw!.openTests > 1 ? `. ${cw!.openTests - 1} more test${cw!.openTests > 2 ? 's' : ''} open` : ''}</span>`
+        : `<span class="num">0</span><span class="lbl">tests open now</span><span class="sub">Create one under Tests</span>`}
+      </div>` : ''}
+      <div class="t-stat">
+        <span class="num">${mt ? Math.round((mc / mt) * 100) : 0}%</span>
+        <span class="lbl">class average on Paper 1 questions</span>
+        <span class="sub">${mt} answers from ${rows.length} learner${rows.length === 1 ? '' : 's'}</span>
+      </div>
+    </section>
+
+    ${struggling.length ? `<section class="card" aria-labelledby="weak">
+      <h2 id="weak">Where the class is struggling</h2>
+      ${struggling.map((x) => `<div class="weak-row">
+        <span class="w-name">${x.t.id}. ${esc(x.t.short)}</span>
+        <span class="bar weak"><span style="width:${x.avg}%"></span></span>
+        <span class="num">${x.avg}%</span>
+        <a class="btn btn-sm" href="/topic/${x.t.id}">Open topic</a>
+      </div>`).join('')}
+      <p class="muted small" style="margin:8px 0 0">Average topic score of the learners who have started each topic. ${usingFirebase ? 'Set a test on a weak topic under Tests: Paper 1 questions can be added in one tap.' : ''}</p>
+    </section>` : ''}
+
+    <section class="card" aria-labelledby="heat">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h2 id="heat" style="margin:0">Topic scores by learner</h2>
+        <span class="heat-key">0% <span style="background:var(--surface)"></span><span style="background:#FCEBB0"></span><span style="background:#F8D35C"></span><span style="background:#F5B700"></span> 100%</span>
+      </div>
+      ${rows.length ? `<div class="table-wrap"><table class="heat">
+        <thead><tr><th class="left" scope="col">Learner</th>${topics.map((t) => `<th scope="col" title="${esc(t.title)}">T${t.id}</th>`).join('')}<th scope="col">Best mock</th></tr></thead>
+        <tbody>${rows.map((r) => {
+          const best = r.prog.mocks.reduce((m, x) => Math.max(m, x.score), -1);
+          return `<tr><th class="left" scope="row">${esc(r.name)} <span class="muted small">${esc(r.cls)}</span></th>
+            ${topics.map((t) => { const tp = r.prog.topics[t.id]; const c = heatClass(tp); return `<td class="${c}">${c === 'none' ? '-' : tp.percent}</td>`; }).join('')}
+            <td>${best >= 0 ? `${best}/${r.prog.mocks[0].max}` : '-'}</td></tr>`;
+        }).join('')}</tbody></table></div>
+        <p class="muted small" style="margin:8px 0 0">${rows.length} learner(s), ${attempts.length} saved results. Red numbers are under 25%. A dash means not started.</p>`
+        : `<p class="muted">No learner results ${usingFirebase ? 'yet' : 'on this tablet yet'}.</p>`}
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-accent" data-act="csv-summary" type="button" ${rows.length ? '' : 'disabled'}>Export summary CSV</button>
+        <button class="btn" data-act="csv-all" type="button" ${attempts.length ? '' : 'disabled'}>Export all results CSV</button>
+      </div>
+    </section>
+
     <div class="card">
       <h2>Mock settings ${usingFirebase ? 'for the whole class' : 'for this tablet'}</h2>
       <div class="grid-2">
@@ -115,27 +214,17 @@ async function renderOverview(el: HTMLElement) {
       <p class="muted small">${usingFirebase ? 'Saved to the class account: every device picks them up when the learner next opens the site online.' : 'These settings are stored on this tablet only. Set them on each tablet before the session.'}</p>
     </div>
     <div class="card">
-      <div class="row" style="justify-content:space-between"><h2 style="margin:0">${usingFirebase ? 'Class progress' : 'Progress stored on this tablet'}</h2>
-        <div class="row">
-          <button class="btn btn-accent" data-act="csv-summary" type="button" ${rows.length ? '' : 'disabled'}>Export summary CSV</button>
-          <button class="btn" data-act="csv-all" type="button" ${attempts.length ? '' : 'disabled'}>Export all attempts CSV</button>
-        </div></div>
-      <p class="muted small">${rows.length} learner(s), ${attempts.length} attempt(s). Topic columns show each learner's topic score (%).</p>
-      ${rows.length ? `<div class="table-wrap"><table class="data">
-        <thead><tr><th class="left">Learner</th><th>Class</th><th>Best mock</th>${topics.map((t) => `<th title="${esc(t.title)}">T${t.id}</th>`).join('')}<th>Last active</th></tr></thead>
-        <tbody>${rows.map((r) => {
-          const best = r.prog.mocks.reduce((m, x) => Math.max(m, x.score), -1);
-          return `<tr><td class="left"><b>${esc(r.name)}</b></td><td>${esc(r.cls)}</td><td>${best >= 0 ? `${best}/${r.prog.mocks[0].max}` : '-'}</td>
-            ${topics.map((t) => { const p = r.prog.topics[t.id].percent; return `<td style="${p < 50 ? 'color:var(--bad);font-weight:700' : ''}">${p}</td>`; }).join('')}
-            <td class="small">${fmtDate(r.list[0].timestamp)}</td></tr>`;
-        }).join('')}</tbody></table></div>` : `<p class="muted">No learner data ${usingFirebase ? 'yet' : 'on this tablet yet'}.</p>`}
-    </div>
-    <div class="card">
       <h2>Danger zone</h2>
       <button class="btn btn-danger" data-act="clear" type="button">Delete ALL learner results${usingFirebase ? '' : ' on this tablet'}</button>
     </div>`;
 
   el.onclick = async (e) => {
+    const go = (e.target as HTMLElement).closest<HTMLElement>('[data-goto]')?.dataset.goto;
+    if (go) {
+      try { sessionStorage.setItem(TAB_KEY, go); } catch { /* ignore */ }
+      (el.closest('.t-layout')?.querySelector(`[data-tab="${go}"]`) as HTMLElement | null)?.click();
+      return;
+    }
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (act === 'lock') {
       if (usingFirebase) {

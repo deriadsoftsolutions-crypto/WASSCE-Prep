@@ -5,6 +5,7 @@ import {
   type Assignment, type Feedback, type LearnerInfo, type Submission,
 } from '../firebase/assignments';
 import { dueText, richText } from './assignments';
+import { icon } from '../lib/icons';
 
 /** Teacher dashboard: Assignments tab. */
 export async function mountTeacherAssignments(host: HTMLElement) {
@@ -144,7 +145,7 @@ export async function mountTeacherAssignments(host: HTMLElement) {
             ${f ? `<span class="pill ok">Marked ${f.mark} / ${f.maxMarks}</span>` : ''}</div>
           ${s ? `
             ${s.text ? `<div class="model" style="margin-top:10px">${richText(s.text)}</div>` : ''}
-            ${s.files.length ? `<div class="row" style="margin-top:10px">${s.files.map((file, i) => `<button class="btn btn-sm" data-file="${i}" type="button">📄 ${esc(file.name)}</button>`).join('')}</div>` : ''}
+            ${s.files.length ? `<div class="row" style="margin-top:10px">${s.files.map((file, i) => `<button class="btn btn-sm" data-file="${i}" type="button">${icon('file', 18)} ${esc(file.name)}</button>`).join('')}</div>` : ''}
             <div class="grid-2" style="margin-top:12px;align-items:end">
               <label class="field" style="margin:0"><span>Mark (out of ${a.maxMarks})</span><input type="number" data-mark min="0" max="${a.maxMarks}" step="0.5" value="${f ? f.mark : ''}" /></label>
               <label class="field" style="margin:0"><span>Comment for the learner</span><textarea data-comment rows="2">${esc(f?.comment ?? '')}</textarea></label>

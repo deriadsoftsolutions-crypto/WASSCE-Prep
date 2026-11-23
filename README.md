@@ -118,6 +118,8 @@ Rules to keep in mind:
 - `DEFAULT_MOCK_MINUTES`, `DEFAULT_SHUFFLE`: defaults until a teacher changes them.
 - `CALC_TOLERANCE`: accepted error in the calculation checker.
 
+- `WASSCE_DATE`, `WASSCE_LABEL`: the countdown on the home page. The date is an estimate: set it to the first Robotics paper on the official WAEC timetable.
+
 ### Changing the teacher PIN
 
 1. Open `src/config.ts` and change `TEACHER_PIN: '5454'` to the new PIN (keep the quotes).
@@ -187,6 +189,14 @@ Protection against cheating, enforced by `firestore.rules` rather than the brows
 - Answers can be submitted once and never changed; only teachers can write results or allow a retake.
 
 Data: `assessments/{id}`, `assessments/{id}/content/questions`, `assessments/{id}/content/key`, and per learner `assessmentStarts`, `assessmentAttempts`, `assessmentResults` under `learners/{uid}/`.
+
+## Design ("circuit ink")
+
+- **Colours** (tokens at the top of `src/styles.css`): green `#006B3F` for anything you can act on, gold `#F5B700` for "energised" things (progress, lit wires, mastery), red `#CE1126` only for urgent items, navy ink `#13233A` for text and panel outlines on a cool off-white `#F4F6F1`. Dark mode redefines the same tokens.
+- **Type**: Atkinson Hyperlegible (designed for legibility) for all reading, Barlow Condensed only for big numbers. Both are bundled with the site (`@fontsource`), so they work offline.
+- **Icons**: line icons in `src/lib/icons.ts` (no emoji, which look different on every tablet).
+- **Navigation**: a top menu on wide screens; a bottom tab bar under 1024 px wide, with a badge on Classwork for work still to do.
+- **Home**: WASSCE countdown, "Today's circuit" (three suggested steps joined by a trace that lights up as they are done), due work, and topic tiles whose LED bar shows mastery (Not started, Learning, Practising, Nearly there, Mastered).
 
 ## Project structure
 

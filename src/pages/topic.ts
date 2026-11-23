@@ -2,11 +2,19 @@ import topicsData from '../data/topics.json';
 import paper1 from '../data/paper1.json';
 import type { Paper1Question, Topic } from '../types';
 import { esc } from '../lib/dom';
-import { ring } from '../lib/ui';
 import { learner } from '../lib/session';
 import { storage } from '../storage';
 import { mountActivity } from '../activities';
 import { mountPracticeQuiz } from '../quiz/quiz';
+import { topicIcon } from '../lib/icons';
+import { ledHTML, masteryLevel } from './home';
+import type { Progress } from '../types';
+
+const LV = ['Not started', 'Learning', 'Practising', 'Nearly there', 'Mastered'];
+function topicMeter(p: Progress | null, id: number): string {
+  const lv = masteryLevel(p, id);
+  return `<div style="display:flex;align-items:center;gap:12px"><span><span class="num" style="font-size:2.4rem">${p?.topics[id]?.percent ?? 0}%</span><br><span class="muted small">${LV[lv]}</span></span>${ledHTML(lv)}</div>`;
+}
 
 const topics = topicsData as Topic[];
 
@@ -27,10 +35,10 @@ export async function topicPage(el: HTMLElement, params: Record<string, string>)
     <a class="crumb" href="/">← All topics</a>
     <div class="page-head">
       <div>
-        <div class="muted" style="font-weight:700">${t.icon} Topic ${t.id}</div>
+        <div class="muted" style="font-weight:700;display:flex;gap:8px;align-items:center">${topicIcon(t.id, 22)} Topic ${t.id}</div>
         <h1>${esc(t.title)}</h1>
       </div>
-      <div class="topic-ring">${ring(prog?.topics[id]?.percent ?? 0, 76, 9)}</div>
+      <div class="topic-ring">${topicMeter(prog, id)}</div>
     </div>
     <div class="grid-2">
       <div class="card">
@@ -69,7 +77,7 @@ export async function topicPage(el: HTMLElement, params: Record<string, string>)
     if (!l2) return;
     const p = await storage.getProgress(l2.id);
     const host = el.querySelector('.topic-ring');
-    if (host) host.innerHTML = ring(p.topics[id]?.percent ?? 0, 76, 9);
+    if (host) host.innerHTML = topicMeter(p, id);
   };
   window.addEventListener('progress-changed', refreshRing);
   cleanups.push(() => window.removeEventListener('progress-changed', refreshRing));

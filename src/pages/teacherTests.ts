@@ -9,6 +9,7 @@ import paper1 from '../data/paper1.json';
 import topicsData from '../data/topics.json';
 import type { Paper1Question, Topic } from '../types';
 import { richText } from './assignments';
+import { topicIcon } from '../lib/icons';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const P1 = paper1 as Paper1Question[];
@@ -183,7 +184,7 @@ export async function mountTeacherTests(host: HTMLElement) {
       const m = modal(`<h2>Add Paper 1 questions</h2>
         <p class="muted small">Tick the questions to add. Answers and explanations come with them.</p>
         <div style="max-height:55vh;overflow:auto">${TOPICS.map((t) => `
-          <details><summary style="min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer">${t.icon} ${t.id}. ${esc(t.short)} (${t.paper1.length})</summary>
+          <details><summary style="min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer">${topicIcon(t.id, 20)} ${t.id}. ${esc(t.short)} (${t.paper1.length})</summary>
             <label class="check"><input type="checkbox" data-topicall="${t.id}" /><span><b>All of this topic</b></span></label>
             ${P1.filter((q) => q.topic === t.id).map((q) => `<label class="check"><input type="checkbox" data-pq="${q.n}" data-t="${t.id}" /><span><b>Q${q.n}.</b> ${esc(q.question)}</span></label>`).join('')}
           </details>`).join('')}</div>

@@ -17,7 +17,7 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, db } from '../firebase/app';
-import { cacheProfile, cachedProfile, isTeacher, signOut } from '../firebase/account';
+import { cacheProfile, cachedProfile, ensureProfile, isTeacher, signOut } from '../firebase/account';
 import type { Attempt, AttemptFilter, Learner, Progress, Topic } from '../types';
 import type { StorageAdapter } from './StorageAdapter';
 import { computeProgress } from './progress';
@@ -138,7 +138,10 @@ export class FirebaseAdapter implements StorageAdapter {
     const u = auth.currentUser;
     if (!u) return null;
     const cached = cachedProfile(u.uid);
-    if (cached) return cached;
+    if (cached) {
+      void ensureProfile(cached);
+      return cached;
+    }
     try {
       const snap = await getDoc(doc(db, 'learners', u.uid));
       if (snap.exists()) {

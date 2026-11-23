@@ -4,6 +4,7 @@ import { esc, nice, pick, randInt, shuffle } from '../lib/dom';
 import { close, evaluate } from '../lib/mathparse';
 import { feedbackHTML } from '../lib/ui';
 import { CONFIG } from '../config';
+import { icon } from '../lib/icons';
 
 interface CalcType {
   name: string;
@@ -105,7 +106,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext, param?: string) {
   };
 
   const hintBtn = (k: keyof CalcType['hints']) => `<button class="btn btn-sm btn-ghost" data-hint="${k}" type="button">Hint</button>`;
-  const hintBox = (k: keyof CalcType['hints']) => (st.hints.has(k) ? `<div class="hint">💡 ${esc(TYPES[problem.type].hints[k])}</div>` : '');
+  const hintBox = (k: keyof CalcType['hints']) => (st.hints.has(k) ? `<div class="hint">${icon('hint', 18)} ${esc(TYPES[problem.type].hints[k])}</div>` : '');
 
   const render = () => {
     const T = TYPES[problem.type];
@@ -117,7 +118,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext, param?: string) {
           ${PROBLEMS.map((p) => `<option value="${p.id}" ${problem.id === p.id ? 'selected' : ''}>${esc(TYPES[p.type].name)}</option>`).join('')}
         </select></label>
       <div class="row" style="margin-bottom:12px">
-        <button class="btn btn-accent" data-act="random" type="button">🎲 Random practice: new numbers</button>
+        <button class="btn btn-accent" data-act="random" type="button">New numbers: random practice</button>
         <span class="muted small">Makes a new problem of the type you chose.</span>
       </div>`}
       <div class="card" style="background:var(--surface-2)">
@@ -240,7 +241,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext, param?: string) {
       const k = h.dataset.hint as keyof CalcType['hints'];
       st.hints.add(k);
       const step = h.closest('.calc-step')!;
-      if (!step.querySelector('.hint')) step.querySelector(`[data-fb]`)!.insertAdjacentHTML('beforebegin', `<div class="hint">💡 ${esc(TYPES[problem.type].hints[k])}</div>`);
+      if (!step.querySelector('.hint')) step.querySelector(`[data-fb]`)!.insertAdjacentHTML('beforebegin', `<div class="hint">${icon('hint', 18)} ${esc(TYPES[problem.type].hints[k])}</div>`);
       return;
     }
     const act = t.closest<HTMLElement>('[data-act]')?.dataset.act;

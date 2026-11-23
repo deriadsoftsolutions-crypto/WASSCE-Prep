@@ -7,10 +7,10 @@ const noise = () => Math.round((Math.random() - 0.5) * 2) / 10; // -0.1, 0 or +0
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
 const PLACES = [
-  { name: 'Fridge', icon: '🧊', base: 5 },
-  { name: 'Classroom at noon', icon: '🏫', base: 31 },
-  { name: 'Sunny window sill', icon: '☀️', base: 42 },
-  { name: 'Cool morning', icon: '🌅', base: 22 },
+  { name: 'Fridge', base: 5 },
+  { name: 'Classroom at noon', base: 31 },
+  { name: 'Sunny window sill', base: 42 },
+  { name: 'Cool morning', base: 22 },
 ];
 
 export function mount(el: HTMLElement, ctx: ActivityContext) {
@@ -42,7 +42,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     el.innerHTML = `
       <div class="feedback info" style="margin-top:0"><strong>The problem</strong>This robot's temperature sensor reads a little wrong. Use one-point calibration to fix it.</div>
       <h4 style="margin-top:14px">Step 1. Put the sensor and a reference thermometer side by side in the same stable place, and read both.</h4>
-      <div class="grid-2">${big('🤖 Robot sensor', `${sensor.toFixed(1)} °C`, readS, 'readS')}${big('🌡️ Reference thermometer', `${ref.toFixed(1)} °C`, readR, 'readR')}</div>
+      <div class="grid-2">${big('Robot sensor', `${sensor.toFixed(1)} °C`, readS, 'readS')}${big('Reference thermometer', `${ref.toFixed(1)} °C`, readR, 'readR')}</div>
       <h4 style="margin-top:16px">Step 2. Work out the offset = reference − sensor</h4>
       <div class="row">
         <label class="field" style="margin:0;flex:1;min-width:180px"><span>Offset (°C)</span><input data-offset inputmode="decimal" autocomplete="off" ${readS && readR ? '' : 'disabled'} value="${offset ?? ''}" placeholder="${readS && readR ? 'e.g. -1.5' : 'Take both readings first'}" /></label>
@@ -55,7 +55,7 @@ float tempC = readSensorC() + OFFSET;   // corrected reading</pre>
         <h4>Step 3. Verify: test at different temperatures. Enter the corrected reading (raw + offset).</h4>
         ${verify.map((v, i) => `
           <div class="calc-step ${v.ok === null ? '' : v.ok ? 'ok' : 'bad'}">
-            <div class="row"><b style="font-size:1.1rem">${v.place.icon} ${v.place.name}</b><span class="spacer"></span><span>Raw sensor: <b>${v.raw.toFixed(1)} °C</b></span></div>
+            <div class="row"><b style="font-size:1.1rem">${v.place.name}</b><span class="spacer"></span><span>Raw sensor: <b>${v.raw.toFixed(1)} °C</b></span></div>
             <div class="row" style="margin-top:8px">
               <label class="field" style="margin:0;flex:1;min-width:160px"><span>Corrected reading (°C)</span><input inputmode="decimal" data-ver="${i}" autocomplete="off" /></label>
               <button class="btn" data-check="${i}" type="button">Check</button>

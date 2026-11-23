@@ -4,6 +4,8 @@ import { learner } from '../lib/session';
 import { usingFirebase } from '../storage';
 import { navigate } from '../router';
 import { testsListHTML } from './tests';
+import { refreshDue } from '../lib/due';
+import { icon } from '../lib/icons';
 import { isTeacher } from '../firebase/account';
 import {
   assignmentsFor, deleteFile, fmtSize, getAssignment, myFeedback, mySubmission, openFile, shrinkImage, submit, uploadFile,
@@ -66,7 +68,7 @@ export async function assignmentsPage(el: HTMLElement) {
         : overdue ? '<span class="pill" style="background:var(--bad-soft);color:var(--bad)">Not submitted</span>'
         : '<span class="pill accent">To do</span>';
       return `<a class="topic-card" href="/assignments/${a.id}" style="flex-direction:column;align-items:flex-start">
-        <div class="row" style="width:100%"><b style="font-size:1.15rem">📎 ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
+        <div class="row" style="width:100%"><b style="font-size:1.15rem;display:inline-flex;gap:8px;align-items:center">${icon('clip', 22)} ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
         <div class="muted small">${esc(dueText(a))} · ${a.maxMarks} marks</div>
       </a>`;
     }).join('')}</div>` : `<div class="card"><p style="margin:0">${teacher ? 'No published assignments yet.' : 'No assignments for your class yet.'}</p></div>`}`;
@@ -106,7 +108,7 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
       ${a.allowFiles ? `
         <p style="margin-bottom:6px"><b>Files</b> <span class="muted small">Photos of your work, PDF or Word. Up to ${MAX_FILES} files, 10 MB each.</span></p>
         <div data-files></div>
-        ${locked ? '' : `<label class="btn" style="margin-top:8px"><input type="file" data-pick accept="${ACCEPT}" multiple hidden />📎 Add files or take a photo</label>`}` : ''}
+        ${locked ? '' : `<label class="btn" style="margin-top:8px"><input type="file" data-pick accept="${ACCEPT}" multiple hidden />${icon('upload', 20)} Add files or take a photo</label>`}` : ''}
       ${locked ? '' : `<div class="row" style="margin-top:16px"><button class="btn btn-primary btn-big" data-submit type="button">${existing ? 'Update my submission' : 'Submit'}</button></div>`}
       <div data-fb></div>
     </div>`;
@@ -116,7 +118,7 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
     if (!filesHost) return;
     filesHost.innerHTML = state.files.length
       ? state.files.map((f, i) => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--border)">
-          <span>📄</span><button class="btn btn-sm btn-ghost" data-open="${i}" type="button" style="text-align:left">${esc(f.name)}</button>
+          ${icon('file', 20)}<button class="btn btn-sm btn-ghost" data-open="${i}" type="button" style="text-align:left">${esc(f.name)}</button>
           <span class="muted small">${fmtSize(f.size)}</span><span class="spacer"></span>
           ${locked ? '' : `<button class="btn btn-sm btn-danger" data-remove="${i}" type="button">Remove</button>`}</div>`).join('')
       : '<p class="muted small" style="margin:0">No files attached.</p>';
@@ -142,7 +144,7 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
     for (const original of picked) {
       const row = document.createElement('div');
       row.className = 'row small';
-      row.innerHTML = `<span>⏳ ${esc(original.name)}</span><span class="spacer"></span><div class="bar" style="width:140px"><span style="width:0%"></span></div>`;
+      row.innerHTML = `<span>Uploading ${esc(original.name)}</span><span class="spacer"></span><div class="bar" style="width:140px"><span style="width:0%"></span></div>`;
       filesHost.appendChild(row);
       state.uploading++;
       try {
@@ -190,6 +192,7 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
       };
       try {
         await submit(s);
+        refreshDue();
         // Files removed from the earlier submission are no longer needed.
         existing?.files.filter((f) => !s.files.some((x) => x.key === f.key)).forEach((f) => deleteFile(f.key).catch(() => {}));
         clearDraft();

@@ -1,10 +1,11 @@
 import topicsData from '../data/topics.json';
 import type { Topic } from '../types';
 import { esc, fmtDate, fmtTime } from '../lib/dom';
-import { confirmDialog, ring, toast } from '../lib/ui';
+import { confirmDialog, toast } from '../lib/ui';
 import { learner, signOutOrSwitch } from '../lib/session';
 import { storage, usingFirebase, topicItemIds } from '../storage';
 import { ACTIVITIES } from '../activities';
+import { topicIcon } from '../lib/icons';
 
 const topics = topicsData as Topic[];
 
@@ -26,10 +27,10 @@ export async function progressPage(el: HTMLElement) {
   el.innerHTML = `
     <div class="page-head">
       <div><h1>My Progress</h1><p class="muted" style="margin:0">${esc(l.name)} · ${esc(l.className)} · ${prog.totalAttempts} attempt${prog.totalAttempts === 1 ? '' : 's'} saved${usingFirebase ? ' to your account' : ' on this tablet'}</p></div>
-      ${ring(overall, 90, 10)}
+      <div style="text-align:right"><span class="num" style="font-size:3.5rem">${overall}%</span><br><span class="muted small">across all topics</span></div>
     </div>
     ${weakIds.size ? `<div class="feedback bad" style="margin-bottom:16px"><strong>Focus on these topics next</strong>
-      ${[...weakIds].map((id) => { const t = topics.find((x) => x.id === id)!; return `<a class="btn btn-sm" style="margin:4px 6px 0 0" href="/topic/${id}">${t.icon} ${esc(t.short)}</a>`; }).join('')}</div>`
+      ${[...weakIds].map((id) => { const t = topics.find((x) => x.id === id)!; return `<a class="btn btn-sm" style="margin:4px 6px 0 0" href="/topic/${id}">${esc(t.short)}</a>`; }).join('')}</div>`
       : prog.totalAttempts ? '<div class="feedback ok" style="margin-bottom:16px"><strong>Great work!</strong>No topic is below 60%. Try a full mock to test yourself.</div>' : ''}
     <div class="card">
       <h2>Scores per topic</h2>
@@ -46,7 +47,7 @@ export async function progressPage(el: HTMLElement) {
           return `<span class="pill ${it ? (it.best >= 0.8 ? 'ok' : '') : ''}" style="margin:2px 4px 2px 0">${esc(name)}: ${value}</span>`;
         }).join('');
         return `<div class="prog-row ${weak ? 'weak' : ''}">
-          <div><a href="/topic/${t.id}" style="font-weight:700">${t.icon} ${t.id}. ${esc(t.short)}</a>
+          <div><a href="/topic/${t.id}" style="font-weight:700;display:inline-flex;gap:8px;align-items:center">${topicIcon(t.id, 20)} ${t.id}. ${esc(t.short)}</a>
             <div class="muted small">Paper 1: ${tp.mcqTotal ? `${tp.mcqCorrect} / ${tp.mcqTotal} correct` : 'none yet'}</div></div>
           <div><div class="bar ${weak ? 'weak' : ''}"><span style="width:${tp.percent}%"></span></div><div style="margin-top:6px">${items}</div></div>
           <div style="font-weight:800;font-size:1.2rem;text-align:right">${tp.percent}%</div>

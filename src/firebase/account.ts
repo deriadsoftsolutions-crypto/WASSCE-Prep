@@ -25,7 +25,12 @@ export async function learnerSignUp(name: string, className: string, pin: string
   await updateProfile(cred.user, { displayName: name });
   const l: Learner = { id: cred.user.uid, name, className, createdAt: Date.now() };
   cacheProfile(l);
-  void setDoc(doc(db, 'learners', l.id), { name, className, createdAt: l.createdAt, role: 'learner' }).catch(console.error);
+  // Wait (briefly) for the profile to be saved, so it is not lost if the page changes straight away.
+  // Offline, the write stays queued and is sent later; ensureProfile() also repairs it on the next start.
+  await Promise.race([
+    setDoc(doc(db, 'learners', l.id), { name, className, createdAt: l.createdAt, role: 'learner' }).catch(console.error),
+    new Promise((r) => setTimeout(r, 4000)),
+  ]);
   return l;
 }
 
@@ -81,4 +86,15 @@ export function authErrorMessage(e: unknown): string {
     default:
       return 'Something went wrong. Please try again.';
   }
+}
+
+let profileChecked = '';
+/** Make sure learners/{uid} exists on the server (the teacher's class lists come from it). Once per session. */
+export async function ensureProfile(l: Learner) {
+  if (profileChecked === l.id || !l.className || l.className === 'Teacher') return;
+  profileChecked = l.id;
+  try {
+    const ref = doc(db, 'learners', l.id);
+    if (!(await getDoc(ref)).exists()) await setDoc(ref, { name: l.name, className: l.className, createdAt: l.createdAt, role: 'learner' });
+  } catch { profileChecked = ''; }
 }
