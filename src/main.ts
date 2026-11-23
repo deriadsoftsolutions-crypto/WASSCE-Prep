@@ -5,6 +5,8 @@ import { mockPage } from './pages/mock';
 import { homePage } from './pages/home';
 import { topicPage } from './pages/topic';
 import { paper2ListPage, paper2QuestionPage } from './pages/paper2';
+import { progressPage } from './pages/progress';
+import { teacherPage } from './pages/teacher';
 
 function initTheme() {
   const btn = document.getElementById('theme-toggle')!;
@@ -32,6 +34,8 @@ async function boot() {
   route('/mock', mockPage, 'mock');
   route('/paper2', paper2ListPage, 'paper2');
   route('/paper2/:id', paper2QuestionPage, 'paper2');
+  route('/progress', progressPage, 'progress');
+  route('/teacher', teacherPage);
   await loadLearner();
   updateChip();
   document.getElementById('learner-chip')!.addEventListener('click', () => void askLearner(true));
