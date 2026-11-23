@@ -1,1 +1,112 @@
-[]
+[
+  {
+    "id": 1,
+    "title": "Introduction to robotics, history and society",
+    "short": "Intro, history and society",
+    "icon": "🤖",
+    "summary": "What a robot is, where the word came from, how robots grew out of the industrial revolutions, and how robots affect work, safety and ethics in society, including in Ghana.",
+    "keyIdeas": ["A robot is a programmable machine that senses its environment, processes information and acts on it. Its main parts are sensors, a controller, actuators, a power supply and an end effector.", "The word robot comes from the Czech word robota, meaning forced labour. Karel Čapek used it in his 1920 play R.U.R.", "Programmability lets one robot do many different tasks. Dexterity, mobility and autonomy are other key characteristics.", "Industrial revolutions: 1st steam power and mechanised textiles, 2nd electricity and the assembly line, 3rd computers, PLCs and the first industrial robots, 4th AI, IoT and cyber-physical systems.", "Robots are preferred for dangerous, dirty and dull work, for example search and rescue in places hazardous to humans.", "Good integration of robots at work means training workers in new skills, and setting clear ethical guidelines so robot decisions match human values." ],
+    "paper1": [3, 9, 23, 24, 27, 33, 37],
+    "paper2": ["Q5(c)" ],
+    "activities": ["match-components", "sort-revolutions" ]
+  },
+  {
+    "id": 2,
+    "title": "Electronic components and circuits",
+    "short": "Electronic components",
+    "icon": "🔌",
+    "summary": "The parts that make up a robot's circuits: resistors, capacitors, transistors, relays, contactors, circuit breakers and potentiometers, and how to wire them safely to a microcontroller such as the Arduino Uno.",
+    "keyIdeas": ["Resistors limit current. Capacitors store charge. Transistors switch or amplify small signals.", "A relay is an electrically operated switch. A contactor is a heavy-duty relay used to switch high-power loads such as big motors.", "A circuit breaker protects a circuit by cutting the supply when the current is too high.", "A potentiometer has three pins. The two outer pins go to 5V and GND. The middle pin (the wiper) gives a variable voltage, so it goes to an analogue input such as A0.", "Moving parts such as gears are mounted away from the PCB because they need space to move." ],
+    "paper1": [1, 6, 12, 28, 39],
+    "paper2": [],
+    "activities": ["pot-wiring", "match-electronics" ]
+  },
+  {
+    "id": 3,
+    "title": "Sensors, signals and calibration",
+    "short": "Sensors and calibration",
+    "icon": "🌡️",
+    "summary": "How sensors turn physical quantities into electrical signals, the difference between analogue and digital signals, how an ADC converts voltage into numbers, and how to calibrate a sensor that reads wrongly.",
+    "keyIdeas": ["Transduction is converting a physical stimulus (heat, light, pressure) into an electrical signal.", "An analogue signal varies continuously over a range. A digital signal has fixed levels, such as 0 and 1.", "The Arduino ADC is 10-bit: 0V to 5V becomes a number from 0 to 1023. Value = V / 5 × 1023.", "Calibration means comparing a sensor with a known accurate reference and adjusting the readings to match.", "One-point calibration: place sensor and reference thermometer in the same stable place, record both, offset = reference minus sensor, add the offset in code, then re-test.", "A worn resistive track in a potentiometer gives uneven changes in output voltage." ],
+    "paper1": [2, 11, 35],
+    "paper2": ["Q6(a)", "Q6(b)", "Q6(c)", "Q6(d)" ],
+    "activities": ["sensor-calibration", "adc-slider" ]
+  },
+  {
+    "id": 4,
+    "title": "Actuators and mechanisms",
+    "short": "Actuators and mechanisms",
+    "icon": "⚙️",
+    "summary": "Actuators make robots move. Learn the main types and their energy sources, and the mechanisms (gears, cams, rack and pinion) that change one kind of motion into another.",
+    "keyIdeas": ["Electric actuators (DC motors, servos, steppers) use electricity. Hydraulic actuators use pressurised liquid (oil). Pneumatic actuators use compressed air.", "A solenoid is an electromagnet that gives a short straight push or pull.", "A rack and pinion converts rotary (circular) motion into linear (straight) motion.", "A cam and follower converts rotation into a rising and falling motion. For an eccentric cam the lift is s = r(1 − cos θ).", "Smooth cam operation needs a smooth profile, a roller follower, a return spring, lubrication and good alignment." ],
+    "paper1": [5, 7],
+    "paper2": ["Q5(a)" ],
+    "activities": ["match-actuators", "match-mechanisms" ]
+  },
+  {
+    "id": 5,
+    "title": "Control systems and PID",
+    "short": "Control and PID",
+    "icon": "🎯",
+    "summary": "Open-loop systems act without checking the result. Closed-loop systems use sensor feedback to correct errors. PID control is the most common way to make a robot reach a target smoothly and accurately.",
+    "keyIdeas": ["Open loop: no feedback, for example a toaster on a timer or a robot arm with no sensor.", "Closed loop: a sensor measures the actual output, compares it with the setpoint, and the controller corrects the error.", "P (proportional): output is proportional to the error. Too high a Kp causes overshoot and oscillation.", "I (integral): adds up error over time and removes steady drift or offset. If a robot slowly drifts, increase Ki.", "D (derivative): reacts to how fast the error changes. It damps overshoot and oscillation." ],
+    "paper1": [13, 17, 21],
+    "paper2": ["Q3(a)", "Q3(d)" ],
+    "activities": ["pid-tuner", "loop-sorter" ]
+  },
+  {
+    "id": 6,
+    "title": "Algorithms, pseudocode, flowcharts and FSMs",
+    "short": "Algorithms and flowcharts",
+    "icon": "🧭",
+    "summary": "How to plan robot behaviour before coding: algorithms, pseudocode, flowchart symbols and finite state machines, and the sense, think, act cycle.",
+    "keyIdeas": ["Design order: pseudocode, then flowchart, then code.", "Robots work in the sequence Sensor → Processor → Actuator (sense, think, act).", "An iterative algorithm repeats a task until a condition is met. Conditional logic (IF ... THEN ... ELSE) lets a robot decide using sensor data.", "Flowchart symbols: oval = start/stop, rectangle = process, parallelogram = input/output, diamond = decision.", "A Finite State Machine (FSM) controls the robot's operational steps by moving between defined states.", "An algorithm flaw is a logic or sequence error in the program that causes wrong behaviour even though the hardware works." ],
+    "paper1": [15, 16, 19, 25, 29, 34, 38],
+    "paper2": ["Q3(c)", "Q5(b)" ],
+    "activities": ["flowchart-builder", "flowchart-symbols" ]
+  },
+  {
+    "id": 7,
+    "title": "Boolean algebra and logic gates",
+    "short": "Boolean logic and gates",
+    "icon": "🔀",
+    "summary": "Logic gates make decisions with 0s and 1s. Learn the seven gates, how to build truth tables, how to read a logic circuit as a Boolean expression, and how to simplify expressions.",
+    "keyIdeas": ["AND gives 1 only when all inputs are 1. OR gives 1 when any input is 1. NOT inverts.", "XOR gives 1 when the inputs are different. XNOR gives 1 when they are the same. NAND and NOR are AND and OR followed by NOT.", "n inputs give 2ⁿ combinations: 3 inputs give 8 rows, 4 inputs give 16.", "In a K-map, a group of 4 adjacent 1s eliminates two variables. A group of 2 eliminates one.", "Boolean algebra simplifies circuits (fewer gates, cheaper, faster) and allows precise design of robot decisions." ],
+    "paper1": [10, 14, 18, 31, 40],
+    "paper2": ["Q4(a)", "Q4(b)", "Q4(c)" ],
+    "activities": ["logic-sim", "truth-table", "gate-identifier" ]
+  },
+  {
+    "id": 8,
+    "title": "Robot motion calculations",
+    "short": "Motion calculations",
+    "icon": "📐",
+    "summary": "The calculations that appear in Paper 1 and Paper 2: time, speed and distance, load per leg, angular velocity, wheel speed, spin turns, when a robot is at rest, and cam lift.",
+    "keyIdeas": ["time = distance ÷ speed. Always convert to metres and seconds first.", "Weight W = mg. Load per leg = mg ÷ number of legs.", "Angular velocity ω = θ ÷ t, with θ in radians (180° = π rad).", "Linear speed of a wheel v = ω × r, or arc length ÷ time = θr ÷ t.", "Spin turn: each wheel travels on a circle of radius half the wheel spacing. Rotations = (turn angle ÷ 360) × (half spacing ÷ wheel radius).", "A robot is momentarily at rest when velocity v = dP/dt = 0." ],
+    "paper1": [4, 20, 22, 26, 36],
+    "paper2": ["Q2(b)", "Q2(c)", "Q3(b)" ],
+    "activities": ["calc-checker" ]
+  },
+  {
+    "id": 9,
+    "title": "Robot design, locomotion and stability",
+    "short": "Design and locomotion",
+    "icon": "🦿",
+    "summary": "Choosing how a robot moves (wheels, tracks, legs, propellers) to suit the terrain, and designing for stability by managing the centre of gravity and turning radius.",
+    "keyIdeas": ["Wheels are fast and efficient on smooth floors. Tracks grip on mud, sand and loose ground. Legs step over rocks and gaps.", "A stability test checks the robot's balance: whether it tips over when moving, turning or carrying a load.", "A low centre of gravity and a wide base make a robot more stable.", "Counterweights improve stability but add mass, so the motors work harder, the battery drains faster and the robot moves slower.", "A large turning radius, long wheelbase or poorly placed sensors can make a robot hit walls in narrow corridors." ],
+    "paper1": [8],
+    "paper2": ["Q1(c)", "Q2(a)", "Q2(d)" ],
+    "activities": ["match-locomotion" ]
+  },
+  {
+    "id": 10,
+    "title": "Simulation tools and 3D printing",
+    "short": "Simulation and 3D printing",
+    "icon": "🖨️",
+    "summary": "Testing robots in software before building them, and making robot parts with FDM and SLA 3D printers.",
+    "keyIdeas": ["Simulation (for example Gazebo, Webots, Tinkercad Circuits) saves cost, avoids damaged hardware, and allows fast, safe, repeatable tests.", "Gazebo is a robot simulator for testing movement and sensors. Fusion 360 is for CAD design. Arduino IDE is for writing code.", "FDM printers melt plastic filament (PLA, ABS, PETG). Parts are tough, cheap and can be large.", "SLA printers cure liquid photopolymer resin with light. Parts are very detailed and smooth but more brittle.", "In the slicer, layer height and infill control print quality, strength and printing time." ],
+    "paper1": [30, 32],
+    "paper2": ["Q1(a)", "Q1(b)", "Q1(d)" ],
+    "activities": ["sort-printing" ]
+  }
+]

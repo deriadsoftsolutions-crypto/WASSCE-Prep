@@ -1,0 +1,204 @@
+{
+  "types": {
+    "time-travel": {
+      "name": "Time to travel a distance",
+      "formulas": ["t = d ÷ v", "t = d × v", "t = v ÷ d", "t = d − v"],
+      "correctFormula": 0,
+      "vars": [
+        { "sym": "d", "label": "distance d (m)" },
+        { "sym": "v", "label": "speed v (m/s)" }
+      ],
+      "units": ["s", "m", "m/s", "min"],
+      "unit": "s",
+      "hints": {
+        "formula": "Speed = distance ÷ time, so rearrange to make time the subject.",
+        "subs": "Use metres for distance and metres per second for speed.",
+        "answer": "Divide the distance by the speed.",
+        "unit": "Time in SI units is measured in seconds."
+      }
+    },
+    "leg-load": {
+      "name": "Load per leg",
+      "formulas": ["F = m × g ÷ n", "F = m ÷ n", "F = m × g × n", "F = m × n ÷ g"],
+      "correctFormula": 0,
+      "vars": [
+        { "sym": "m", "label": "mass m (kg)" },
+        { "sym": "g", "label": "g (m/s²)" },
+        { "sym": "n", "label": "number of legs n" }
+      ],
+      "units": ["N", "kg", "J", "m/s²"],
+      "unit": "N",
+      "hints": {
+        "formula": "First find the weight W = mg, then share it equally between the legs.",
+        "subs": "g is 9.8 m/s² (10 m/s² is also accepted). Count the legs touching the ground.",
+        "answer": "Multiply mass by g, then divide by the number of legs.",
+        "unit": "Load is a force, so it is measured in newtons."
+      }
+    },
+    "stride-distance": {
+      "name": "Distance from motor speed and stride",
+      "formulas": ["d = f × s × t", "d = f × s ÷ t", "d = s × t", "d = f × t ÷ s"],
+      "correctFormula": 0,
+      "vars": [
+        { "sym": "f", "label": "motor speed f (rev/s)" },
+        { "sym": "s", "label": "stride per rotation s (m)" },
+        { "sym": "t", "label": "time t (s)" }
+      ],
+      "units": ["m", "mm/s", "rev", "s"],
+      "unit": "m",
+      "hints": {
+        "formula": "Number of rotations = f × t. Each rotation moves the robot one stride.",
+        "subs": "Convert mm to m (divide by 1000) and minutes to seconds (multiply by 60).",
+        "answer": "Rotations × stride gives the distance.",
+        "unit": "You converted the stride to metres, so the answer is in metres."
+      }
+    },
+    "angular-velocity": {
+      "name": "Angular velocity of a joint",
+      "formulas": ["ω = θ ÷ t (θ in radians)", "ω = θ × t", "ω = t ÷ θ", "ω = θ ÷ t (θ in degrees)"],
+      "correctFormula": 0,
+      "vars": [
+        { "sym": "θ", "label": "angle θ (rad)" },
+        { "sym": "t", "label": "time t (s)" }
+      ],
+      "units": ["rad/s", "°", "m/s", "rev"],
+      "unit": "rad/s",
+      "hints": {
+        "formula": "Angular velocity is angle turned per unit time, with the angle in radians.",
+        "subs": "Convert degrees to radians: multiply by π and divide by 180. You can type pi, for example pi/6.",
+        "answer": "Divide the angle in radians by the time.",
+        "unit": "Radians per second."
+      }
+    },
+    "wheel-speed": {
+      "name": "Linear speed of a wheel",
+      "formulas": ["v = θ × r ÷ t", "v = θ ÷ (r × t)", "v = 2πr × t", "v = θ × t ÷ r"],
+      "correctFormula": 0,
+      "vars": [
+        { "sym": "θ", "label": "angle θ (rad)" },
+        { "sym": "r", "label": "radius r (m)" },
+        { "sym": "t", "label": "time t (s)" }
+      ],
+      "units": ["m/s", "rad/s", "m", "cm"],
+      "unit": "m/s",
+      "hints": {
+        "formula": "Arc length travelled = θ × r. Speed = arc length ÷ time.",
+        "subs": "Convert the angle to radians (180° = π) and the radius to metres (50 cm = 0.5 m).",
+        "answer": "Multiply θ by r, then divide by t.",
+        "unit": "Linear speed is in metres per second."
+      }
+    },
+    "spin-turn": {
+      "name": "Wheel rotations in a spin turn",
+      "formulas": ["N = (θ ÷ 360) × (R ÷ r)", "N = (θ ÷ 360) × (r ÷ R)", "N = θ × R × r", "N = (θ ÷ 180) × (D ÷ r)"],
+      "correctFormula": 0,
+      "vars": [
+        { "sym": "θ", "label": "turn angle θ (°)" },
+        { "sym": "R", "label": "turning radius R = half spacing" },
+        { "sym": "r", "label": "wheel radius r (same unit as R)" }
+      ],
+      "units": ["rotations", "rad", "cm", "°"],
+      "unit": "rotations",
+      "hints": {
+        "formula": "Each wheel travels an arc (θ/360) × 2πR. One rotation of the wheel covers 2πr. Divide and the 2π cancels.",
+        "subs": "In a spin turn the robot turns about its centre, so R is HALF the wheel spacing. Use the same unit for R and r.",
+        "answer": "(θ ÷ 360) × (R ÷ r).",
+        "unit": "The answer is a number of rotations (revolutions)."
+      }
+    },
+    "at-rest": {
+      "name": "When is the robot at rest?",
+      "formulas": ["v = dP/dt = 0", "P(t) = 0", "a = d²P/dt² = 0", "v = P ÷ t = 0"],
+      "correctFormula": 0,
+      "vars": [
+        { "sym": "a", "label": "coefficient of t² in v" },
+        { "sym": "b", "label": "coefficient of t in v" },
+        { "sym": "c", "label": "constant term in v" }
+      ],
+      "twoAnswers": true,
+      "units": ["s", "m", "m/s", "m/s²"],
+      "unit": "s",
+      "hints": {
+        "formula": "At rest means velocity is zero. Velocity is the derivative of position.",
+        "subs": "Differentiate each term: d/dt of kt³ is 3kt², of kt² is 2kt, of kt is k, of a constant is 0. Write v = at² + bt + c.",
+        "answer": "Solve at² + bt + c = 0 by factorising or the quadratic formula. There are two times.",
+        "unit": "These are times, in seconds."
+      }
+    },
+    "cam-lift": {
+      "name": "Eccentric cam lift",
+      "formulas": ["s = r(1 − cos θ)", "s = r cos θ", "s = r(1 + cos θ)", "s = r sin θ"],
+      "correctFormula": 0,
+      "vars": [
+        { "sym": "r", "label": "eccentricity r (cm)" },
+        { "sym": "θ", "label": "angle θ (°)" }
+      ],
+      "units": ["cm", "m/s", "°", "rad"],
+      "unit": "cm",
+      "hints": {
+        "formula": "The formula is given in the question: lift starts at 0 when θ = 0.",
+        "subs": "Keep θ in degrees if your calculator is in degree mode. cos 90° = 0.",
+        "answer": "Work out 1 − cos θ first, then multiply by r.",
+        "unit": "r was in centimetres, so the lift is in centimetres."
+      }
+    }
+  },
+  "problems": [
+    {
+      "id": "time-travel", "type": "time-travel",
+      "question": "An autonomous delivery vehicle moves at 0.5 m/s. How long does it take to travel 10 m?",
+      "vars": { "d": [10], "v": [0.5] },
+      "answers": [20],
+      "working": "t = d ÷ v = 10 ÷ 0.5 = 20 s"
+    },
+    {
+      "id": "leg-load", "type": "leg-load",
+      "question": "A four-legged walking robot has a mass of 8 kg. Calculate the load on each leg when it stands on all four legs. (g = 9.8 m/s²)",
+      "vars": { "m": [8], "g": [9.8, 10], "n": [4] },
+      "answers": [19.6], "altAnswers": [[20]],
+      "working": "W = mg = 8 × 9.8 = 78.4 N. Load per leg = 78.4 ÷ 4 = 19.6 N (20 N with g = 10)."
+    },
+    {
+      "id": "stride-distance", "type": "stride-distance",
+      "question": "A crank motor turns at 0.5 rev/s and the walking robot moves 80 mm per rotation. How far does it travel in 3 minutes?",
+      "vars": { "f": [0.5], "s": [0.08], "t": [180] },
+      "answers": [7.2],
+      "working": "Rotations = 0.5 × 180 = 90. Distance = 90 × 0.08 m = 7.2 m."
+    },
+    {
+      "id": "angular-velocity", "type": "angular-velocity",
+      "question": "A robot joint rotates 30° in 0.25 s. Find its average angular velocity in rad/s.",
+      "vars": { "θ": [0.5235987756], "t": [0.25] },
+      "answers": [2.0943951],
+      "working": "30° = π/6 rad ≈ 0.524 rad. ω = (π/6) ÷ 0.25 = 2π/3 ≈ 2.09 rad/s."
+    },
+    {
+      "id": "wheel-speed", "type": "wheel-speed",
+      "question": "A robot wheel of radius 50 cm rotates through 180° in 5 s. Find its linear speed in m/s.",
+      "vars": { "θ": [3.1415926536], "r": [0.5], "t": [5] },
+      "answers": [0.31415927],
+      "working": "180° = π rad. v = θr ÷ t = π × 0.5 ÷ 5 = 0.314 ≈ 0.31 m/s."
+    },
+    {
+      "id": "spin-turn", "type": "spin-turn",
+      "question": "A two-wheel differential robot has wheel radius 20 cm and wheel spacing 30 cm. It makes a 72° spin turn. How many rotations does each wheel make?",
+      "vars": { "θ": [72], "R": [0.15, 15], "r": [0.2, 20] },
+      "answers": [0.15],
+      "working": "R = 30 ÷ 2 = 15 cm. N = (72 ÷ 360) × (15 ÷ 20) = 0.2 × 0.75 = 0.15 rotations."
+    },
+    {
+      "id": "at-rest", "type": "at-rest",
+      "question": "A robot's position is P(t) = 2t³ − 9t² + 12t + 5. At what times is it momentarily at rest?",
+      "vars": { "a": [6, 1], "b": [-18, -3], "c": [12, 2] },
+      "answers": [1, 2],
+      "working": "v = dP/dt = 6t² − 18t + 12 = 6(t − 1)(t − 2) = 0, so t = 1 s and t = 2 s."
+    },
+    {
+      "id": "cam-lift", "type": "cam-lift",
+      "question": "An eccentric cam with eccentricity r = 4 cm rotates through 90°. Using s = r(1 − cos θ), find the follower lift.",
+      "vars": { "r": [4], "θ": [90] },
+      "answers": [4],
+      "working": "s = 4 × (1 − cos 90°) = 4 × (1 − 0) = 4 cm."
+    }
+  ]
+}

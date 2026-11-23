@@ -1,0 +1,271 @@
+{
+  "instructions": "Answer Question 1 (compulsory) and any three of Questions 2 to 6. For each part, write your answer first, then reveal the model answer and tick the marking points you got.",
+  "questions": [
+    {
+      "id": "Q1",
+      "compulsory": true,
+      "title": "Simulating a classroom delivery robot",
+      "stem": "A group of students is designing a small robot to deliver books between classrooms. Before building it, they test the design in simulation software.",
+      "parts": [
+        {
+          "id": "a", "label": "(a)", "topic": 10, "marks": 4, "type": "written",
+          "text": "State two benefits of simulating the robot before building it.",
+          "model": "1. It saves cost because no hardware is damaged or wasted while testing ideas.\n2. Testing is faster, safe and repeatable: designs can be changed and re-run many times without risk.",
+          "points": [
+            { "text": "Saves cost / no damaged or wasted hardware", "marks": 2 },
+            { "text": "Faster, safer or repeatable testing (easy to change and re-test)", "marks": 2 }
+          ]
+        },
+        {
+          "id": "b", "label": "(b)", "topic": 10, "marks": 4, "type": "written",
+          "text": "Apart from movement, state two other features of the robot that can be tested in the simulation.",
+          "model": "Any two of: sensor placement and performance, motor torque and speed, battery use, payload (how much it can carry), turning radius, obstacle avoidance.",
+          "points": [
+            { "text": "First valid feature (sensors, motor torque/speed, battery, payload, turning radius, obstacle avoidance)", "marks": 2 },
+            { "text": "Second, different valid feature", "marks": 2 }
+          ]
+        },
+        {
+          "id": "c", "label": "(c)", "topic": 9, "marks": 2, "type": "written",
+          "text": "In the simulation the robot keeps hitting the walls when turning in narrow corridors. State one design cause.",
+          "model": "Any one of: turning radius too large or wheelbase too long; blind spots at the sides because of sensor placement; sensor range too short; motors respond too slowly.",
+          "points": [
+            { "text": "One valid design cause (turning radius, wheelbase, sensor placement or range, slow motor response)", "marks": 2 }
+          ]
+        },
+        {
+          "id": "d", "label": "(d)(i)", "topic": 10, "marks": 2, "type": "written",
+          "text": "The chassis will be 3D printed. Name one material used by each type of printer: FDM and SLA.",
+          "model": "FDM: PLA (or ABS, PETG).\nSLA: photopolymer resin.",
+          "points": [
+            { "text": "FDM: PLA, ABS or PETG", "marks": 1 },
+            { "text": "SLA: photopolymer resin", "marks": 1 }
+          ]
+        },
+        {
+          "id": "e", "label": "(d)(ii)", "topic": 10, "marks": 1, "type": "written",
+          "text": "Which printer is better for the robot chassis?",
+          "model": "FDM.",
+          "points": [{ "text": "FDM", "marks": 1 }]
+        },
+        {
+          "id": "f", "label": "(d)(iii)", "topic": 10, "marks": 2, "type": "written",
+          "text": "Give a reason for your answer in (d)(ii).",
+          "model": "FDM parts are tougher and more impact resistant, cheaper, and the printer has a larger build volume. SLA resin parts are brittle and could crack when the robot bumps into things.",
+          "points": [
+            { "text": "FDM is tougher / impact resistant / cheaper / larger build volume", "marks": 1 },
+            { "text": "SLA resin is brittle (or comparison made)", "marks": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q2",
+      "title": "Four-legged walking robot",
+      "stem": "A four-legged walking robot of mass 8 kg is driven by cranks and is designed to cross rocky terrain.",
+      "parts": [
+        {
+          "id": "a", "label": "(a)", "topic": 9, "marks": 2, "type": "written",
+          "text": "State one advantage of legs over wheels on rocky terrain.",
+          "model": "Legs can step over rocks and gaps and keep traction (grip) on uneven ground, where wheels would get stuck or slip.",
+          "points": [{ "text": "Steps over rocks or gaps / keeps traction on uneven ground", "marks": 2 }]
+        },
+        {
+          "id": "b", "label": "(b)", "topic": 8, "marks": 2, "type": "calc", "calcId": "leg-load",
+          "text": "Calculate the load on each leg when the robot stands on all four legs. (g = 9.8 m/s²)",
+          "model": "W = mg = 8 × 9.8 = 78.4 N\nLoad per leg = 78.4 ÷ 4 = 19.6 N (20 N if g = 10 m/s²)",
+          "points": [
+            { "text": "Correct method: mg ÷ 4", "marks": 1 },
+            { "text": "19.6 N with unit", "marks": 1 }
+          ]
+        },
+        {
+          "id": "c", "label": "(c)", "topic": 8, "marks": 3, "type": "calc", "calcId": "stride-distance",
+          "text": "Each crank motor turns at 0.5 rev/s and the robot moves 80 mm per rotation. How far does it travel in 3 minutes?",
+          "model": "Rotations = 0.5 × 180 s = 90\nDistance = 90 × 80 mm = 7200 mm = 7.2 m",
+          "points": [
+            { "text": "Converts 3 min to 180 s (and 80 mm to 0.08 m)", "marks": 1 },
+            { "text": "Number of rotations = 90", "marks": 1 },
+            { "text": "Distance = 7.2 m", "marks": 1 }
+          ]
+        },
+        {
+          "id": "d", "label": "(d)", "topic": 9, "marks": 3, "type": "written",
+          "text": "Counterweights are added to lower the robot's centre of gravity. Discuss the effect of this change.",
+          "model": "Benefit: a lower centre of gravity makes the robot more stable and it resists tipping over on rocks.\nDrawback: the extra mass increases the load on the motors, drains the battery faster and makes the robot slower.",
+          "points": [
+            { "text": "More stable / resists tipping", "marks": 1 },
+            { "text": "More mass means more motor load or battery drain", "marks": 1 },
+            { "text": "Slower movement (or another valid drawback)", "marks": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q3",
+      "title": "Autonomous delivery vehicle",
+      "stem": "An autonomous delivery vehicle uses closed-loop control. It must reach a delivery point 10 m away and stop accurately.",
+      "parts": [
+        {
+          "id": "a", "label": "(a)", "topic": 5, "marks": 2, "type": "written",
+          "text": "Explain what is meant by a closed-loop system.",
+          "model": "A closed-loop system uses sensor feedback: it measures the actual output, compares it with the desired value (setpoint) and corrects the error.",
+          "points": [
+            { "text": "Uses sensor feedback", "marks": 1 },
+            { "text": "Compares actual output with setpoint and corrects the error", "marks": 1 }
+          ]
+        },
+        {
+          "id": "b", "label": "(b)", "topic": 8, "marks": 2, "type": "calc", "calcId": "time-travel",
+          "text": "If the vehicle moves at 0.5 m/s, how long does it take to travel 10 m?",
+          "model": "t = d ÷ v = 10 ÷ 0.5 = 20 s",
+          "points": [
+            { "text": "t = d ÷ v with correct substitution", "marks": 1 },
+            { "text": "20 s", "marks": 1 }
+          ]
+        },
+        {
+          "id": "c", "label": "(c)", "topic": 6, "marks": 3, "type": "activity", "activity": "flowchart-builder",
+          "text": "Draw a flowchart for the vehicle: it follows a pre-defined path, checks whether it has reached its destination, reads an obstacle sensor at junctions, and stops and waits if an obstacle is detected.",
+          "model": "Start → Follow pre-defined path → Destination reached? (Yes → Stop at destination; No → Read obstacle sensor) → At a junction? (No → back to Follow path; Yes → Obstacle detected?) → Obstacle detected? (No → back to Follow path; Yes → Stop motors and wait → back to Read obstacle sensor).",
+          "points": [
+            { "text": "Correct symbols (oval, rectangle, parallelogram, diamond)", "marks": 1 },
+            { "text": "Correct sequence and decisions", "marks": 1 },
+            { "text": "Yes and No branches labelled and loops back correctly", "marks": 1 }
+          ]
+        },
+        {
+          "id": "d", "label": "(d)", "topic": 5, "marks": 3, "type": "activity", "activity": "pid-tuner",
+          "text": "Explain how a PID controller helps the vehicle stop accurately at the delivery point.",
+          "model": "P: the motor command is proportional to the remaining distance, so it slows as it gets close.\nI: removes any steady error so it does not stop short.\nD: damps overshoot and oscillation so it does not roll past.\nThe gains are tuned using encoder feedback.",
+          "points": [
+            { "text": "P proportional to remaining distance (error)", "marks": 1 },
+            { "text": "I removes steady-state error", "marks": 1 },
+            { "text": "D damps overshoot or oscillation", "marks": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q4",
+      "title": "Logic circuit",
+      "stem": "In a logic circuit, inputs X and NOT Y feed AND gate 1. Inputs Y and Z feed AND gate 2. The outputs of the two AND gates feed an XOR gate whose output is F.",
+      "parts": [
+        {
+          "id": "a", "label": "(a)", "topic": 7, "marks": 2, "type": "activity", "activity": "logic-sim",
+          "text": "Write the Boolean expression for F.",
+          "model": "F = XY' ⊕ YZ",
+          "points": [
+            { "text": "XY' and YZ terms correct", "marks": 1 },
+            { "text": "Combined with XOR (⊕)", "marks": 1 }
+          ]
+        },
+        {
+          "id": "b", "label": "(b)", "topic": 7, "marks": 4, "type": "activity", "activity": "truth-table",
+          "text": "Complete the truth table for the circuit, with columns X, Y, Z, XY', YZ and F.",
+          "model": "XYZ: 000→F=0, 001→0, 010→0, 011→1, 100→1, 101→1, 110→0, 111→1.\nXY' is 1 only for 100 and 101. YZ is 1 only for 011 and 111.",
+          "points": [
+            { "text": "All 8 input combinations listed", "marks": 1 },
+            { "text": "XY' column correct", "marks": 1 },
+            { "text": "YZ column correct", "marks": 1 },
+            { "text": "F column correct", "marks": 1 }
+          ]
+        },
+        {
+          "id": "c", "label": "(c)", "topic": 7, "marks": 4, "type": "written",
+          "text": "State two reasons why Boolean algebra is important in robotics.",
+          "model": "1. It simplifies logic circuits, so fewer gates are needed, which makes circuits cheaper, smaller and faster.\n2. It allows precise design and analysis of digital logic and robot decisions.",
+          "points": [
+            { "text": "Simplifies circuits (fewer gates, cheaper, faster)", "marks": 2 },
+            { "text": "Precise design and analysis of logic / robot decisions", "marks": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q5",
+      "title": "Cams, algorithms and the industrial revolution",
+      "stem": "A robot uses an eccentric cam to lift a part. Its control program sometimes misbehaves.",
+      "parts": [
+        {
+          "id": "a", "label": "(a)(i)", "topic": 8, "marks": 2, "type": "calc", "calcId": "cam-lift",
+          "text": "An eccentric cam of eccentricity r = 4 cm rotates through 90°. Using s = r(1 − cos θ), calculate the follower lift.",
+          "model": "s = 4(1 − cos 90°) = 4(1 − 0) = 4 cm",
+          "points": [
+            { "text": "Correct substitution, cos 90° = 0", "marks": 1 },
+            { "text": "4 cm", "marks": 1 }
+          ]
+        },
+        {
+          "id": "b", "label": "(a)(ii)", "topic": 4, "marks": 2, "type": "written",
+          "text": "State one design consideration for smooth cam operation.",
+          "model": "Any one of: a smooth cam profile, a roller follower, a return spring, lubrication, correct alignment.",
+          "points": [{ "text": "One valid consideration (smooth profile, roller follower, spring, lubrication, alignment)", "marks": 2 }]
+        },
+        {
+          "id": "c", "label": "(b)", "topic": 6, "marks": 2, "type": "written",
+          "text": "Explain what is meant by an algorithm flaw.",
+          "model": "A logic or sequence error in the program that makes the robot behave wrongly even though the hardware is working correctly.",
+          "points": [
+            { "text": "Logic or sequence error in the program", "marks": 1 },
+            { "text": "Causes wrong behaviour even though hardware works", "marks": 1 }
+          ]
+        },
+        {
+          "id": "d", "label": "(c)", "topic": 1, "marks": 4, "type": "written",
+          "text": "State two technological advancements of the second industrial revolution.",
+          "model": "Any two of: electricity, assembly line mass production, Bessemer steel process, telephone or telegraph, internal combustion engine.",
+          "points": [
+            { "text": "First valid advancement", "marks": 2 },
+            { "text": "Second, different valid advancement", "marks": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q6",
+      "title": "Calibrating a temperature sensor",
+      "stem": "A robot's temperature sensor reads a few degrees different from the actual temperature.",
+      "parts": [
+        {
+          "id": "a", "label": "(a)", "topic": 3, "marks": 2, "type": "written",
+          "text": "What is meant by calibration?",
+          "model": "Comparing the sensor's readings with a known accurate reference and adjusting the readings to match it.",
+          "points": [
+            { "text": "Compare with a known accurate reference", "marks": 1 },
+            { "text": "Adjust readings to match", "marks": 1 }
+          ]
+        },
+        {
+          "id": "b", "label": "(b)", "topic": 3, "marks": 3, "type": "activity", "activity": "sensor-calibration",
+          "text": "Describe the steps of a one-point calibration.",
+          "model": "1. Put the sensor and a reference thermometer in the same stable environment.\n2. Record both readings and calculate offset = reference − sensor.\n3. Apply the offset in the code and re-test.",
+          "points": [
+            { "text": "Same stable environment as a reference thermometer", "marks": 1 },
+            { "text": "Record both; offset = reference − sensor", "marks": 1 },
+            { "text": "Apply offset in code and re-test", "marks": 1 }
+          ]
+        },
+        {
+          "id": "c", "label": "(c)", "topic": 3, "marks": 3, "type": "activity", "activity": "adc-slider",
+          "text": "Describe how the sensor signal is processed by the microcontroller.",
+          "model": "Sensor output voltage → ADC converts it to a number 0 to 1023 → number converted to °C → offset applied (and readings averaged) → value used for decisions.",
+          "points": [
+            { "text": "ADC converts voltage to a number 0 to 1023", "marks": 1 },
+            { "text": "Converted to °C and offset applied / averaged", "marks": 1 },
+            { "text": "Used for decisions", "marks": 1 }
+          ]
+        },
+        {
+          "id": "d", "label": "(d)", "topic": 3, "marks": 2, "type": "written",
+          "text": "How can the calibration be verified?",
+          "model": "Compare the corrected readings against a certified thermometer at different real temperatures and over a period of time.",
+          "points": [
+            { "text": "Compare against a certified thermometer", "marks": 1 },
+            { "text": "At different temperatures / over time", "marks": 1 }
+          ]
+        }
+      ]
+    }
+  ]
+}

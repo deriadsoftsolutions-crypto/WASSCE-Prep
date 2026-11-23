@@ -1,0 +1,168 @@
+{
+  "matching": {
+    "match-components": {
+      "title": "Robot parts and their jobs",
+      "instructions": "Tap a robot part on the left, then tap the job it does on the right. You can also drag a part onto its job.",
+      "leftTitle": "Part",
+      "rightTitle": "Job",
+      "pairs": [
+        { "left": "Sensor", "right": "Detects information about the surroundings", "why": "Sensors are the robot's senses: light, distance, temperature, touch." },
+        { "left": "Controller (microcontroller)", "right": "Processes inputs and decides what to do", "why": "The controller (for example an Arduino) is the robot's brain." },
+        { "left": "Actuator", "right": "Produces movement", "why": "Motors, servos and cylinders turn energy into motion." },
+        { "left": "Power supply", "right": "Provides energy to all the parts", "why": "Batteries or mains supply power the controller, sensors and actuators." },
+        { "left": "End effector", "right": "Tool at the end of the arm that does the task", "why": "Grippers, welding torches and suction cups are end effectors." }
+      ]
+    },
+    "match-electronics": {
+      "title": "Components and their functions",
+      "instructions": "Match each electronic component to its function.",
+      "leftTitle": "Component",
+      "rightTitle": "Function",
+      "pairs": [
+        { "left": "Resistor", "right": "Limits electric current", "why": "A resistor opposes current, for example to protect an LED." },
+        { "left": "Capacitor", "right": "Stores electric charge", "why": "Capacitors store and release charge, smoothing supplies." },
+        { "left": "Transistor", "right": "Switches or amplifies small signals", "why": "A small base current controls a larger collector current." },
+        { "left": "Contactor", "right": "Heavy-duty switch for high-power loads", "why": "A contactor is a big relay used for motors and other high-power devices." },
+        { "left": "Circuit breaker", "right": "Protects a circuit from too much current", "why": "It trips and cuts the supply in an overload or short circuit." },
+        { "left": "Potentiometer", "right": "Gives an adjustable voltage", "why": "Turning the knob moves the wiper along the track, changing the output voltage." },
+        { "left": "Diode", "right": "Lets current flow one way only", "why": "Used to protect circuits from reverse current, for example across motors." }
+      ]
+    },
+    "match-actuators": {
+      "title": "Actuators and their energy sources",
+      "instructions": "Match each actuator to the energy source that drives it.",
+      "leftTitle": "Actuator",
+      "rightTitle": "Energy source",
+      "pairs": [
+        { "left": "DC motor", "right": "Electric current from a battery", "why": "Electric actuators turn electrical energy into rotation." },
+        { "left": "Hydraulic cylinder", "right": "Pressurised liquid (oil)", "why": "Hydraulics use a liquid. They give very large forces, as in excavators." },
+        { "left": "Pneumatic cylinder", "right": "Compressed air", "why": "Pneumatics use a gas. They are fast and clean, good for pick-and-place." },
+        { "left": "Solenoid", "right": "Magnetic field from a current-carrying coil", "why": "The coil pulls an iron plunger in, giving a short straight push or pull." },
+        { "left": "Muscle wire (shape memory alloy)", "right": "Heat", "why": "The wire contracts when heated by a current and relaxes when it cools." }
+      ]
+    },
+    "match-mechanisms": {
+      "title": "Mechanisms and motion",
+      "instructions": "Match each mechanism to what it does to motion.",
+      "leftTitle": "Mechanism",
+      "rightTitle": "What it does",
+      "pairs": [
+        { "left": "Rack and pinion", "right": "Turns rotary motion into straight (linear) motion", "why": "The pinion gear drives the toothed rack backwards and forwards." },
+        { "left": "Cam and follower", "right": "Turns rotation into a rising and falling motion", "why": "The cam profile pushes the follower up and a spring returns it." },
+        { "left": "Gear train", "right": "Changes speed and torque", "why": "A small gear driving a big gear gives more torque and less speed." },
+        { "left": "Ratchet and pawl", "right": "Allows rotation in one direction only", "why": "The pawl catches on the teeth to stop the wheel turning back." },
+        { "left": "Crank and slider", "right": "Turns rotation into back-and-forth motion", "why": "Like a bicycle pedal or engine piston, used in walking robots." }
+      ]
+    },
+    "match-locomotion": {
+      "title": "Locomotion and terrain",
+      "instructions": "Match each way of moving to the terrain it suits best.",
+      "leftTitle": "Locomotion",
+      "rightTitle": "Best terrain",
+      "pairs": [
+        { "left": "Wheels", "right": "Smooth, flat floors such as a factory or classroom", "why": "Wheels are fast and energy efficient on smooth surfaces." },
+        { "left": "Tracks (caterpillar)", "right": "Mud, sand and loose soil", "why": "Tracks spread the weight over a large area so they do not sink, and they grip well." },
+        { "left": "Legs", "right": "Rocky ground with gaps and steps", "why": "Legs can step over obstacles and keep traction on uneven ground." },
+        { "left": "Propellers (drone)", "right": "Through the air over roads and rivers", "why": "Drones fly over obstacles, as in medical deliveries to rural areas." },
+        { "left": "Thrusters and fins", "right": "Underwater", "why": "Underwater robots push against water to move and steer." }
+      ]
+    },
+    "flowchart-symbols": {
+      "title": "Flowchart symbol quiz",
+      "instructions": "Match each flowchart symbol to what it means.",
+      "leftTitle": "Symbol",
+      "rightTitle": "Meaning",
+      "pairs": [
+        { "left": "Oval", "shape": "oval", "right": "Start or stop", "why": "Every flowchart begins and ends with an oval (terminator)." },
+        { "left": "Rectangle", "shape": "rect", "right": "Process (an action such as Move forward)", "why": "Rectangles show something the robot does." },
+        { "left": "Parallelogram", "shape": "para", "right": "Input or output (such as Read sensor)", "why": "Reading a sensor or displaying a value is input or output." },
+        { "left": "Diamond", "shape": "diamond", "right": "Decision with Yes and No branches", "why": "A question such as Obstacle detected? has two exits." },
+        { "left": "Arrow", "shape": "arrow", "right": "Flow line showing the order of steps", "why": "Arrows connect the symbols and show the direction of flow." }
+      ]
+    }
+  },
+  "sorting": {
+    "loop-sorter": {
+      "title": "Open loop or closed loop?",
+      "instructions": "Drag each example into the right bin, or tap an example and then tap a bin.",
+      "bins": [
+        { "id": "open", "label": "Open loop (no feedback)" },
+        { "id": "closed", "label": "Closed loop (uses feedback)" }
+      ],
+      "items": [
+        { "text": "Toaster on a timer", "bin": "open", "why": "It toasts for a set time and never checks how brown the bread is." },
+        { "text": "Air conditioner with a thermostat", "bin": "closed", "why": "The thermostat measures room temperature and switches cooling on or off." },
+        { "text": "Line follower with IR sensors", "bin": "closed", "why": "IR sensors detect the line and the robot corrects its steering." },
+        { "text": "Robot arm with no sensor", "bin": "open", "why": "It moves by a fixed amount and cannot check where it ended up." },
+        { "text": "Washing machine on a fixed cycle", "bin": "open", "why": "It runs for set times and does not measure how clean the clothes are." },
+        { "text": "Wall-following robot with an ultrasonic sensor", "bin": "closed", "why": "It measures the distance to the wall and corrects it." },
+        { "text": "Traffic lights on a fixed timer", "bin": "open", "why": "They change on time, not according to the traffic." },
+        { "text": "Electric iron with a thermostat", "bin": "closed", "why": "The thermostat cuts the heater when the set temperature is reached." }
+      ]
+    },
+    "sort-printing": {
+      "title": "FDM or SLA?",
+      "instructions": "Sort each property into the 3D printing method it describes.",
+      "bins": [
+        { "id": "fdm", "label": "FDM (melted filament)" },
+        { "id": "sla", "label": "SLA (liquid resin)" }
+      ],
+      "items": [
+        { "text": "Melts plastic filament through a hot nozzle", "bin": "fdm", "why": "FDM means Fused Deposition Modelling: it lays down melted plastic." },
+        { "text": "Cures liquid resin with UV light", "bin": "sla", "why": "SLA (stereolithography) hardens photopolymer resin with a laser or UV screen." },
+        { "text": "Uses PLA, ABS or PETG", "bin": "fdm", "why": "These are thermoplastic filaments for FDM printers." },
+        { "text": "Uses photopolymer resin", "bin": "sla", "why": "SLA material is a light-sensitive liquid resin." },
+        { "text": "Very fine detail and smooth surface", "bin": "sla", "why": "SLA layers are very thin and the light spot is small." },
+        { "text": "Tough, impact-resistant parts", "bin": "fdm", "why": "PLA, PETG and ABS parts survive knocks, good for a robot chassis." },
+        { "text": "Parts can be brittle", "bin": "sla", "why": "Cured resin can crack or snap under impact." },
+        { "text": "Cheaper, with a larger build volume", "bin": "fdm", "why": "FDM printers and filament are cheaper and usually print bigger parts." },
+        { "text": "Parts need washing and UV post-curing", "bin": "sla", "why": "Uncured resin must be washed off and the part hardened fully." },
+        { "text": "Layer lines are easy to see", "bin": "fdm", "why": "FDM layers are thicker, so lines show on the surface." }
+      ]
+    },
+    "sort-revolutions": {
+      "title": "Industrial revolutions and technology",
+      "instructions": "Sort each technology into the industrial revolution it belongs to.",
+      "bins": [
+        { "id": "1", "label": "1st: steam (from about 1760)" },
+        { "id": "2", "label": "2nd: electricity (from about 1870)" },
+        { "id": "3", "label": "3rd: computers (from about 1969)" },
+        { "id": "4", "label": "4th: smart systems (today)" }
+      ],
+      "items": [
+        { "text": "Steam engine", "bin": "1", "why": "Steam power drove the first factories and railways." },
+        { "text": "Mechanised textile looms", "bin": "1", "why": "Machines replaced hand weaving in the first revolution." },
+        { "text": "Electricity in factories", "bin": "2", "why": "Electric power was the key technology of the second revolution." },
+        { "text": "Assembly line mass production", "bin": "2", "why": "Moving assembly lines (for example Ford, 1913) made mass production possible." },
+        { "text": "Bessemer steel process", "bin": "2", "why": "Cheap steel made large machines and buildings possible." },
+        { "text": "Telephone and telegraph", "bin": "2", "why": "Fast communication arrived in the second revolution." },
+        { "text": "Internal combustion engine", "bin": "2", "why": "Petrol and diesel engines powered cars and machines." },
+        { "text": "Programmable logic controllers (PLCs)", "bin": "3", "why": "PLCs brought computer control to factory machines." },
+        { "text": "First industrial robot (Unimate)", "bin": "3", "why": "Unimate began work at General Motors in 1961, leading into the automation age." },
+        { "text": "Personal computers and the internet", "bin": "3", "why": "Digital electronics and IT define the third revolution." },
+        { "text": "Artificial intelligence", "bin": "4", "why": "AI lets machines learn and make decisions." },
+        { "text": "Internet of Things (IoT)", "bin": "4", "why": "Connected sensors and devices share data over the internet." },
+        { "text": "Cyber-physical systems and smart factories", "bin": "4", "why": "Physical machines tightly linked with software and data." }
+      ]
+    }
+  },
+  "flowchart": {
+    "title": "Delivery vehicle flowchart (Paper 2 Q3(c))",
+    "instructions": "Place each block into the right slot by dragging it, or tap a block and then tap a slot. Then tap each yellow label to set it to Yes or No. Tap a placed block to send it back.",
+    "pieces": [
+      { "id": "start", "text": "Start", "shape": "oval" },
+      { "id": "follow", "text": "Follow pre-defined path", "shape": "rect" },
+      { "id": "dest", "text": "Destination reached?", "shape": "diamond" },
+      { "id": "read", "text": "Read obstacle sensor", "shape": "para" },
+      { "id": "junction", "text": "At a junction?", "shape": "diamond" },
+      { "id": "obstacle", "text": "Obstacle detected?", "shape": "diamond" },
+      { "id": "wait", "text": "Stop motors and wait", "shape": "rect" },
+      { "id": "stop", "text": "Stop at destination", "shape": "oval" }
+    ],
+    "solution": {
+      "slots": ["start", "follow", "dest", "read", "junction", "obstacle", "wait", "stop"],
+      "labels": { "a": "Yes", "b": "No", "c": "No", "d": "Yes", "e": "No", "f": "Yes" }
+    },
+    "explanation": "Start, then Follow pre-defined path. Destination reached? Yes goes to Stop at destination. No goes on to Read obstacle sensor (a parallelogram because it is an input). At a junction? No loops back to Follow path. Yes asks Obstacle detected? No loops back to Follow path. Yes goes to Stop motors and wait, then back to Read obstacle sensor to check again."
+  }
+}
