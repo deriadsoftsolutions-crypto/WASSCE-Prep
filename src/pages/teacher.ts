@@ -2,7 +2,7 @@ import topicsData from '../data/topics.json';
 import type { Attempt, Topic } from '../types';
 import { CONFIG } from '../config';
 import { esc, fmtDate } from '../lib/dom';
-import { confirmDialog, downloadText, toast } from '../lib/ui';
+import { addRevealToggles, confirmDialog, downloadText, toast } from '../lib/ui';
 import { getSettings, saveSettings } from '../lib/settings';
 import { storage, usingFirebase } from '../storage';
 import { refreshLearner } from '../lib/session';
@@ -39,6 +39,7 @@ function renderLock(el: HTMLElement) {
       </form>
     </div>`;
   const form = el.querySelector('form')!;
+  addRevealToggles(form);
   (form.querySelector('input') as HTMLInputElement).focus();
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -196,6 +197,7 @@ function renderTeacherLogin(el: HTMLElement) {
       <p class="muted small" style="margin-top:12px">Learners do not need this page. A new teacher account must be approved once in the Firebase console; this page shows you how.</p>
     </div>`;
   const form = el.querySelector('form')!;
+  addRevealToggles(form);
   const err = el.querySelector('[data-err]') as HTMLElement;
   const submit = el.querySelector('[data-submit]') as HTMLButtonElement;
   el.onclick = (e) => {

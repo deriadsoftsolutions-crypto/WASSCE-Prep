@@ -1,7 +1,7 @@
 import { storage, usingFirebase } from '../storage';
 import type { Attempt, AttemptKind, Learner } from '../types';
 import { esc } from './dom';
-import { confirmDialog, modal, toast } from './ui';
+import { addRevealToggles, confirmDialog, modal, toast } from './ui';
 import * as acct from '../firebase/account';
 
 let current: Learner | null = null;
@@ -79,6 +79,7 @@ function signInDialog(): Promise<Learner> {
         <p class="small" style="margin:0"><a href="/teacher" data-teacher>Teacher sign in</a></p>
       </form>`, { dismissible: false });
     const form = m.root.querySelector('form') as HTMLFormElement;
+    addRevealToggles(form);
     const err = form.querySelector('[data-err]') as HTMLElement;
     const submit = form.querySelector('[data-submit]') as HTMLButtonElement;
 

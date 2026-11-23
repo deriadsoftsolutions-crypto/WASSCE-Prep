@@ -72,3 +72,33 @@ export function downloadText(filename: string, text: string, mime = 'text/csv') 
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+/**
+ * Add a Show / Hide button to every password or PIN box inside `root`,
+ * so learners can check what they typed.
+ */
+export function addRevealToggles(root: ParentNode) {
+  root.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach((input) => {
+    if (input.parentElement?.classList.contains('pw-wrap')) return;
+    const wrap = document.createElement('span');
+    wrap.className = 'pw-wrap';
+    input.replaceWith(wrap);
+    wrap.appendChild(input);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pw-toggle';
+    btn.textContent = 'Show';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.setAttribute('aria-label', 'Show what you typed');
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+      btn.setAttribute('aria-pressed', String(show));
+      btn.setAttribute('aria-label', show ? 'Hide what you typed' : 'Show what you typed');
+      input.focus();
+    });
+    wrap.appendChild(btn);
+  });
+}

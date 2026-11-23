@@ -407,3 +407,14 @@ canvas { width: 100%; display: block; border-radius: 12px; background: var(--sur
 .toast { background: var(--text); color: var(--bg); padding: 12px 18px; border-radius: 12px; font-weight: 600; box-shadow: var(--shadow); max-width: 90vw; }
 .toast button { margin-left: 12px; }
 tr.weak td { background: var(--bad-soft); }
+
+/* Show / Hide button inside PIN and password boxes */
+.pw-wrap { position: relative; display: block; }
+.pw-wrap input { padding-right: 84px; }
+.pw-toggle {
+  position: absolute; top: 0; bottom: 0; right: 0;
+  min-width: 76px; min-height: var(--tap); padding: 0 10px; border-radius: 0 10px 10px 0;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  font-weight: 700; font-size: 0.95rem; cursor: pointer; touch-action: manipulation;
+}
+.pw-toggle[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); }
