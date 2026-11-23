@@ -105,7 +105,7 @@ Rules to keep in mind:
 
 `src/config.ts`:
 
-- `TEACHER_PIN`: PIN for `/teacher` (default `1234`, change it before sharing the site).
+- `TEACHER_PIN`: PIN for `/teacher` (currently `5454`).
 - `DEFAULT_MOCK_MINUTES`, `DEFAULT_SHUFFLE`: defaults until a teacher changes them on a tablet.
 - `CALC_TOLERANCE`: accepted error in the calculation checker.
 
