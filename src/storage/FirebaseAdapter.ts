@@ -1,94 +1,163 @@
 /**
- * FirebaseAdapter: STUB for later.
+ * FirebaseAdapter: stores attempts in Cloud Firestore so a learner's progress
+ * follows them to any device, and the teacher can see the whole class.
  *
- * This class has the same shape as LocalStorageAdapter so the rest of the app
- * never needs to change. To switch over:
+ * Firestore layout (protected by firestore.rules):
+ *   learners/{uid}                 -> { name, className, createdAt, role }
+ *   learners/{uid}/attempts/{id}   -> Attempt
+ *   teachers/{uid}                 -> {}   (added by hand in the Firebase console)
+ *   settings/global                -> { mockMinutes, shuffle }
  *
- *   1. npm install firebase
- *   2. Create a Firebase project, enable Authentication (e.g. Email link,
- *      Google, or Anonymous) and Cloud Firestore.
- *   3. Put your web config in .env as VITE_FIREBASE_API_KEY etc.
- *   4. Fill in each method below (example code is in the comments).
- *   5. In src/storage/index.ts, replace `new LocalStorageAdapter()` with
- *      `new FirebaseAdapter()`.
- *
- * Suggested Firestore layout:
- *   learners/{learnerId}                 -> { name, className, createdAt }
- *   learners/{learnerId}/attempts/{id}   -> Attempt
- *
- * Tip: Firestore has built-in offline persistence. Call
- * `initializeFirestore(app, { localCache: persistentLocalCache() })` so the
- * site still works when the school Wi-Fi drops.
+ * Offline: Firestore keeps a cache on the device. Writes made offline are
+ * queued and sent when the connection returns, so we never wait on the server.
  */
-import type { Attempt, AttemptFilter, Learner, Progress } from '../types';
+import {
+  collection, collectionGroup, doc, getDoc, getDocs, onSnapshot, setDoc, writeBatch,
+  type DocumentReference, type Unsubscribe,
+} from 'firebase/firestore';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { auth, db } from '../firebase/app';
+import { cacheProfile, cachedProfile, isTeacher, signOut } from '../firebase/account';
+import type { Attempt, AttemptFilter, Learner, Progress, Topic } from '../types';
 import type { StorageAdapter } from './StorageAdapter';
-// import { computeProgress } from './progress';
-// import topics from '../data/topics.json';
-// import { initializeApp } from 'firebase/app';
-// import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-// import {
-//   initializeFirestore, persistentLocalCache, collection, collectionGroup,
-//   addDoc, getDoc, getDocs, query, where, orderBy, doc, setDoc, writeBatch,
-// } from 'firebase/firestore';
+import { computeProgress } from './progress';
+import topics from '../data/topics.json';
 
-// const app = initializeApp({
-//   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-//   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-//   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-//   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-// });
-// const db = initializeFirestore(app, { localCache: persistentLocalCache() });
-// const auth = getAuth(app);
+const changed = () => window.dispatchEvent(new CustomEvent('progress-changed'));
 
-const NOT_READY = 'FirebaseAdapter is not implemented yet. See README "Adding Firebase later".';
+/** Firestore rejects `undefined` values, so drop them. */
+function clean<T>(o: T): T {
+  return JSON.parse(JSON.stringify(o)) as T;
+}
+
+function matches(a: Attempt, f: AttemptFilter): boolean {
+  return (!f.learnerId || a.learnerId === f.learnerId) && (!f.kind || a.kind === f.kind) && (!f.itemId || a.itemId === f.itemId);
+}
 
 export class FirebaseAdapter implements StorageAdapter {
-  async saveAttempt(_attempt: Parameters<StorageAdapter['saveAttempt']>[0]): Promise<Attempt> {
-    // const data = { ..._attempt, timestamp: _attempt.timestamp ?? Date.now() };
-    // const ref = await addDoc(collection(db, 'learners', data.learnerId, 'attempts'), data);
-    // window.dispatchEvent(new CustomEvent('progress-changed'));
-    // return { ...data, id: ref.id } as Attempt;
-    throw new Error(NOT_READY);
+  /** Live copy of the signed-in learner's own attempts (served from the device cache when offline). */
+  private own: { uid: string; list: Attempt[]; ready: Promise<void>; unsub: Unsubscribe } | null = null;
+  /** Short-lived copy of everyone's attempts for the teacher page. */
+  private classCache: { at: number; list: Attempt[] } | null = null;
+
+  constructor() {
+    onAuthStateChanged(auth, (u) => this.onUser(u));
   }
 
-  async getAttempts(_filter?: AttemptFilter): Promise<Attempt[]> {
-    // With a learnerId: query that learner's sub-collection.
-    // Without: a teacher account can use collectionGroup(db, 'attempts')
-    // (protect this with Firestore security rules).
-    // const q = _filter?.learnerId
-    //   ? query(collection(db, 'learners', _filter.learnerId, 'attempts'), orderBy('timestamp', 'desc'))
-    //   : query(collectionGroup(db, 'attempts'), orderBy('timestamp', 'desc'));
-    // const snap = await getDocs(q);
-    // return snap.docs.map((d) => ({ ...(d.data() as Attempt), id: d.id }))
-    //   .filter((a) => (!_filter?.kind || a.kind === _filter.kind) && (!_filter?.itemId || a.itemId === _filter.itemId));
-    throw new Error(NOT_READY);
+  private onUser(u: User | null) {
+    if (this.own && this.own.uid !== u?.uid) {
+      this.own.unsub();
+      this.own = null;
+    }
+    this.classCache = null;
+    if (u) this.watch(u.uid);
   }
 
-  async getProgress(_learnerId: string): Promise<Progress> {
-    // const attempts = await this.getAttempts({ learnerId: _learnerId });
-    // return computeProgress(_learnerId, attempts, topics);
-    throw new Error(NOT_READY);
+  private watch(uid: string) {
+    if (this.own?.uid === uid) return this.own;
+    let resolve!: () => void;
+    const ready = new Promise<void>((r) => (resolve = r));
+    const state = { uid, list: [] as Attempt[], ready, unsub: (() => {}) as Unsubscribe };
+    state.unsub = onSnapshot(
+      collection(db, 'learners', uid, 'attempts'),
+      (snap) => {
+        state.list = snap.docs.map((d) => ({ ...(d.data() as Attempt), id: d.id }));
+        resolve();
+        changed();
+      },
+      (err) => {
+        console.warn('Attempts listener error', err);
+        resolve();
+      },
+    );
+    this.own = state;
+    return state;
   }
 
-  async clearProgress(_learnerId?: string): Promise<void> {
-    // const attempts = await this.getAttempts(_learnerId ? { learnerId: _learnerId } : {});
-    // const batch = writeBatch(db);
-    // attempts.forEach((a) => batch.delete(doc(db, 'learners', a.learnerId, 'attempts', a.id)));
-    // await batch.commit();
-    throw new Error(NOT_READY);
+  async saveAttempt(input: Parameters<StorageAdapter['saveAttempt']>[0]): Promise<Attempt> {
+    const u = auth.currentUser;
+    if (!u) throw new Error('Not signed in');
+    const ref: DocumentReference = doc(collection(db, 'learners', u.uid, 'attempts'));
+    const attempt: Attempt = clean({ ...input, learnerId: u.uid, id: ref.id, timestamp: input.timestamp ?? Date.now() });
+    // Not awaited on purpose: offline, the promise only settles once the server confirms.
+    setDoc(ref, attempt).catch((e) => console.error('Could not save attempt', e));
+    // Show it straight away; the live listener then replaces the list with Firestore's copy.
+    const own = this.watch(u.uid);
+    if (!own.list.some((a) => a.id === attempt.id)) own.list = [...own.list, attempt];
+    changed();
+    return attempt;
+  }
+
+  async getAttempts(filter: AttemptFilter = {}): Promise<Attempt[]> {
+    const u = auth.currentUser;
+    if (!u) return [];
+    let list: Attempt[];
+    if (filter.learnerId === u.uid || (!filter.learnerId && !(await isTeacher()))) {
+      const own = this.watch(u.uid);
+      await own.ready;
+      list = own.list;
+    } else if (!filter.learnerId) {
+      list = await this.classAttempts();
+    } else {
+      list = this.classCache
+        ? this.classCache.list.filter((a) => a.learnerId === filter.learnerId)
+        : (await getDocs(collection(db, 'learners', filter.learnerId, 'attempts'))).docs.map((d) => ({ ...(d.data() as Attempt), id: d.id }));
+    }
+    return list.filter((a) => matches(a, filter)).sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  /** Every learner's attempts (teacher only; the security rules refuse anyone else). */
+  private async classAttempts(): Promise<Attempt[]> {
+    if (this.classCache && Date.now() - this.classCache.at < 60_000) return this.classCache.list;
+    const snap = await getDocs(collectionGroup(db, 'attempts'));
+    const list = snap.docs.map((d) => ({ ...(d.data() as Attempt), id: d.id }));
+    this.classCache = { at: Date.now(), list };
+    return list;
+  }
+
+  async getProgress(learnerId: string): Promise<Progress> {
+    return computeProgress(learnerId, await this.getAttempts({ learnerId }), topics as Topic[]);
+  }
+
+  async clearProgress(learnerId?: string): Promise<void> {
+    const list = learnerId ? await this.getAttempts({ learnerId }) : await this.classAttempts();
+    for (let i = 0; i < list.length; i += 450) {
+      const batch = writeBatch(db);
+      list.slice(i, i + 450).forEach((a) => batch.delete(doc(db, 'learners', a.learnerId, 'attempts', a.id)));
+      const done = batch.commit();
+      // Only wait for the server when online; offline deletes are queued.
+      if (navigator.onLine) await done.catch((e) => console.error(e));
+      else done.catch((e) => console.error(e));
+    }
+    this.classCache = null;
+    changed();
   }
 
   async getLearner(): Promise<Learner | null> {
-    // Use the signed-in Firebase user. Name and class can be stored in learners/{uid}.
-    // const user = auth.currentUser; if (!user) return null;
-    // const snap = await getDoc(doc(db, 'learners', user.uid));
-    // return snap.exists() ? ({ id: user.uid, ...snap.data() } as Learner) : null;
-    throw new Error(NOT_READY);
+    await auth.authStateReady();
+    const u = auth.currentUser;
+    if (!u) return null;
+    const cached = cachedProfile(u.uid);
+    if (cached) return cached;
+    try {
+      const snap = await getDoc(doc(db, 'learners', u.uid));
+      if (snap.exists()) {
+        const d = snap.data() as { name: string; className: string; createdAt: number };
+        const l: Learner = { id: u.uid, name: d.name, className: d.className, createdAt: d.createdAt };
+        cacheProfile(l);
+        return l;
+      }
+    } catch { /* offline with nothing cached: fall through */ }
+    return { id: u.uid, name: u.displayName || 'Teacher', className: (await isTeacher()) ? 'Teacher' : '', createdAt: Date.now() };
   }
 
-  async setLearner(_learner: Learner | null): Promise<void> {
-    // if (!_learner) return signOut(auth);
-    // await setDoc(doc(db, 'learners', _learner.id), { name: _learner.name, className: _learner.className, createdAt: _learner.createdAt });
-    throw new Error(NOT_READY);
+  async setLearner(learner: Learner | null): Promise<void> {
+    if (!learner) {
+      await signOut();
+      return;
+    }
+    // Sign-up and sign-in happen in src/firebase/account.ts. Here we only update the profile.
+    cacheProfile(learner);
+    await setDoc(doc(db, 'learners', learner.id), { name: learner.name, className: learner.className, createdAt: learner.createdAt, role: 'learner' }, { merge: true });
   }
 }

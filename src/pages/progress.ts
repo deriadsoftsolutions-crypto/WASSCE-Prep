@@ -2,15 +2,15 @@ import topicsData from '../data/topics.json';
 import type { Topic } from '../types';
 import { esc, fmtDate, fmtTime } from '../lib/dom';
 import { confirmDialog, ring, toast } from '../lib/ui';
-import { askLearner, learner } from '../lib/session';
-import { storage } from '../storage';
+import { learner, signOutOrSwitch } from '../lib/session';
+import { storage, usingFirebase } from '../storage';
 import { ACTIVITIES } from '../activities';
 
 const topics = topicsData as Topic[];
 
 export async function progressPage(el: HTMLElement) {
   const l = learner();
-  if (!l) { el.innerHTML = '<h1>My Progress</h1><p>Enter your name first.</p>'; return; }
+  if (!l) { el.innerHTML = '<h1>My Progress</h1><p>Sign in first to see your progress.</p>'; return; }
   const prog = await storage.getProgress(l.id);
   const overall = Math.round(topics.reduce((s, t) => s + (prog.topics[t.id]?.percent ?? 0), 0) / topics.length);
   // Weakness uses topic activity scores and Paper 1 accuracy (topic quizzes and mocks), only for topics with some data.
@@ -25,7 +25,7 @@ export async function progressPage(el: HTMLElement) {
 
   el.innerHTML = `
     <div class="page-head">
-      <div><h1>My Progress</h1><p class="muted" style="margin:0">${esc(l.name)} · ${esc(l.className)} · ${prog.totalAttempts} attempt${prog.totalAttempts === 1 ? '' : 's'} saved on this tablet</p></div>
+      <div><h1>My Progress</h1><p class="muted" style="margin:0">${esc(l.name)} · ${esc(l.className)} · ${prog.totalAttempts} attempt${prog.totalAttempts === 1 ? '' : 's'} saved${usingFirebase ? ' to your account' : ' on this tablet'}</p></div>
       ${ring(overall, 90, 10)}
     </div>
     ${weakIds.size ? `<div class="feedback bad" style="margin-bottom:16px"><strong>Focus on these topics next</strong>
@@ -67,14 +67,14 @@ export async function progressPage(el: HTMLElement) {
     <div class="card">
       <h2>Settings</h2>
       <div class="row">
-        <button class="btn" data-act="switch" type="button">Switch learner</button>
+        <button class="btn" data-act="switch" type="button">${usingFirebase ? 'Sign out' : 'Switch learner'}</button>
         <button class="btn btn-danger" data-act="reset" type="button">Reset my progress</button>
       </div>
     </div>`;
 
-  el.querySelector('[data-act="switch"]')!.addEventListener('click', () => void askLearner(true));
+  el.querySelector('[data-act="switch"]')!.addEventListener('click', () => void signOutOrSwitch());
   el.querySelector('[data-act="reset"]')!.addEventListener('click', async () => {
-    if (await confirmDialog(`Delete all saved progress for ${l.name} on this tablet? This cannot be undone.`, 'Delete progress', true)) {
+    if (await confirmDialog(`Delete all saved progress for ${l.name}${usingFirebase ? '' : ' on this tablet'}? This cannot be undone.`, 'Delete progress', true)) {
       await storage.clearProgress(l.id);
       toast('Progress reset.');
       void progressPage(el);

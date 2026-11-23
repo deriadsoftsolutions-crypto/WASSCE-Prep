@@ -1,6 +1,9 @@
 import './styles.css';
 import { route, startRouter, render } from './router';
-import { learner, loadLearner, askLearner } from './lib/session';
+import { learner, loadLearner, askLearner, signOutOrSwitch } from './lib/session';
+import { usingFirebase } from './storage';
+import { getSettings, saveSettings } from './lib/settings';
+import { fetchRemoteSettings } from './firebase/settings';
 import { mockPage } from './pages/mock';
 import { homePage } from './pages/home';
 import { topicPage } from './pages/topic';
@@ -25,7 +28,8 @@ function updateChip() {
   const chip = document.getElementById('learner-chip')!;
   const l = learner();
   chip.hidden = !l;
-  if (l) chip.textContent = `${l.name} · ${l.className}`;
+  if (l) chip.textContent = l.className ? `${l.name} · ${l.className}` : l.name;
+  chip.title = usingFirebase ? 'Sign out' : 'Switch learner';
 }
 
 async function boot() {
@@ -40,10 +44,25 @@ async function boot() {
   route('/teacher', teacherPage);
   await loadLearner();
   updateChip();
-  document.getElementById('learner-chip')!.addEventListener('click', () => void askLearner(true));
-  window.addEventListener('learner-changed', () => { updateChip(); void render(); });
+  document.getElementById('learner-chip')!.addEventListener('click', () => void signOutOrSwitch());
+  window.addEventListener('learner-changed', () => {
+    updateChip();
+    void render();
+    if (usingFirebase && learner()) void syncSettings();
+  });
+  // Anyone who leaves the teacher page without signing in is asked to sign in.
+  window.addEventListener('route-changed', (e) => {
+    if (!learner() && (e as CustomEvent<string>).detail !== '/teacher' && document.readyState !== 'loading') void askLearner();
+  });
   startRouter();
   if (!learner() && location.pathname !== '/teacher') await askLearner();
+  else if (usingFirebase && learner()) void syncSettings();
+}
+
+/** Pull the teacher's class-wide mock settings (Firebase mode) into this device's copy. */
+async function syncSettings() {
+  const remote = await fetchRemoteSettings();
+  if (remote) saveSettings({ ...getSettings(), ...remote });
 }
 
 void boot();

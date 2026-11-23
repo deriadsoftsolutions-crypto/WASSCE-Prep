@@ -5,7 +5,7 @@ An interactive, offline-capable practice micro-site for the WASSCE Robotics mock
 - **Vite + vanilla TypeScript**, no framework. About 35 kB of gzipped JavaScript on first load; each activity loads on demand.
 - **Tablet first**: 48px minimum tap targets, portrait and landscape, touch drag-and-drop with Pointer Events (plus tap-to-place as a fallback).
 - **Offline PWA**: the service worker precaches the whole site, so it keeps working when the Wi-Fi drops. It can be installed to the home screen.
-- **No backend yet**: progress is saved on each tablet through a `StorageAdapter` interface, ready to switch to Firebase later.
+- **Firebase accounts**: learners sign in with name, class and a 6-digit PIN, so progress follows them to any device. Teachers see the whole class. All storage goes through a `StorageAdapter` interface, with an on-device (`localStorage`) mode as a fallback.
 
 ## Contents
 
@@ -105,20 +105,21 @@ Rules to keep in mind:
 
 `src/config.ts`:
 
-- `TEACHER_PIN`: PIN for `/teacher` (currently `5454`).
-- `DEFAULT_MOCK_MINUTES`, `DEFAULT_SHUFFLE`: defaults until a teacher changes them on a tablet.
+- `STORAGE`: `'firebase'` (sign-in, progress in the cloud) or `'local'` (no sign-in, progress stays on each tablet).
+- `TEACHER_PIN`: PIN for `/teacher`, used only in `'local'` mode (currently `5454`).
+- `DEFAULT_MOCK_MINUTES`, `DEFAULT_SHUFFLE`: defaults until a teacher changes them.
 - `CALC_TOLERANCE`: accepted error in the calculation checker.
 
-The PIN is a light lock for a classroom, not real security: it is in the JavaScript bundle. Real teacher accounts should come with Firebase Authentication.
+`src/firebase/config.ts` holds the Firebase web config. These values are public by design; the data is protected by `firestore.rules`.
 
 ## Teacher page
 
-Go to `/teacher` on each tablet and enter the PIN. You can:
+Go to `/teacher` and sign in with the teacher account (see "Firebase" below for the one-time approval). You can:
 
-- set the Paper 1 mock timer in minutes (0 = no timer) and turn shuffle on or off for that tablet;
-- see every learner who has used that tablet, their best mock and topic scores (under 50% in red);
+- set the Paper 1 mock timer in minutes (0 = no timer) and turn shuffle on or off for the whole class;
+- see every learner, their best mock and topic scores (under 50% in red);
 - export a **summary CSV** (one row per learner) and an **all attempts CSV** (one row per quiz, activity, mock or Paper 2 part), which open in Excel or Google Sheets;
-- delete all learner data on that tablet.
+- delete all learner results.
 
 ## Project structure
 
@@ -131,9 +132,10 @@ src/
   storage/
     StorageAdapter.ts   the interface all app code uses
     LocalStorageAdapter.ts
-    FirebaseAdapter.ts  stub for later
+    FirebaseAdapter.ts  Firestore implementation (default)
     progress.ts         computeProgress(): same logic for every adapter
     index.ts            picks the adapter (one line to change)
+  firebase/             Firebase setup, sign-in helpers, class settings
   data/                 all question content (JSON)
   pages/                home, topic, mock, paper2, progress, teacher
   quiz/quiz.ts          Paper 1 engine (practice and mock modes)
@@ -143,61 +145,63 @@ scripts/
   sw-template.js        service worker template (filled in at build time)
   make-icons.cjs        regenerates PNG icons from public/icons/icon.svg
 public/                 manifest, icons, Cloudflare _headers
+firestore.rules         Firestore security rules (publish in the Firebase console)
 ```
 
-## Adding Firebase later
+## Firebase (learner and teacher accounts)
 
-All reads and writes of learner data go through `storage` from `src/storage/index.ts`, typed as `StorageAdapter`:
+Project: `roboticsclass-b0eaf`. Firestore location: europe-west1.
 
-```ts
-interface StorageAdapter {
-  saveAttempt(attempt): Promise<Attempt>;
-  getAttempts(filter?): Promise<Attempt[]>;
-  getProgress(learnerId): Promise<Progress>;
-  clearProgress(learnerId?): Promise<void>;
-  getLearner(): Promise<Learner | null>;
-  setLearner(learner | null): Promise<void>;
-}
+### How sign-in works
+
+- **Learners** choose "I'm new here" once and enter their full name, class and a 6-digit PIN. Behind the scenes this becomes a Firebase email/password account with a made-up address such as `ama-mensah.2scia@learners.wassce-prep.app` (never emailed). Spaces and capitals in the class do not matter ("2 Sci A" = "2sci a"), but the name must be typed the same way each time.
+- **Shared tablets**: learners tap their name at the top and choose **Sign out** when they finish.
+- **Offline**: after the first sign-in on a device, everything works offline. Results are kept on the device and uploaded when the connection returns. The first sign-in on a new device needs internet.
+- **Teachers** use `/teacher` with a real email and password.
+
+### Approving a teacher account (one time)
+
+1. Open `/teacher`, choose **Create teacher account**, and sign up. The page then shows your **user ID**.
+2. In the Firebase console open **Firestore Database > Data**, tap **+ Start collection**, Collection ID `teachers`.
+3. Document ID: paste your user ID. Add a field `name` (string) with your name. Save.
+4. Back on `/teacher`, tap **Check again**.
+
+### A learner forgot their PIN
+
+Learners have no real email, so a PIN cannot be reset by email. In the Firebase console go to **Authentication > Users**, find the learner (their address starts with their name and class), open the menu and **Delete account**. The learner then signs up again with a new PIN. Their old results stay in the teacher's CSV export but are not linked to the new account.
+
+### Security rules
+
+`firestore.rules` is the source of truth. After changing it, paste it into **Firestore Database > Rules** and tap **Publish** (or run `npx firebase-tools deploy --only firestore:rules`). The rules make sure:
+
+- learners can read and write only their own profile and results, and cannot change past results;
+- only accounts listed in `teachers` can read the whole class, change class settings or delete other learners' results;
+- nobody can make themselves a teacher from the website.
+
+### Data layout
+
+```
+learners/{uid}                  name, className, createdAt
+learners/{uid}/attempts/{id}    one Attempt (see src/types.ts)
+teachers/{uid}                  added by hand in the console
+settings/global                 mockMinutes, shuffle (set from /teacher)
 ```
 
-So moving to Firebase means filling in `src/storage/FirebaseAdapter.ts` and changing one line.
+### Code
 
-1. **Create the project.** In the Firebase console, add a project, then a **Web app**. Enable **Authentication** (Google, email link or anonymous sign-in) and **Cloud Firestore**.
-2. **Install the SDK.** `npm install firebase`
-3. **Add config.** Create `.env` (do not commit it) and add the same variables in Cloudflare Pages > Settings > Environment variables:
-   ```
-   VITE_FIREBASE_API_KEY=...
-   VITE_FIREBASE_AUTH_DOMAIN=...
-   VITE_FIREBASE_PROJECT_ID=...
-   VITE_FIREBASE_APP_ID=...
-   ```
-4. **Implement the adapter.** Uncomment the imports and setup at the top of `FirebaseAdapter.ts` and fill in each method. Example code is in the comments. Suggested layout:
-   ```
-   learners/{learnerId}                  name, className, createdAt
-   learners/{learnerId}/attempts/{id}    one Attempt
-   ```
-   - `saveAttempt`: `addDoc(collection(db, 'learners', learnerId, 'attempts'), attempt)`.
-   - `getAttempts`: query the learner's sub-collection, or `collectionGroup(db, 'attempts')` for the teacher.
-   - `getProgress`: fetch attempts and return `computeProgress(learnerId, attempts, topics)` so results match the local version.
-   - `getLearner` / `setLearner`: use the signed-in user (`auth.currentUser.uid` as the learner id) and their `learners/{uid}` document.
-5. **Keep it offline.** Use `initializeFirestore(app, { localCache: persistentLocalCache() })`. Writes made offline are queued and sent when the Wi-Fi returns.
-6. **Switch.** In `src/storage/index.ts` change `new LocalStorageAdapter()` to `new FirebaseAdapter()`.
-7. **Login screen.** Replace the name and class dialog in `src/lib/session.ts` (`askLearner`) with a Firebase sign-in, then call `storage.setLearner(...)` with the user's name and class.
-8. **Security rules** (starting point):
-   ```
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{db}/documents {
-       match /learners/{uid}/{document=**} {
-         allow read, write: if request.auth != null && request.auth.uid == uid;
-       }
-       match /{path=**}/attempts/{id} {
-         allow read: if request.auth != null && request.auth.token.teacher == true;
-       }
-     }
-   }
-   ```
-   Give teacher accounts a `teacher: true` custom claim (with the Admin SDK), then the teacher page can read every learner's attempts.
-9. **Migrate old data (optional).** Before switching, export CSVs from each tablet's teacher page, or add a one-off button that reads `LocalStorageAdapter.getAttempts()` and saves each through the Firebase adapter.
+- `src/storage/FirebaseAdapter.ts` implements the same `StorageAdapter` interface as `LocalStorageAdapter`, so no page talks to Firebase directly.
+- `src/firebase/` holds the app setup (with the offline cache), sign-in helpers and class settings.
+- To go back to on-device storage, set `STORAGE: 'local'` in `src/config.ts`.
 
-The Firebase domains are not precached by the service worker (it only handles same-origin requests), so Firebase's own offline cache does that job.
+### Testing with the Firebase emulators
+
+```bash
+npx firebase-tools emulators:start --only auth,firestore     # terminal 1 (needs Java)
+VITE_FIREBASE_EMULATOR=1 npm run dev                         # terminal 2
+```
+
+The emulators use `firestore.rules`, so the security rules are tested too, and nothing touches the real project.
+
+### Costs
+
+The free Spark plan allows 50,000 reads and 20,000 writes per day, which is plenty for a class. Each finished quiz or activity is one write. Opening the teacher page reads every result once (cached for a minute), so a class of 100 with a few hundred results each stays well within the limit.

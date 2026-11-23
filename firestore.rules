@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isTeacher() {
+      return signedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    }
+
+    // Only you add teachers, by hand in the Firebase console.
+    match /teachers/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Class-wide mock settings: everyone signed in can read, only teachers can change.
+    match /settings/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+
+    // Each learner can only see and write their own data. Teachers can read everyone.
+    match /learners/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if isTeacher();
+
+      match /attempts/{id} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow create: if signedIn() && request.auth.uid == uid
+                      && request.resource.data.learnerId == uid;
+        allow delete: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow update: if false;
+      }
+    }
+
+    // Teacher page: read all learners' attempts at once.
+    match /{path=**}/attempts/{id} {
+      allow read: if isTeacher();
+    }
+  }
+}

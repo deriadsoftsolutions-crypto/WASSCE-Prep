@@ -44,6 +44,7 @@ export async function render() {
   cleanup = undefined;
   leaveGuard = null;
   const path = location.pathname;
+  window.dispatchEvent(new CustomEvent('route-changed', { detail: path }));
   let nav = '';
   app.innerHTML = '';
   for (const r of routes) {
