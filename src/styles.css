@@ -169,7 +169,7 @@ section + section { margin-top: 24px; }
 .btn-danger { color: var(--bad); border-color: var(--bad); }
 .btn-ghost { background: transparent; }
 .btn-big { min-height: 64px; font-size: 1.1rem; padding: 14px 24px; }
-.btn-sm { min-height: 40px; padding: 6px 12px; font-size: 0.95rem; }
+.btn-sm { min-height: var(--tap); padding: 6px 12px; font-size: 0.95rem; }
 .btn-block { width: 100%; }
 
 /* ---------- Home ---------- */
