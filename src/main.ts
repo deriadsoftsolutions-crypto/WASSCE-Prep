@@ -4,6 +4,7 @@ import { learner, loadLearner, askLearner, signOutOrSwitch } from './lib/session
 import { usingFirebase } from './storage';
 import { getSettings, saveSettings } from './lib/settings';
 import { fetchRemoteSettings } from './firebase/settings';
+import { isTeacher } from './firebase/account';
 import { mockPage } from './pages/mock';
 import { homePage } from './pages/home';
 import { topicPage } from './pages/topic';
@@ -32,6 +33,10 @@ function updateChip() {
   chip.hidden = !l;
   if (l) chip.textContent = l.className ? `${l.name} · ${l.className}` : l.name;
   chip.title = usingFirebase ? 'Sign out' : 'Switch learner';
+  // Show a Teacher link in the menu for teacher accounts.
+  const link = document.querySelector<HTMLElement>('[data-nav="teacher"]')!;
+  link.hidden = true;
+  if (usingFirebase && l) void isTeacher().then((t) => { link.hidden = !t; }).catch(() => {});
 }
 
 async function boot() {
@@ -47,7 +52,7 @@ async function boot() {
   route('/assignments', assignmentsPage, 'assignments');
   route('/assignments/:id', assignmentPage, 'assignments');
   route('/tests/:id', testPage, 'assignments');
-  route('/teacher', teacherPage);
+  route('/teacher', teacherPage, 'teacher');
   await loadLearner();
   updateChip();
   document.getElementById('learner-chip')!.addEventListener('click', () => void signOutOrSwitch());

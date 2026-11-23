@@ -418,3 +418,6 @@ tr.weak td { background: var(--bad-soft); }
   font-weight: 700; font-size: 0.95rem; cursor: pointer; touch-action: manipulation;
 }
 .pw-toggle[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); }
+
+/* The page container receives focus for screen readers; do not draw a frame around it. */
+main:focus, main:focus-visible { outline: none; }

@@ -19,9 +19,9 @@ function windowText(a: Assessment): string {
 }
 
 /** HTML list of tests for the Classwork page. */
-export async function testsListHTML(className: string): Promise<string> {
-  const list = await assessmentsFor(className);
-  if (!list.length) return '<div class="card"><p style="margin:0">No tests for your class yet.</p></div>';
+export async function testsListHTML(className: string, all = false): Promise<string> {
+  const list = await assessmentsFor(className, all);
+  if (!list.length) return `<div class="card"><p style="margin:0">${all ? 'No published tests yet.' : 'No tests for your class yet.'}</p></div>`;
   const rows = await Promise.all(list.map(async (a) => {
     const [att, res, start] = await Promise.all([myAttempt(a.id).catch(() => null), myResult(a.id).catch(() => null), myStart(a.id).catch(() => null)]);
     const st = statusOf(a);
@@ -33,7 +33,7 @@ export async function testsListHTML(className: string): Promise<string> {
       : '<span class="pill" style="background:var(--bad-soft);color:var(--bad)">Closed</span>';
     return `<a class="topic-card" href="/tests/${a.id}" style="flex-direction:column;align-items:flex-start">
       <div class="row" style="width:100%"><b style="font-size:1.15rem">📝 ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
-      <div class="muted small">${a.questionCount} questions · ${a.totalMarks} marks · ${esc(windowText(a))}</div></a>`;
+      <div class="muted small">${all ? `${esc(a.className || 'All classes')} · ` : ''}${a.questionCount} questions · ${a.totalMarks} marks · ${esc(windowText(a))}</div></a>`;
   }));
   return `<div class="qlist">${rows.join('')}</div>`;
 }

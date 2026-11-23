@@ -206,9 +206,9 @@ export async function allowRetake(learnerId: string, assessmentId: string) {
 
 /* ---------- Learner ---------- */
 
-export async function assessmentsFor(className: string): Promise<Assessment[]> {
+export async function assessmentsFor(className: string, all = false): Promise<Assessment[]> {
   const k = classKey(className);
-  return (await listAssessments()).filter((a) => a.published && (a.classKey === '' || a.classKey === k));
+  return (await listAssessments()).filter((a) => a.published && (all || a.classKey === '' || a.classKey === k));
 }
 
 const uid = () => {

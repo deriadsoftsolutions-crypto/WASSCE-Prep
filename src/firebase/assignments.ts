@@ -66,9 +66,9 @@ export async function getAssignment(id: string): Promise<Assignment | null> {
 }
 
 /** Assignments a learner in `className` should see. */
-export async function assignmentsFor(className: string): Promise<Assignment[]> {
+export async function assignmentsFor(className: string, all = false): Promise<Assignment[]> {
   const k = classKey(className);
-  return (await listAssignments()).filter((a) => a.published && (a.classKey === '' || a.classKey === k));
+  return (await listAssignments()).filter((a) => a.published && (all || a.classKey === '' || a.classKey === k));
 }
 
 export async function saveAssignment(a: Omit<Assignment, 'id' | 'createdAt'> & { id?: string; createdAt?: number }): Promise<string> {

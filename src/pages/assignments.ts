@@ -4,6 +4,7 @@ import { learner } from '../lib/session';
 import { usingFirebase } from '../storage';
 import { navigate } from '../router';
 import { testsListHTML } from './tests';
+import { isTeacher } from '../firebase/account';
 import {
   assignmentsFor, deleteFile, fmtSize, getAssignment, myFeedback, mySubmission, openFile, shrinkImage, submit, uploadFile,
   type Assignment, type Submission, type SubmittedFile,
@@ -40,8 +41,9 @@ export async function assignmentsPage(el: HTMLElement) {
   const l = learner()!;
   let list: Assignment[];
   let testsHTML: string;
+  const teacher = await isTeacher().catch(() => false);
   try {
-    [list, testsHTML] = await Promise.all([assignmentsFor(l.className), testsListHTML(l.className)]);
+    [list, testsHTML] = await Promise.all([assignmentsFor(l.className, teacher), testsListHTML(l.className, teacher)]);
   } catch {
     el.innerHTML = '<h1>Classwork</h1><p class="mark-bad">Could not load your classwork. Check your internet connection.</p>';
     return;
@@ -52,6 +54,7 @@ export async function assignmentsPage(el: HTMLElement) {
   }));
   el.innerHTML = `
     <div class="page-head"><h1>Classwork</h1><span class="muted">${esc(l.className)}</span></div>
+    ${teacher ? feedbackHTML('info', 'You are signed in as the teacher.', '<p style="margin:6px 0">Learners only see the tests and assignments set for their own class. Below is everything that is published, so you can preview it. To create, edit or mark work, use the Teacher page.</p><a class="btn btn-primary" href="/teacher">Go to the Teacher page</a>') : ''}
     <h2>Tests</h2>
     ${testsHTML}
     <h2 style="margin-top:24px">Assignments</h2>
@@ -66,7 +69,7 @@ export async function assignmentsPage(el: HTMLElement) {
         <div class="row" style="width:100%"><b style="font-size:1.15rem">📎 ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
         <div class="muted small">${esc(dueText(a))} · ${a.maxMarks} marks</div>
       </a>`;
-    }).join('')}</div>` : '<div class="card"><p style="margin:0">No assignments for your class yet.</p></div>'}`;
+    }).join('')}</div>` : `<div class="card"><p style="margin:0">${teacher ? 'No published assignments yet.' : 'No assignments for your class yet.'}</p></div>`}`;
 }
 
 export async function assignmentPage(el: HTMLElement, params: Record<string, string>) {
