@@ -145,8 +145,8 @@ export class FirebaseAdapter implements StorageAdapter {
     try {
       const snap = await getDoc(doc(db, 'learners', u.uid));
       if (snap.exists()) {
-        const d = snap.data() as { name: string; className: string; createdAt: number };
-        const l: Learner = { id: u.uid, name: d.name, className: d.className, createdAt: d.createdAt };
+        const d = snap.data() as { name: string; className: string; createdAt: number; year?: 1 | 2 | 3 };
+        const l: Learner = { id: u.uid, name: d.name, className: d.className, createdAt: d.createdAt, year: d.year };
         cacheProfile(l);
         return l;
       }
@@ -165,6 +165,6 @@ export class FirebaseAdapter implements StorageAdapter {
     }
     // Sign-up and sign-in happen in src/firebase/account.ts. Here we only update the profile.
     cacheProfile(learner);
-    await setDoc(doc(db, 'learners', learner.id), { name: learner.name, className: learner.className, createdAt: learner.createdAt, role: 'learner' }, { merge: true });
+    await setDoc(doc(db, 'learners', learner.id), JSON.parse(JSON.stringify({ name: learner.name, className: learner.className, year: learner.year, createdAt: learner.createdAt, role: 'learner' })), { merge: true });
   }
 }

@@ -5,6 +5,8 @@ import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import { storage } from '../storage';
 import { ACTIVITIES } from '../activities';
 import { classKey, classesOf, listLearners, type LearnerInfo } from '../firebase/assignments';
+import { listUnits, type Unit } from '../firebase/units';
+import { NEW_LESSON_KEY } from './teacherCurriculum';
 import { deleteLesson, listLessons, saveLesson, uploadLessonImage, youtubeId, type Block, type Lesson } from '../firebase/lessons';
 
 const topics = topicsData as Topic[];
@@ -18,10 +20,11 @@ export async function mountTeacherLessons(host: HTMLElement) {
   host.innerHTML = '<div class="skel"><span class="tall"></span><span></span><span></span></div>';
   let lessons: Lesson[] = [];
   let learners: LearnerInfo[] = [];
+  let units: Unit[] = [];
   let finished = new Map<string, Set<string>>();
   const load = async () => {
-    const [ls, lr, attempts] = await Promise.all([listLessons(), listLearners(), storage.getAttempts({ kind: 'lesson' })]);
-    lessons = ls; learners = lr;
+    const [ls, lr, attempts, us] = await Promise.all([listLessons(), listLearners(), storage.getAttempts({ kind: 'lesson' }), listUnits().catch(() => [] as Unit[])]);
+    lessons = ls; learners = lr; units = us.sort((a, b) => a.year - b.year || a.order - b.order);
     finished = new Map();
     for (const a of attempts) {
       const id = a.itemId.replace(/^lesson:/, '');
@@ -32,6 +35,8 @@ export async function mountTeacherLessons(host: HTMLElement) {
   const audience = (l: Lesson) => learners.filter((x) => !l.classKey || classKey(x.className) === l.classKey).length;
   const topicLabel = (id: number) => (id ? `${id}. ${topics.find((t) => t.id === id)?.short ?? ''}` : 'General');
 
+  const unitLabel = (l: Lesson) => { const u = units.find((x) => x.id === l.unitId); return u ? `STEM ${u.year}, ${u.code}` : l.year ? `STEM ${l.year}` : 'Any year'; };
+
   /* ---------------- List ---------------- */
   const renderList = () => {
     host.onclick = null;
@@ -39,9 +44,10 @@ export async function mountTeacherLessons(host: HTMLElement) {
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
         <h2 style="margin:0">Lessons</h2><button class="btn btn-primary" data-new type="button">+ New lesson</button></div>
       ${lessons.length ? `<div class="table-wrap"><table class="data">
-        <thead><tr><th class="left">Lesson</th><th>Topic</th><th>Class</th><th>Finished</th><th></th></tr></thead>
+        <thead><tr><th class="left">Lesson</th><th>Unit</th><th>Topic</th><th>Class</th><th>Finished</th><th></th></tr></thead>
         <tbody>${lessons.map((l) => `<tr>
           <td class="left"><b>${esc(l.title)}</b>${l.published ? '' : ' <span class="pill">Draft</span>'}<div class="muted small">${l.blocks.length} block${l.blocks.length === 1 ? '' : 's'}, updated ${fmtDate(l.updatedAt)}</div></td>
+          <td>${esc(unitLabel(l))}</td>
           <td>${esc(topicLabel(l.topicId))}</td>
           <td>${esc(l.className || 'All classes')}</td>
           <td>${finished.get(l.id)?.size ?? 0} / ${audience(l)}</td>
@@ -62,6 +68,10 @@ export async function mountTeacherLessons(host: HTMLElement) {
     host.onclick = null;
     let blocks: Block[] = lesson ? JSON.parse(JSON.stringify(lesson.blocks)) : [{ type: 'text', md: '' }];
     const classes = classesOf(learners);
+    let preUnit = '';
+    if (!lesson) { try { preUnit = sessionStorage.getItem(NEW_LESSON_KEY) ?? ''; sessionStorage.removeItem(NEW_LESSON_KEY); } catch { /* ignore */ } }
+    const curUnit = lesson?.unitId ?? preUnit;
+    const curYear = lesson?.year ?? units.find((u) => u.id === curUnit)?.year ?? 0;
     const custom = lesson && lesson.className && !classes.some((c) => classKey(c) === lesson.classKey);
 
     host.innerHTML = `
@@ -71,7 +81,12 @@ export async function mountTeacherLessons(host: HTMLElement) {
           <label class="field"><span>Title</span><input name="title" maxlength="120" value="${esc(lesson?.title ?? '')}" placeholder="e.g. How a PID controller stops a robot on the line" /></label>
           <label class="field"><span>One-line summary (shown on the lesson card)</span><input name="summary" maxlength="200" value="${esc(lesson?.summary ?? '')}" /></label>
           <div class="grid-2">
-            <label class="field"><span>Topic</span><select name="topic">
+            <label class="field"><span>Year</span><select name="year">
+              ${[0, 1, 2, 3].map((y) => `<option value="${y}" ${curYear === y ? 'selected' : ''}>${y ? `STEM ${y}` : 'Every year'}</option>`).join('')}</select></label>
+            <label class="field"><span>Curriculum unit</span><select name="unit">
+              <option value="">No unit</option>
+              ${units.map((u) => `<option value="${u.id}" data-y="${u.year}" ${curUnit === u.id ? 'selected' : ''}>STEM ${u.year}, ${esc(u.code)} ${esc(u.title)}</option>`).join('')}</select></label>
+            <label class="field"><span>WASSCE practice topic</span><select name="topic">
               <option value="0">General (no topic)</option>
               ${topics.map((t) => `<option value="${t.id}" ${lesson?.topicId === t.id ? 'selected' : ''}>${t.id}. ${esc(t.short)}</option>`).join('')}</select></label>
             <label class="field"><span>Class</span><select name="cls">
@@ -100,6 +115,10 @@ export async function mountTeacherLessons(host: HTMLElement) {
 
     const form = host.querySelector('[data-form]') as HTMLFormElement;
     const blocksHost = host.querySelector('[data-blocks]') as HTMLElement;
+    form.querySelector('select[name=unit]')!.addEventListener('change', (e) => {
+      const y = (e.target as HTMLSelectElement).selectedOptions[0]?.dataset.y;
+      if (y) (form.querySelector('select[name=year]') as HTMLSelectElement).value = y;
+    });
     form.querySelector('select[name=cls]')!.addEventListener('change', (e) => {
       (form.querySelector('[data-otherwrap]') as HTMLElement).hidden = (e.target as HTMLSelectElement).value !== '__other';
     });
@@ -244,7 +263,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
         try {
           await saveLesson({
             id: lesson?.id, createdAt: lesson?.createdAt, title, summary: String(fd.get('summary') ?? '').trim(),
-            topicId: Number(fd.get('topic')) || 0, className, classKey: classKey(className), blocks,
+            topicId: Number(fd.get('topic')) || 0, year: Number(fd.get('year')) || 0, unitId: String(fd.get('unit') ?? ''), className, classKey: classKey(className), blocks,
             published: fd.get('published') === 'on',
           });
           toast('Lesson saved.');
@@ -266,5 +285,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
     host.innerHTML = feedbackHTML('bad', 'Could not load lessons.', '<p>Check your internet connection, and that the latest security rules are published in Firebase.</p>');
     return;
   }
-  renderList();
+  let fromUnit = false;
+  try { fromUnit = !!sessionStorage.getItem(NEW_LESSON_KEY); } catch { /* ignore */ }
+  if (fromUnit) renderEditor(); else renderList();
 }

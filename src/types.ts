@@ -26,6 +26,8 @@ export interface Learner {
   name: string;
   className: string;
   createdAt: number;
+  /** STEM year: 1, 2 or 3 (missing for teachers and for accounts made before years existed) */
+  year?: 1 | 2 | 3;
 }
 
 export type AttemptKind = 'topic-quiz' | 'mock' | 'activity' | 'paper2' | 'lesson';

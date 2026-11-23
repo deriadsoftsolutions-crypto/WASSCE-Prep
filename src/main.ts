@@ -3,7 +3,7 @@ import '@fontsource/atkinson-hyperlegible/latin-700.css';
 import '@fontsource/barlow-condensed/latin-700.css';
 import './styles.css';
 import { route, startRouter, render } from './router';
-import { learner, loadLearner, askLearner, signOutOrSwitch } from './lib/session';
+import { learner, loadLearner, askLearner, askYear, signOutOrSwitch } from './lib/session';
 import { usingFirebase } from './storage';
 import { getSettings, saveSettings } from './lib/settings';
 import { fetchRemoteSettings } from './firebase/settings';
@@ -17,6 +17,7 @@ import { progressPage } from './pages/progress';
 import { assignmentsPage, assignmentPage } from './pages/assignments';
 import { testPage } from './pages/tests';
 import { lessonPage } from './pages/lessons';
+import { learnPage, unitPage, wasscePage } from './pages/learn';
 import { initPWA } from './lib/pwa';
 import { icon } from './lib/icons';
 import { dueWork } from './lib/due';
@@ -49,13 +50,17 @@ async function boot() {
   initTheme();
   initPWA();
   (document.querySelector('[data-nav="assignments"]') as HTMLElement).hidden = !usingFirebase;
+  (document.querySelector('[data-nav="learn"]') as HTMLElement).hidden = !usingFirebase;
   initNav();
   route('/', homePage, 'home');
-  route('/topic/:id', topicPage);
+  route('/topic/:id', topicPage, 'wassce');
   route('/topic/:id/:activity', activityPage);
-  route('/mock', mockPage, 'mock');
-  route('/paper2', paper2ListPage, 'paper2');
-  route('/paper2/:id', paper2QuestionPage, 'paper2');
+  route('/mock', mockPage, 'wassce');
+  route('/wassce', wasscePage, 'wassce');
+  route('/learn', learnPage, 'learn');
+  route('/learn/:id', unitPage, 'learn');
+  route('/paper2', paper2ListPage, 'wassce');
+  route('/paper2/:id', paper2QuestionPage, 'wassce');
   route('/progress', progressPage, 'progress');
   route('/assignments', assignmentsPage, 'assignments');
   route('/assignments/:id', assignmentPage, 'assignments');
@@ -71,6 +76,7 @@ async function boot() {
     void render();
     if (usingFirebase && learner()) void syncSettings();
     void updateBadge();
+    void maybeAskYear();
   });
   window.addEventListener('classwork-changed', () => void updateBadge());
   // Anyone who leaves the teacher page without signing in is asked to sign in.
@@ -81,9 +87,23 @@ async function boot() {
   if (!learner() && location.pathname !== '/teacher') await askLearner();
   else if (usingFirebase && learner()) void syncSettings();
   void updateBadge();
+  void maybeAskYear();
 }
 
-const NAV_ICONS: Record<string, string> = { home: 'home', mock: 'paper1', paper2: 'paper2', assignments: 'classwork', progress: 'progress', teacher: 'teacher' };
+/** Accounts made before years existed are asked their STEM year once. */
+let askingYear = false;
+async function maybeAskYear() {
+  const l = learner();
+  if (!usingFirebase || !l || l.year || askingYear || location.pathname === '/teacher') return;
+  askingYear = true;
+  try {
+    if (!(await isTeacher().catch(() => true))) await askYear();
+  } finally {
+    askingYear = false;
+  }
+}
+
+const NAV_ICONS: Record<string, string> = { home: 'home', learn: 'book', assignments: 'classwork', wassce: 'test', progress: 'progress', teacher: 'teacher' };
 
 /** Give each menu link its icon, and Classwork a badge for work still to do. */
 function initNav() {

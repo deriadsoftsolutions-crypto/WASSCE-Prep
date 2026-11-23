@@ -20,15 +20,15 @@ export function cachedProfile(uid: string): Learner | null {
   try { const r = localStorage.getItem(PROFILE_KEY(uid)); return r ? (JSON.parse(r) as Learner) : null; } catch { return null; }
 }
 
-export async function learnerSignUp(name: string, className: string, pin: string): Promise<Learner> {
+export async function learnerSignUp(name: string, className: string, pin: string, year: 1 | 2 | 3): Promise<Learner> {
   const cred = await createUserWithEmailAndPassword(auth, learnerEmail(name, className), pin);
   await updateProfile(cred.user, { displayName: name });
-  const l: Learner = { id: cred.user.uid, name, className, createdAt: Date.now() };
+  const l: Learner = { id: cred.user.uid, name, className, createdAt: Date.now(), year };
   cacheProfile(l);
   // Wait (briefly) for the profile to be saved, so it is not lost if the page changes straight away.
   // Offline, the write stays queued and is sent later; ensureProfile() also repairs it on the next start.
   await Promise.race([
-    setDoc(doc(db, 'learners', l.id), { name, className, createdAt: l.createdAt, role: 'learner' }).catch(console.error),
+    setDoc(doc(db, 'learners', l.id), { name, className, year, createdAt: l.createdAt, role: 'learner' }).catch(console.error),
     new Promise((r) => setTimeout(r, 4000)),
   ]);
   return l;
@@ -95,6 +95,6 @@ export async function ensureProfile(l: Learner) {
   profileChecked = l.id;
   try {
     const ref = doc(db, 'learners', l.id);
-    if (!(await getDoc(ref)).exists()) await setDoc(ref, { name: l.name, className: l.className, createdAt: l.createdAt, role: 'learner' });
+    if (!(await getDoc(ref)).exists()) await setDoc(ref, JSON.parse(JSON.stringify({ name: l.name, className: l.className, year: l.year, createdAt: l.createdAt, role: 'learner' })));
   } catch { profileChecked = ''; }
 }

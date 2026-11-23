@@ -12,6 +12,7 @@ import { saveRemoteSettings } from '../firebase/settings';
 import { mountTeacherAssignments } from './teacherAssignments';
 import { mountTeacherTests } from './teacherTests';
 import { mountTeacherLessons } from './teacherLessons';
+import { mountTeacherCurriculum } from './teacherCurriculum';
 
 const topics = topicsData as Topic[];
 const UNLOCK_KEY = 'wassce.teacher.unlocked';
@@ -63,7 +64,7 @@ async function renderDashboard(el: HTMLElement) {
   let tab = 'overview';
   try { tab = sessionStorage.getItem(TAB_KEY) ?? 'overview'; } catch { /* ignore */ }
   if (!usingFirebase) tab = 'overview';
-  const tabs = [['overview', 'Overview'], ['lessons', 'Lessons'], ['tests', 'Tests'], ['assignments', 'Assignments']];
+  const tabs = [['overview', 'Overview'], ['curriculum', 'Curriculum'], ['lessons', 'Lessons'], ['tests', 'Tests'], ['assignments', 'Assignments']];
   const me = learner();
   el.innerHTML = `
     <div class="t-layout">
@@ -96,6 +97,7 @@ async function renderDashboard(el: HTMLElement) {
   if (tab === 'assignments') await mountTeacherAssignments(body);
   else if (tab === 'tests') await mountTeacherTests(body);
   else if (tab === 'lessons') await mountTeacherLessons(body);
+  else if (tab === 'curriculum') await mountTeacherCurriculum(body, () => (el.querySelector('[data-tab="lessons"]') as HTMLElement | null)?.click());
   else await renderOverview(body);
 }
 

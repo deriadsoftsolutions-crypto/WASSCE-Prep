@@ -30,7 +30,7 @@ export async function myLessons(topicId?: number): Promise<Lesson[]> {
   const l = learner();
   if (!usingFirebase || !l) return [];
   const { isTeacher } = await import('../firebase/account');
-  const all = await lessonsFor(l.className, await isTeacher().catch(() => false)).catch(() => [] as Lesson[]);
+  const all = await lessonsFor(l.className, await isTeacher().catch(() => false), l.year).catch(() => [] as Lesson[]);
   return topicId == null ? all : all.filter((x) => x.topicId === topicId);
 }
 

@@ -8,6 +8,7 @@ import { icon } from '../lib/icons';
 import { CONFIG } from '../config';
 import { finishedLessons, myLessons } from './lessons';
 import type { Lesson } from '../firebase/lessons';
+import type { Unit } from '../firebase/units';
 
 const topics = topicsData as Topic[];
 const LEVELS = ['Not started', 'Learning', 'Practising', 'Nearly there', 'Mastered'];
@@ -44,7 +45,7 @@ function weakestTopic(prog: Progress | null, skip: Set<number>): { t: Topic; tri
   return { t: fresh ?? topics.find((t) => !skip.has(t.id)) ?? topics[0], tried: !fresh };
 }
 
-function buildCircuit(prog: Progress | null, attempts: Attempt[], due: DueItem[], unread: Lesson[]): Step[] {
+function buildCircuit(prog: Progress | null, attempts: Attempt[], due: DueItem[], unread: Lesson[], nextUnit: { u: Unit; left: number } | null, stem3 = true): Step[] {
   const today = startOfToday();
   const todays = attempts.filter((a) => a.timestamp >= today);
   const steps: Step[] = [];
@@ -53,6 +54,8 @@ function buildCircuit(prog: Progress | null, attempts: Attempt[], due: DueItem[]
   if (due.length) {
     const d = due[0];
     steps.push({ tag: d.kind === 'test' ? 'Test' : 'Assignment', title: d.title, detail: dueLabel(d).text, href: d.href, action: 'Open', done: false });
+  } else if (nextUnit) {
+    steps.push({ tag: 'Your unit', title: nextUnit.u.title, detail: nextUnit.left ? `${nextUnit.left} lesson${nextUnit.left === 1 ? '' : 's'} to finish` : `${nextUnit.u.code}: notes and materials`, href: `/learn/${nextUnit.u.id}`, action: 'Continue', done: false });
   } else if (unread.length) {
     const ls = unread[0];
     if (ls.topicId) used.add(ls.topicId);
@@ -77,7 +80,11 @@ function buildCircuit(prog: Progress | null, attempts: Attempt[], due: DueItem[]
 
   const weekAgo = Date.now() - 7 * 86_400_000;
   const recentMock = attempts.some((a) => a.kind === 'mock' && a.timestamp >= weekAgo);
-  if (!recentMock) {
+  const linkedTopic = nextUnit?.u.wassceTopics.map((id) => topics.find((t) => t.id === id)).find((t) => t && !used.has(t.id));
+  if (!stem3 && linkedTopic) {
+    const d3 = todays.some((a) => a.topicId === linkedTopic.id);
+    steps.push({ tag: d3 ? 'Done' : 'Practice', title: `Practise ${linkedTopic.short.toLowerCase()}`, detail: 'Activities that match your unit', href: `/topic/${linkedTopic.id}`, action: 'Start', done: d3 });
+  } else if (!recentMock) {
     steps.push({ tag: todays.some((a) => a.kind === 'mock') ? 'Done' : 'This week', title: 'Take a Paper 1 mock', detail: '40 questions, with your score for each topic', href: '/mock', action: 'Start mock', done: todays.some((a) => a.kind === 'mock') });
   } else {
     const p2 = todays.some((a) => a.kind === 'paper2');
@@ -104,10 +111,22 @@ export async function homePage(el: HTMLElement) {
     finishedLessons().catch(() => new Map<string, number>()),
   ]);
   const unread = lessons.filter((x) => !doneLessons.has(x.id)).sort((a, b) => b.updatedAt - a.updatedAt);
+  // This year's published units, and the first one with lessons still to finish.
+  let units: Unit[] = [];
+  if (usingFirebase && l?.year) {
+    const { listUnits } = await import('../firebase/units');
+    units = (await listUnits().catch(() => [] as Unit[])).filter((u) => u.year === l.year && u.published);
+  }
+  const unitLeft = (u: Unit) => lessons.filter((x) => x.unitId === u.id && !doneLessons.has(x.id)).length;
+  const unitTotal = (u: Unit) => lessons.filter((x) => x.unitId === u.id).length;
+  const nu = units.find((u) => unitLeft(u) > 0);
+  // A new lesson that belongs to a unit is reached through that unit; a lone new lesson stays a step of its own.
+  const nextUnit = nu ? { u: nu, left: unitLeft(nu) } : null;
+  const isStem3 = !l?.year || l.year === 3;
 
   const weeks = Math.max(0, Math.ceil((new Date(CONFIG.WASSCE_DATE).getTime() - Date.now()) / (7 * 86_400_000)));
   const days = new Set(attempts.filter((a) => a.timestamp >= Date.now() - 7 * 86_400_000).map((a) => new Date(a.timestamp).toDateString())).size;
-  const steps = buildCircuit(prog, attempts, due, unread);
+  const steps = buildCircuit(prog, attempts, due, nextUnit ? unread.filter((x) => !x.unitId) : unread, nextUnit, isStem3);
   const doneCount = steps.filter((s) => s.done).length;
   const nowIndex = steps.findIndex((s) => !s.done);
   const line = !attempts.length ? 'Start with the first step of today\'s circuit below.'
@@ -117,8 +136,10 @@ export async function homePage(el: HTMLElement) {
   el.innerHTML = `
     <section class="titleblock" aria-label="Countdown and greeting">
       <div class="tb-count">
-        <span class="num">${weeks}</span>
-        <span><b>week${weeks === 1 ? '' : 's'} to WASSCE</b><br><span class="muted small">${esc(CONFIG.WASSCE_LABEL)}</span></span>
+        ${isStem3 ? `<span class="num">${weeks}</span>
+        <span><b>week${weeks === 1 ? '' : 's'} to WASSCE</b><br><span class="muted small">${esc(CONFIG.WASSCE_LABEL)}</span></span>`
+        : `<span class="muted small" style="font-weight:700">STEM</span><span class="num">${l!.year}</span>
+        <span><b>Robotics</b><br><span class="muted small">${units.length} unit${units.length === 1 ? '' : 's'} this year</span></span>`}
       </div>
       <div class="tb-greet">
         <h1>${greeting()}${l ? `, ${esc(l.name.split(' ')[0])}` : ''}.</h1>
@@ -158,10 +179,25 @@ export async function homePage(el: HTMLElement) {
       </div>
     </section>` : ''}
 
-    <section aria-labelledby="topics">
-      <div class="section-head"><h2 id="topics">Topics</h2><span class="muted small">The bar lights up as you master each topic</span></div>
+    ${units.length ? `<section aria-labelledby="units">
+      <div class="section-head"><h2 id="units">Your units in STEM ${l!.year}</h2><a href="/learn">All units</a></div>
       <div class="tiles">
-        ${topics.map((t) => {
+        ${units.map((u) => {
+          const total = unitTotal(u), left = unitLeft(u);
+          const lv = !total ? 0 : left === 0 ? 4 : Math.max(1, Math.floor(((total - left) / total) * 4));
+          return `<a class="tile" href="/learn/${u.id}">
+            <span class="num" style="width:auto;min-width:44px">${esc(u.code)}</span>
+            <span class="tile-body"><span class="tile-title">${esc(u.subStrand)}</span><span class="tile-level">${total ? `${total - left} of ${total} lessons finished` : 'Notes and materials'}</span></span>
+            ${ledHTML(lv, `${total - left} of ${total} lessons finished`)}
+          </a>`;
+        }).join('')}
+      </div>
+    </section>` : ''}
+
+    <section aria-labelledby="topics">
+      <div class="section-head"><h2 id="topics">WASSCE practice topics</h2><a href="/wassce">WASSCE Prep</a></div>
+      <div class="tiles">
+        ${(isStem3 ? topics : topics.filter((t) => units.some((u) => u.wassceTopics.includes(t.id)))).map((t) => {
           const lv = masteryLevel(prog, t.id);
           return `<a class="tile" href="/topic/${t.id}">
             <span class="num">${t.id}</span>

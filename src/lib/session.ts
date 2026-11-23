@@ -71,6 +71,8 @@ function signInDialog(): Promise<Learner> {
         </div>
         <label class="field"><span>Your full name</span><input name="name" required maxlength="40" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Ama Mensah" /></label>
         <label class="field"><span>Class</span><input name="cls" required maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. 2 Sci A" /></label>
+        <fieldset class="field" data-yearwrap hidden style="border:0;padding:0;margin:0 0 12px"><legend style="font-weight:600;margin-bottom:6px">Your year</legend>
+          <div class="row">${[1, 2, 3].map((y) => `<label class="switch" style="border:1.5px solid var(--ink);border-radius:6px;padding:0 14px"><input type="radio" name="year" value="${y}" /> STEM ${y}</label>`).join('')}</div></fieldset>
         <label class="field"><span data-pinlabel>Your 6-digit PIN</span><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" /></label>
         <label class="field" data-confirm hidden><span>Type the PIN again</span><input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" /></label>
         <div data-err></div>
@@ -87,6 +89,7 @@ function signInDialog(): Promise<Learner> {
       mode = md;
       form.querySelectorAll('[data-mode]').forEach((t) => t.setAttribute('aria-selected', String((t as HTMLElement).dataset.mode === md)));
       (form.querySelector('[data-confirm]') as HTMLElement).hidden = md !== 'new';
+      (form.querySelector('[data-yearwrap]') as HTMLElement).hidden = md !== 'new';
       (form.querySelector('[data-pinlabel]') as HTMLElement).textContent = md === 'new' ? 'Choose a 6-digit PIN (keep it secret, remember it)' : 'Your 6-digit PIN';
       submit.textContent = md === 'new' ? 'Create my account' : 'Sign in';
       err.innerHTML = '';
@@ -108,10 +111,12 @@ function signInDialog(): Promise<Learner> {
       if (!className) return fail('Please type your class, for example 2 Sci A.');
       if (!/^\d{6}$/.test(pin)) return fail('Your PIN must be exactly 6 digits.');
       if (mode === 'new' && pin !== String(fd.get('pin2') ?? '')) return fail('The two PINs do not match.');
+      const year = Number(fd.get('year')) as 1 | 2 | 3;
+      if (mode === 'new' && ![1, 2, 3].includes(year)) return fail('Choose your year: STEM 1, STEM 2 or STEM 3.');
       submit.disabled = true;
       submit.textContent = 'Please wait...';
       try {
-        if (mode === 'new') await acct.learnerSignUp(name, className, pin);
+        if (mode === 'new') await acct.learnerSignUp(name, className, pin, year);
         else await acct.learnerSignIn(name, className, pin);
         const l = await storage.getLearner();
         if (!l) throw new Error('Not signed in');
@@ -166,4 +171,27 @@ export async function saveResult(r: ResultInput): Promise<Attempt | null> {
     toast('Could not save your result.');
     return null;
   }
+}
+
+/** Ask which STEM year the learner is in (sign-up asks this; older accounts are asked once). */
+export function askYear(current?: 1 | 2 | 3): Promise<void> {
+  const l = learner();
+  if (!l) return Promise.resolve();
+  return new Promise((resolve) => {
+    const m = modal(`<form class="stack">
+        <h2>${current ? 'Change your year' : 'Which year are you in?'}</h2>
+        <p class="muted">The site shows the lessons and materials for your year. You can change this later on My Progress.</p>
+        <div class="grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">${[1, 2, 3].map((y) => `<button type="submit" class="btn btn-big ${current === y ? 'btn-primary' : ''}" name="year" value="${y}">STEM ${y}</button>`).join('')}</div>
+      </form>`, { dismissible: !!current });
+    m.root.querySelector('form')!.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const y = Number(((e as SubmitEvent).submitter as HTMLButtonElement | null)?.value) as 1 | 2 | 3;
+      if (![1, 2, 3].includes(y)) return;
+      const next = { ...l, year: y };
+      await storage.setLearner(next).catch(console.error);
+      m.close();
+      setCurrent(next);
+      resolve();
+    });
+  });
 }

@@ -1,0 +1,442 @@
+{
+  "source": "NaCCA Robotics Curriculum for Secondary Education (SHS 1-3), September 2023. Outcomes and indicators are taken from the curriculum; summaries are draft plain-language overviews for the teacher to check.",
+  "strands": {
+    "1": "Principles of Robotic Systems",
+    "2": "Robot Design Methodologies",
+    "3": "Robot Construction and Programming"
+  },
+  "units": [
+    {
+      "code": "1.1.1",
+      "year": 1,
+      "strand": 1,
+      "subStrand": "Robots and Society",
+      "section": 1,
+      "title": "Robots and society: industrial revolutions and the benefits of robots",
+      "summary": "How the four industrial revolutions led to today's robots, how robots and people work together, and the economic and social benefits of robots in workplaces, smart homes and smart cities, guided by roboethics.",
+      "outcomes": [
+        "Appraise the peculiar characteristics of the various industrial revolutions and critically analyse the impact of performance on human-robot coexistence in working environments.",
+        "Outline the essential economic and social benefits of using robots in 21st-century environments."
+      ],
+      "indicators": [
+        "Describe the distinct features and advancements that characterise the transition from each of the industrial revolutions.",
+        "Analyse how the four organisational performance indicators (price, quality, flexibility and innovation) have been impacted by the interdependence of humans and robots in working environments.",
+        "Identify the economic and social benefits of using robots in 21st-century environments (workplaces, smart homes, smart cities, playgrounds) within the confines of accepted standards and ethics."
+      ],
+      "wassceTopics": [
+        1
+      ]
+    },
+    {
+      "code": "1.1.2",
+      "year": 1,
+      "strand": 1,
+      "subStrand": "Robot Control Principles",
+      "section": 2,
+      "title": "Robot control principles: robot subsystems and control loops",
+      "summary": "What makes a machine a robot, the subsystems (sensors, controller, actuators, power) and how they connect, and the difference between open-loop (no feedback) and closed-loop (feedback) systems, shown with logic and loop diagrams.",
+      "outcomes": [
+        "Assess various systems, classify whether they fall under robotic or non-robotic systems, and outline the functions of the subsystems of robots.",
+        "Classify feedback and non-feedback loop systems and demonstrate the use of logic and loop diagrams in control systems design."
+      ],
+      "indicators": [
+        "Describe robots and identify the differences between robotic and non-robotic systems.",
+        "Describe the attributes and functionalities of a robot's subsystems and how they interconnect.",
+        "Contrast non-feedback loop systems and feedback loop systems.",
+        "Evaluate the use of logic and loop diagrams and demonstrate their use in control systems design."
+      ],
+      "wassceTopics": [
+        1,
+        5
+      ]
+    },
+    {
+      "code": "1.1.3",
+      "year": 1,
+      "strand": 1,
+      "subStrand": "Sensors and Actuators",
+      "section": 3,
+      "title": "Sensors and actuators: learning from nature, calibrating linear sensors",
+      "summary": "How robots copy living things (senses, brain and muscles become sensors, processor and actuators), the science behind common sensors, and how to read linear sensors and calibrate them with a straight-line equation.",
+      "outcomes": [
+        "Analyse the similarities between robots and living organisms and outline critical scientific principles that underpin how sensing is achieved in robots.",
+        "Experiment with varying linear sensors such as light, colour, ultrasonic and temperature sensors, explain their outputs and apply linear equations to calibrate them."
+      ],
+      "indicators": [
+        "Draw a parallel relationship that relates the coordination of senses, brain and moving parts in living organisms to the coordination of sensors, processors and actuators in robots.",
+        "Discuss the scientific principles underlying the operation of sensors.",
+        "Observe varying outputs of different linear sensors and explain the variations observed.",
+        "Apply knowledge from linear equations to calibrate linear sensors and to scale sensor readings to fit within a desired max-min range."
+      ],
+      "wassceTopics": [
+        3
+      ]
+    },
+    {
+      "code": "1.2.1",
+      "year": 1,
+      "strand": 2,
+      "subStrand": "Digital and Analogue System Design",
+      "section": 4,
+      "title": "Electronic circuits: components, block and schematic diagrams",
+      "summary": "The components of electronic circuits and what each does, reading and drawing block and schematic diagrams, and building circuits on a breadboard from a schematic.",
+      "outcomes": [
+        "Correctly label the components of an electronic circuit, state their functions and interpret block and schematic diagrams.",
+        "Assemble electronic circuits from schematic diagrams and analyse their application in discrete and continuous-time machine design."
+      ],
+      "indicators": [
+        "Identify the components of an electronic circuit and their functions.",
+        "Properly label and explain block and schematic diagram representations of electronic systems."
+      ],
+      "wassceTopics": [
+        2
+      ]
+    },
+    {
+      "code": "1.2.2",
+      "year": 1,
+      "strand": 2,
+      "subStrand": "Tools and Apps for Robot Design",
+      "section": 5,
+      "title": "Robot design software: IDEs, modelling and simulation",
+      "summary": "Using programming environments (IDEs), modelling and simulation tools to design robots and test how they move before building them.",
+      "outcomes": [
+        "Effectively use virtual platforms and simulation tools to design and test robots."
+      ],
+      "indicators": [
+        "Explore features of selected modelling, programming and simulation tools useful for the design of robots.",
+        "Design robots using virtual platforms, simulation tools and programming IDEs to test the mechanics of the designed robots."
+      ],
+      "wassceTopics": [
+        10
+      ]
+    },
+    {
+      "code": "1.3.1",
+      "year": 1,
+      "strand": 3,
+      "subStrand": "Higher Order Design Thinking",
+      "section": 6,
+      "title": "Design thinking: inputs, processes, outputs and flowcharts",
+      "summary": "Breaking a problem into inputs, processes and outputs, then describing the solution with algorithms, pseudocode and flowcharts.",
+      "outcomes": [
+        "Use flowchart diagrams to implement algorithms for solutions to basic problems."
+      ],
+      "indicators": [
+        "Determine the inputs, processes and outputs required to solve a particular problem.",
+        "Define solutions to fundamental automated and robotic problems using algorithms, pseudocodes and flowchart diagrams."
+      ],
+      "wassceTopics": [
+        6
+      ]
+    },
+    {
+      "code": "1.3.2",
+      "year": 1,
+      "strand": 3,
+      "subStrand": "Robot Construction",
+      "section": 7,
+      "title": "Robot construction: stable structures and moving parts",
+      "summary": "How mass and centre of gravity affect stability, designing structures that withstand forces, and building simple robots from kits or local materials.",
+      "outcomes": [
+        "Appraise the effects of mass and centre of gravity in designing structures that withstand forces.",
+        "Create robots using fabricated robotic materials or local materials to implement basic mechanic operations."
+      ],
+      "indicators": [
+        "Describe the effect of mass and centre of gravity on the stability of a structure or robot, and strategies for designing systems that can withstand forces.",
+        "Build structures for a specified use case and test them for stability and ability to withstand forces.",
+        "Create robots using robotic kits and/or local materials that address the problems of recognised robotics challenges."
+      ],
+      "wassceTopics": [
+        9
+      ]
+    },
+    {
+      "code": "1.3.3",
+      "year": 1,
+      "strand": 3,
+      "subStrand": "Programming Robots",
+      "section": 8,
+      "title": "Programming robots: decisions, loops and finite state machines",
+      "summary": "Turning flowcharts into programs with single and nested decisions and feedback loops, then designing and programming finite state machines (FSMs) to control robots.",
+      "outcomes": [
+        "Create programs that make use of decision structures and loop conditions to control robots.",
+        "Design and program finite state machines."
+      ],
+      "indicators": [
+        "Create computer programs from pre-designed flowcharts that have single-decision conditions.",
+        "Create computer programs from pre-designed flowcharts that have nested decision conditions.",
+        "Create computer programs from pre-designed flowcharts that have a controlled feedback loop with loop interrupts.",
+        "Formulate and program FSMs to control different use cases (for example temperature control or multi-state motor speed control)."
+      ],
+      "wassceTopics": [
+        6
+      ]
+    },
+    {
+      "code": "2.1.1",
+      "year": 2,
+      "strand": 1,
+      "subStrand": "Robots and Society",
+      "section": 1,
+      "title": "Robots and society: impact, safety, roboethics and careers",
+      "summary": "The positive and negative impacts of robots on society, why robots and people must coexist safely and ethically, writing about robot ethics, and careers in robotics.",
+      "outcomes": [
+        "Justify the need for integrating robots in human-centred environments for positive impact and outline ethical and safety considerations for successful coexistence.",
+        "Identify possible career paths in the area of robotics."
+      ],
+      "indicators": [
+        "Analyse and enumerate both the positive and negative impacts of robots on society.",
+        "Explain the need for robot coexistence with humans, taking into consideration safety and roboethics.",
+        "Write publishable articles on topics related to ethics, safety and robot coexistence in society."
+      ],
+      "wassceTopics": [
+        1
+      ]
+    },
+    {
+      "code": "2.1.2",
+      "year": 2,
+      "strand": 1,
+      "subStrand": "Robot Control Principles",
+      "section": 2,
+      "title": "Robot control principles: designing feedback and non-feedback controls",
+      "summary": "Turning a description of an automated task into component and system diagrams for feedback and non-feedback control, and building arithmetic and logical models for continuous-time and finite-state machines.",
+      "outcomes": [
+        "Convert an automated solution narrative into controlled feedback and non-feedback component designs.",
+        "Formulate arithmetic and logical models for continuous-time and finite-state machines."
+      ],
+      "indicators": [
+        "Make use of component diagrams and system diagrams to design non-feedback systems for implementing controls in given scenarios.",
+        "Utilise component and system diagrams to design feedback systems for implementing controls in given scenarios."
+      ],
+      "wassceTopics": [
+        5
+      ]
+    },
+    {
+      "code": "2.1.3",
+      "year": 2,
+      "strand": 1,
+      "subStrand": "Sensors and Actuators",
+      "section": 3,
+      "title": "Sensors and actuators: classifying sensors and using sensor data",
+      "summary": "Classifying sensors as analogue or digital and active or passive, measuring their inputs and outputs, and using equations in code to convert sensor readings and control actuators.",
+      "outcomes": [
+        "Examine sensor power source, input and output using appropriate measuring instruments and correctly classify them as active-analogue, passive-analogue, active-digital or passive-digital sensors.",
+        "Use mathematical knowledge for sensor data manipulation and application for digital control of actuators."
+      ],
+      "indicators": [
+        "Explain the features that categorise sensors as analogue or digital (based on the output signal) and as active or passive (based on their power source).",
+        "Classify sensors as active-analogue, passive-analogue, active-digital or passive-digital.",
+        "Apply mathematical methods to programmatically convert continuous-time sensor output to discrete-time digital output."
+      ],
+      "wassceTopics": [
+        3
+      ]
+    },
+    {
+      "code": "2.2.1",
+      "year": 2,
+      "strand": 2,
+      "subStrand": "Digital and Analogue System Design",
+      "section": 4,
+      "title": "Digital systems: Boolean algebra, Karnaugh maps and PCBs",
+      "summary": "Using Boolean algebra to describe automation solutions, simplifying them with Karnaugh maps, and soldering and testing combinational circuits on printed circuit boards.",
+      "outcomes": [
+        "Use Boolean algebra to define automation solutions and apply Karnaugh maps to simplify and optimise Boolean-defined combinational digital systems.",
+        "Build and test basic combinational circuits on printed circuit boards."
+      ],
+      "indicators": [
+        "Explain and apply Boolean algebra in the definition and design of digital systems.",
+        "Apply Karnaugh maps to optimise digital systems.",
+        "Solder and test electronic circuits on a printed circuit board (PCB) using pre-designed schematic diagrams."
+      ],
+      "wassceTopics": [
+        7,
+        2
+      ]
+    },
+    {
+      "code": "2.2.2",
+      "year": 2,
+      "strand": 2,
+      "subStrand": "Tools and Apps for Robot Design",
+      "section": 5,
+      "title": "3D design and printing: CAD models of robot parts",
+      "summary": "Designing robot parts as 3D models with a CAD tool and using a 3D printer to make prototype parts.",
+      "outcomes": [
+        "Use computer-aided design tools to design 3D models of robot parts and operate a 3D printer for fabrication of prototype robot parts."
+      ],
+      "indicators": [
+        "Use a CAD tool to model parts of robotic systems."
+      ],
+      "wassceTopics": [
+        10
+      ]
+    },
+    {
+      "code": "2.3.1",
+      "year": 2,
+      "strand": 3,
+      "subStrand": "Higher Order Design Thinking",
+      "section": 6,
+      "title": "Design thinking: from high-level designs to detailed algorithms",
+      "summary": "Analysing and improving flowcharts and pseudocode for harder automation problems, and turning high-level designs into detailed, low-level specifications.",
+      "outcomes": [
+        "Use algorithms, pseudocodes and flowcharts to implement low-level design specifications from high-level designs."
+      ],
+      "indicators": [
+        "Define solutions for control and feedback systems using algorithms, pseudocodes and flowchart diagrams."
+      ],
+      "wassceTopics": [
+        6
+      ]
+    },
+    {
+      "code": "2.3.2",
+      "year": 2,
+      "strand": 3,
+      "subStrand": "Robot Construction",
+      "section": 7,
+      "title": "Robot construction: kinematics, velocity and trajectories",
+      "summary": "Closed-chain mechanisms, velocity and trajectory kinematics, calculations for robot navigation, and building robots with gears, swinging and reciprocating mechanisms.",
+      "outcomes": [
+        "Analyse robots with closed-chain designs and formulate navigation equations for traversing specific trajectories.",
+        "Create robots using fabricated robotic materials or local materials to implement basic mechanics."
+      ],
+      "indicators": [
+        "Discuss closed chains, velocity and trajectory as they are used in mechanics.",
+        "Analyse and perform basic calculations involving velocity and trajectory motions and apply trajectory calculations to robot navigation.",
+        "Create robots using robotic kits and/or local materials to implement mechanics such as gears, swinging mechanisms and reciprocating mechanisms."
+      ],
+      "wassceTopics": [
+        8,
+        4
+      ]
+    },
+    {
+      "code": "2.3.3",
+      "year": 2,
+      "strand": 3,
+      "subStrand": "Programming Robots",
+      "section": 8,
+      "title": "Programming robots: PID control, testing and debugging",
+      "summary": "Programming PID controllers for line-following and wall-following robots, experimenting with the P, I and D gains, and finding algorithm, design and coding flaws in robots.",
+      "outcomes": [
+        "Implement a PID controller and experiment with the effects of proportional, derivative and integral gain on the navigation efficiency of PID-controlled two-wheeled rover robots.",
+        "Critically analyse and assess built robots for algorithmic, design and coding flaws."
+      ],
+      "indicators": [
+        "Implement PID controllers for line-following and wall-following robots.",
+        "Apply the principle of variation and proportionality to experiment with the effect of proportional, derivative and integral gains on the efficiency of a PID-controlled robot.",
+        "Observe and identify flaws in an operational robot and trace them to algorithm flaws, design flaws or coding errors."
+      ],
+      "wassceTopics": [
+        5
+      ]
+    },
+    {
+      "code": "3.1.1",
+      "year": 3,
+      "strand": 1,
+      "subStrand": "Robots and Society",
+      "section": 1,
+      "title": "Robots and society: solving real problems in Ghana and beyond",
+      "summary": "Finding local and global problems that robots and automation can solve, documenting them for a Ghanaian industry, and writing and critiquing technical reports with flowcharts or pseudocode.",
+      "outcomes": [
+        "Conceive, evaluate and document high-level robot-based solutions to real-world problems.",
+        "Prepare and justify technical reports for an envisioned solution to a problem and critique technical reports on proposed solutions to known problems."
+      ],
+      "indicators": [
+        "Identify both local and global problems that can be fixed using robots and automated systems.",
+        "Identify, document and present problems in society and local industries, and suggest the role robots can play in solving them.",
+        "Prepare technical reports, including flowcharts or pseudocode, that outline the sequence of steps to solve problems."
+      ],
+      "wassceTopics": [
+        1
+      ]
+    },
+    {
+      "code": "3.1.2",
+      "year": 3,
+      "strand": 1,
+      "subStrand": "Robot Control Principles",
+      "section": 2,
+      "title": "Robot control principles: autonomous systems, reverse engineering and testing",
+      "summary": "Designing feedback-driven autonomous systems for a local industry, reverse-engineering the controls of working robots, and writing test plans to find and fix faults.",
+      "outcomes": [
+        "Design and implement feedback-driven autonomous systems to improve efficiency in an identifiable local industry.",
+        "Demonstrate skills in reverse-engineering controls of functional autonomous robotic systems through observation and analysis.",
+        "Create test plans for testing robotic systems to uncover faults and go through an iterative fault detection and correction process to fix the defect."
+      ],
+      "indicators": [
+        "Design a prototype feedback-driven autonomous system for efficiency improvement in an identified local industry.",
+        "Identify faults in robotic systems and trace them to algorithm flaws, design flaws or coding errors.",
+        "Go through a series of iterations to fix the identified flaws or improve the robot's performance."
+      ],
+      "wassceTopics": [
+        5,
+        6
+      ]
+    },
+    {
+      "code": "3.1.3",
+      "year": 3,
+      "strand": 1,
+      "subStrand": "Sensors and Actuators",
+      "section": 3,
+      "title": "Sensors and actuators: industrial actuators and final control elements",
+      "summary": "How industrial actuators work (valves, hydraulic actuators, contactors, relays) and choosing the right final control element for an industrial process.",
+      "outcomes": [
+        "Observe and explain the underlying STEM concepts of functional automated system processes and recommend feasible automation designs for unautomated industrial processes."
+      ],
+      "indicators": [
+        "Analyse the operating principles and use of advanced industry-based actuators (valves, hydraulic-based actuators, contactors, relays, etc.).",
+        "Evaluate an industrial control requirement and recommend final control actuators with appropriate justification."
+      ],
+      "wassceTopics": [
+        4,
+        2
+      ]
+    },
+    {
+      "code": "3.2.1",
+      "year": 3,
+      "strand": 2,
+      "subStrand": "Digital and Analogue System Design",
+      "section": 4,
+      "title": "Digital systems: reverse-engineering combinational circuits",
+      "summary": "Working out how a combinational circuit 'black box' works from its inputs and outputs, then designing and building circuits with several inputs and outputs for real problems.",
+      "outcomes": [
+        "Reverse engineer an existing combinational circuit and implement similar circuits or improved versions."
+      ],
+      "indicators": [
+        "Observe the input/output pairs of combinational circuit black boxes and reverse-engineer the circuit.",
+        "Analyse a given real-world scenario and build a circuit that uses a number of inputs to control a given number of outputs."
+      ],
+      "wassceTopics": [
+        7
+      ]
+    },
+    {
+      "code": "3.3.2",
+      "year": 3,
+      "strand": 3,
+      "subStrand": "Robot Construction",
+      "section": 5,
+      "title": "Final year project: a working robot prototype for a real problem",
+      "summary": "Designing and building a fully working robot prototype, from kits or local materials, that addresses a local or global issue.",
+      "outcomes": [
+        "Create robots using fabricated robotic materials or local materials to implement basic mechanics."
+      ],
+      "indicators": [
+        "Create fully functional prototypes of robotic systems that address an identified local or global issue, using robotic kits and/or local materials."
+      ],
+      "wassceTopics": [
+        9,
+        4
+      ]
+    }
+  ]
+}

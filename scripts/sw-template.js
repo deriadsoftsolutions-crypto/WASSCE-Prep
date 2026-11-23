@@ -1,7 +1,7 @@
 /* Service worker generated at build time by vite.config.ts. Do not edit dist/sw.js directly. */
 
 // Bump SCHEMA when the caching rules change, so every device drops its old caches on activate.
-const SCHEMA = 3;
+const SCHEMA = 4;
 const VERSION = '__VERSION__';
 const CACHE = `wassce-v${SCHEMA}-${VERSION}`;
 const PRECACHE = __PRECACHE__;
@@ -15,6 +15,9 @@ const APP_ROUTES = [
   /^\/paper2\/?$/,
   /^\/paper2\/Q\d+\/?$/i,
   /^\/progress\/?$/,
+  /^\/learn\/?$/,
+  /^\/learn\/[A-Za-z0-9_-]+\/?$/,
+  /^\/wassce\/?$/,
   /^\/assignments\/?$/,
   /^\/assignments\/[A-Za-z0-9_-]+\/?$/,
   /^\/tests\/[A-Za-z0-9_-]+\/?$/,
@@ -22,6 +25,14 @@ const APP_ROUTES = [
   /^\/teacher\/?$/,
 ];
 const isAppRoute = (path) => APP_ROUTES.some((re) => re.test(path));
+
+/** Worth keeping offline: a real, complete file that is not a video and not huge. */
+const MAX_KEEP = 30 * 1024 * 1024;
+function keepable(res) {
+  const type = res.headers.get('content-type') || '';
+  const size = Number(res.headers.get('content-length') || 0);
+  return res.ok && res.status === 200 && res.type === 'basic' && !type.startsWith('video/') && size <= MAX_KEEP;
+}
 
 /** Files that may be added to the cache at runtime (built assets and icons only). */
 // Lesson images never change at the same address, so they can be kept for offline reading.
@@ -71,6 +82,16 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  // Notes and lesson images: keep a copy once opened, so they can be read again offline.
+  // (A PDF opened in a new tab arrives as a navigation, so this comes before the page rules.)
+  if (url.pathname.startsWith('/api/lesson-file/') && !req.headers.has('range')) {
+    event.respondWith(fromCache(req).then((cached) => cached || fetch(req).then((res) => {
+      if (keepable(res)) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
+      return res;
+    })));
+    return;
+  }
+
   if (req.mode === 'navigate') {
     // Real app pages: serve the cached app shell (works offline).
     if (isAppRoute(url.pathname)) {
@@ -88,8 +109,7 @@ self.addEventListener('fetch', (event) => {
       if (cached) return cached;
       return fetch(req).then((res) => {
         const type = res.headers.get('content-type') || '';
-        const cacheable =
-          res.ok && res.type === 'basic' && RUNTIME_CACHEABLE.test(url.pathname) && !type.includes('text/html');
+        const cacheable = RUNTIME_CACHEABLE.test(url.pathname) && !type.includes('text/html') && keepable(res);
         if (cacheable) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy));

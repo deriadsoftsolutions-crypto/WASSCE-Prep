@@ -112,6 +112,16 @@ service cloud.firestore {
       allow write: if isTeacher();
     }
 
+    // Curriculum units (STEM 1 to 3) and their materials
+    match /units/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+    match /materials/{id} {
+      allow read: if signedIn() && (resource.data.audience == 'learners' || isTeacher());
+      allow write: if isTeacher();
+    }
+
     // Assignments: set by teachers, visible to everyone signed in.
     match /assignments/{id} {
       allow read: if signedIn();

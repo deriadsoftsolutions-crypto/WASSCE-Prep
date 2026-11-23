@@ -19,8 +19,12 @@ export type Block =
 export interface Lesson {
   id: string;
   title: string;
-  /** 1 to 10, or 0 for a general lesson */
+  /** WASSCE practice topic 1 to 10, or 0 for none */
   topicId: number;
+  /** STEM year 1 to 3, or 0 for every year */
+  year?: number;
+  /** Curriculum unit id (units/{id}), or '' */
+  unitId?: string;
   classKey: string;
   className: string;
   summary: string;
@@ -41,15 +45,15 @@ export async function getLesson(id: string): Promise<Lesson | null> {
   return s.exists() ? { ...(s.data() as Lesson), id: s.id } : null;
 }
 
-export async function lessonsFor(className: string, all = false): Promise<Lesson[]> {
+export async function lessonsFor(className: string, all = false, year?: number): Promise<Lesson[]> {
   const k = classKey(className);
-  return (await listLessons()).filter((l) => l.published && (all || l.classKey === '' || l.classKey === k));
+  return (await listLessons()).filter((l) => l.published && (all || ((l.classKey === '' || l.classKey === k) && (!l.year || !year || l.year === year))));
 }
 
 export async function saveLesson(l: Omit<Lesson, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: number }): Promise<string> {
   const ref = l.id ? doc(db, 'lessons', l.id) : doc(collection(db, 'lessons'));
   const data: Omit<Lesson, 'id'> = {
-    title: l.title, topicId: l.topicId, classKey: l.classKey, className: l.className, summary: l.summary,
+    title: l.title, topicId: l.topicId, year: l.year ?? 0, unitId: l.unitId ?? '', classKey: l.classKey, className: l.className, summary: l.summary,
     blocks: JSON.parse(JSON.stringify(l.blocks)), published: l.published,
     createdAt: l.createdAt ?? Date.now(), updatedAt: Date.now(),
   };

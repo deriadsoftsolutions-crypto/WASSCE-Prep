@@ -1,6 +1,6 @@
 # WASSCE Robotics Practice
 
-An interactive, offline-capable practice micro-site for the WASSCE Robotics mock (Paper 1 objectives and Paper 2 essay), built for learners at Koase STEM SHS to use on tablets.
+An offline-capable Robotics learning site for learners at Koase STEM SHS on tablets: lessons and materials for **STEM 1, STEM 2 and STEM 3** (organised by the NaCCA SHS Robotics curriculum), plus WASSCE practice (Paper 1 objectives and Paper 2 essay).
 
 - **Vite + vanilla TypeScript**, no framework. About 35 kB of gzipped JavaScript on first load; each activity loads on demand.
 - **Tablet first**: 48px minimum tap targets, portrait and landscape, touch drag-and-drop with Pointer Events (plus tap-to-place as a fallback).
@@ -11,7 +11,10 @@ An interactive, offline-capable practice micro-site for the WASSCE Robotics mock
 
 | Page | Route |
 |---|---|
-| Home: greeting, 10 topic cards with progress rings | `/` |
+| Home: today's circuit, your year's units, linked practice topics | `/` |
+| Learn: units for STEM 1, 2 and 3 grouped by strand, year books and resources | `/learn` |
+| Unit page: summary, what you will be able to do, lessons, materials, linked WASSCE topics | `/learn/u1-1-1` ... |
+| WASSCE Prep: Paper 1 mock, Paper 2, the 10 practice topics | `/wassce` |
 | Topic page: summary, key ideas, activities, that topic's Paper 1 questions | `/topic/1` to `/topic/10` |
 | Full Paper 1 mock: 40 questions, optional timer, shuffle, review with explanations and score per topic | `/mock` |
 | Paper 2 practice: parts, model answers, self-mark checklists, embedded step checker and activities | `/paper2`, `/paper2/Q1` ... |
@@ -215,7 +218,51 @@ On `/teacher` > **Lessons** the teacher writes lessons from blocks: **Text** (wi
 Learners find lessons on **Classwork**, on the matching **topic page**, and as the first step of **Today's circuit** when a lesson is new and nothing is due. **Mark as finished** saves an attempt of kind `lesson` (item `lesson:<id>`) with the quick-check score, so it appears in the teacher's CSV. Lesson text is escaped before formatting, so a lesson can never run code on a learner's tablet. Lessons and their images stay readable offline once opened.
 
 - Firestore: `lessons/{id}` (readable when signed in, written by teachers).
-- Functions: `POST /api/lesson-upload` (teachers only, images up to 5 MB) and `GET /api/lesson-file/lessons/...` (public, cached forever: addresses are unguessable and never reused).
+- Functions: `POST /api/lesson-upload` (teachers only: images up to 5 MB, documents up to 40 MB, videos up to 95 MB) and `GET /api/lesson-file/lessons/...` (public, cached forever: addresses are unguessable and never reused).
+
+## STEM 1 to 3: units and materials
+
+Each learner picks their year (STEM 1, 2 or 3) when they create an account. Accounts made before this existed are asked once; learners can change it on **My Progress**. The year decides what **Home** shows: STEM 1 and 2 see their units and the WASSCE topics linked to them; STEM 3 also sees the WASSCE countdown. Every learner can browse the other years on **Learn**.
+
+### Setting up the curriculum (teacher, one time)
+
+1. Publish the latest `firestore.rules` (it adds `units` and `materials`).
+2. `/teacher` > **Curriculum** > **Load the 21 NaCCA units as drafts**. This creates 8 units for STEM 1, 8 for STEM 2 and 5 for STEM 3 from `src/data/curriculum.json`, with the official learning outcomes and indicators, and a short draft summary.
+3. Open each unit, check the title and summary, tick the linked WASSCE practice topics, and switch on **Published** (or use **Publish all STEM n drafts**). Learners see only published units. Use the arrows to change the order.
+
+### Adding materials
+
+Inside a unit (or under **Books and resources for the whole of STEM n**):
+
+- **Upload files**: PDF, Word, PowerPoint, Excel and text up to 40 MB, MP4 or WebM videos up to 95 MB, images up to 5 MB. Files go to R2 under `lessons/`.
+- **+ YouTube video** and **+ Website link**.
+- **+ Section of a book**: points at a PDF already uploaded for that year and opens it at a page. Upload a whole book once as a year resource, then add a section to each unit.
+- **Who sees it**: Learners, **Teachers only** (for teacher manuals and TV versions) or Hidden. Tick **New uploads are for teachers only** before uploading a teacher version.
+
+Learners can read PDFs, Word files and slides they have opened once without internet (files up to 30 MB; videos are not kept).
+
+### Which Ministry book goes with which unit
+
+| Book | Units |
+|---|---|
+| Year 1 "Robotics Section 1 to 8" (LV = learner, TV = teacher) | Sections 1 to 8 = 1.1.1, 1.1.2, 1.1.3, 1.2.1, 1.2.2, 1.3.1, 1.3.2, 1.3.3 |
+| Year 2 Learner Edition and Teacher Manual | Sections 1 to 8 = 2.1.1 to 2.3.3. Learner Edition section starts at PDF pages 7, 27, 58, 88, 146, 167, 181, 231 |
+| Year 3 Teacher Manual | Sections 1 to 5 = 3.1.1, 3.1.2, 3.1.3, 3.2.1, 3.3.2 |
+
+Upload LV files and Learner Editions for learners, and TV files and Teacher Manuals as **Teachers only**.
+
+### Lessons in units
+
+In the lesson editor choose a **Year** and a **Curriculum unit**, or tap **Write a lesson for this unit** on the unit page. Lessons appear on the unit page and on Home as **Your unit**.
+
+### Data
+
+```
+units/{id}       code, year, strand, subStrand, title, summary, outcomes, indicators, wassceTopics, section, order, published
+materials/{id}   unitId ('' = whole-year resource), year, title, kind (file, video, youtube, link), url, page, audience, published
+```
+
+Learners can read units and only the materials with audience `learners`; only teachers can write either.
 
 ## Project structure
 
@@ -233,7 +280,7 @@ src/
     index.ts            picks the adapter (one line to change)
   firebase/             Firebase setup, sign-in helpers, class settings, assignments
   data/                 all question content (JSON)
-  pages/                home, topic, mock, paper2, progress, teacher
+  pages/                home, learn (units), topic, mock, paper2, progress, teacher (+ teacherCurriculum, teacherLessons, ...)
   quiz/quiz.ts          Paper 1 engine (practice and mock modes)
   activities/           one file per interactive activity
   lib/                  dom helpers, drag and drop, gates, maths parser, UI bits
@@ -281,7 +328,7 @@ Learners have no real email, so a PIN cannot be reset by email. In the Firebase 
 ### Data layout
 
 ```
-learners/{uid}                  name, className, createdAt
+learners/{uid}                  name, className, year, createdAt
 learners/{uid}/attempts/{id}    one Attempt (see src/types.ts)
 teachers/{uid}                  added by hand in the console
 settings/global                 mockMinutes, shuffle (set from /teacher)
