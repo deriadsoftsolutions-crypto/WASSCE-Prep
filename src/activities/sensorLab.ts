@@ -39,7 +39,10 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     </div>`;
 
   const render = () => {
+    const allChecked = offsetOk && verify.every((v) => v.ok !== null);
+    const step = !(readS && readR) ? 0 : !offsetOk ? 1 : allChecked ? 3 : 2;
     el.innerHTML = `
+      <span data-steps="Read both thermometers|Work out the offset|Verify" data-step="${step}" hidden></span>
       <div class="feedback info" style="margin-top:0"><strong>The problem</strong>This robot's temperature sensor reads a little wrong. Use one-point calibration to fix it.</div>
       <h4 style="margin-top:14px">Step 1. Put the sensor and a reference thermometer side by side in the same stable place, and read both.</h4>
       <div class="grid-2">${big('Robot sensor', `${sensor.toFixed(1)} °C`, readS, 'readS')}${big('Reference thermometer', `${ref.toFixed(1)} °C`, readR, 'readR')}</div>
@@ -63,7 +66,7 @@ float tempC = readSensorC() + OFFSET;   // corrected reading</pre>
             ${v.ok === null ? '' : `<p class="${v.ok ? 'mark-ok' : 'mark-bad'}" style="margin:8px 0 0">${v.ok ? '✓' : '✗'} Reference thermometer: ${v.ref.toFixed(1)} °C. Corrected = ${v.raw.toFixed(1)} + (${offset!.toFixed(1)}) = ${(v.raw + offset!).toFixed(1)} °C.</p>`}
           </div>`).join('')}` : ''}
       <div data-fb="all"></div>
-      <div class="row"><button class="btn" data-act="reset" type="button">Try again with a new sensor</button></div>`;
+      <div class="row"><button class="btn" data-act="reset" data-bar type="button">Try again with a new sensor</button></div>`;
   };
 
   const finishIfDone = () => {

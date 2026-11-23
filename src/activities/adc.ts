@@ -49,7 +49,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
   const renderQuiz = (fb = '') => {
     if (qi >= qs.length) {
       quizEl.innerHTML = feedbackHTML(score === qs.length ? 'ok' : 'bad', `Quiz score: ${score} / ${qs.length}`) +
-        '<div class="row" style="margin-top:10px"><button class="btn btn-primary" data-act="again" type="button">Try again</button></div>';
+        '<div class="row" style="margin-top:10px"><button class="btn btn-primary" data-act="again" data-bar type="button">Try again</button></div>';
       return;
     }
     const q = qs[qi];

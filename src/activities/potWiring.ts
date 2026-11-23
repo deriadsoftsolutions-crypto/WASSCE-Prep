@@ -28,8 +28,8 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     <p class="instructions small">Tap a pin of the potentiometer, then tap a pin on the Arduino (or drag from one to the other). Tap a pin again to remove its wire.</p>
     <div class="svg-wrap"><svg viewBox="0 0 700 440" data-svg role="img" aria-label="Potentiometer and Arduino Uno wiring"></svg></div>
     <div class="row" style="margin-top:12px">
-      <button class="btn btn-primary btn-big" data-act="check" type="button">Check wiring</button>
-      <button class="btn" data-act="reset" type="button">Try again</button>
+      <button class="btn btn-primary btn-big" data-act="check" data-bar type="button">Check wiring</button>
+      <button class="btn" data-act="reset" data-bar type="button">Try again</button>
     </div>
     <div data-fb></div>
     <div data-live></div>`;

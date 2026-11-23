@@ -77,7 +77,8 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     <p style="margin-top:12px"><span class="expr">F = XY' ⊕ YZ</span></p>
     <p class="mono" data-working style="font-size:1.05rem"></p>
     <div data-explore>
-      <p style="margin:0"><b data-seen>Combinations tried: 1 / 8</b> <span class="muted small">Try all 8 combinations of X, Y and Z.</span></p>
+      <span data-steps="Explore the circuit|Predict F|Your result" data-step="0" hidden></span>
+      <p style="margin:0"><b data-seen data-bar-status>Combinations tried: 1 / 8</b> <span class="muted small">Try all 8 combinations of X, Y and Z.</span></p>
       <div data-explorefb></div>
     </div>
     <div data-predict hidden></div>`;
@@ -139,6 +140,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     hidden = true;
     predictBox.innerHTML = `
       <div class="card" style="margin:12px 0 0">
+        <span data-bar-status hidden>Round ${round + 1} of ${ROUNDS}, ${score} correct so far</span>
         <p><b>Round ${round + 1} of ${ROUNDS}.</b> The inputs are X = ${v.X}, Y = ${v.Y}, Z = ${v.Z}. What will F be?</p>
         <div class="row"><button class="btn btn-big" data-guess="0" type="button">F = 0</button><button class="btn btn-big" data-guess="1" type="button">F = 1</button>
         <span class="spacer"></span><span class="muted">Score: ${score} / ${round}</span></div>
@@ -152,6 +154,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     el.querySelectorAll('[data-mode]').forEach((t) => t.setAttribute('aria-selected', String((t as HTMLElement).dataset.mode === m)));
     predictBox.hidden = m !== 'predict';
     exploreBox.hidden = m !== 'explore';
+    el.querySelector('[data-steps]')!.setAttribute('data-step', m === 'explore' ? '0' : '1');
     hidden = false;
     if (m === 'predict') { round = 0; score = 0; newRound(); }
     else { draw(); trackExplore(); }
@@ -186,9 +189,14 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
       predictBox.querySelector('[data-fb]')!.innerHTML =
         feedbackHTML(ok ? 'ok' : 'bad', ok ? 'Correct!' : `Not quite, F = ${r.f}.`, why) +
         `<div class="row" style="margin-top:10px">${done
-          ? `<b>Final score: ${score} / ${ROUNDS}</b><button class="btn btn-primary" data-again type="button">Try again</button>`
-          : '<button class="btn btn-primary" data-nextround type="button">Next round</button>'}</div>`;
-      if (done) void ctx.save(score, ROUNDS, { mode: 'predict' });
+          ? `<b>Final score: ${score} / ${ROUNDS}</b><button class="btn btn-primary" data-again data-bar type="button">Try again</button>`
+          : '<button class="btn btn-primary" data-nextround data-bar type="button">Next round</button>'}</div>`;
+      if (done) {
+        void ctx.save(score, ROUNDS, { mode: 'predict' });
+        el.querySelector('[data-steps]')!.setAttribute('data-step', '2');
+        const st = predictBox.querySelector('[data-bar-status]');
+        if (st) st.textContent = `Final score: ${score} / ${ROUNDS}`;
+      }
       return;
     }
     if (t.closest('[data-nextround]')) return newRound();

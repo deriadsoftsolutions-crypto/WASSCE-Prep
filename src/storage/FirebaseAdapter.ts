@@ -151,7 +151,11 @@ export class FirebaseAdapter implements StorageAdapter {
         return l;
       }
     } catch { /* offline with nothing cached: fall through */ }
-    return { id: u.uid, name: u.displayName || 'Teacher', className: (await isTeacher()) ? 'Teacher' : '', createdAt: Date.now() };
+    const teacher = await isTeacher();
+    // No profile found (e.g. sign-up interrupted): show a name worked out from the sign-in, never a wrong label.
+    const fromEmail = (u.email ?? '').split('@')[0].split('.')[0].split('-').filter(Boolean)
+      .map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+    return { id: u.uid, name: u.displayName || (teacher ? 'Teacher' : fromEmail || 'Learner'), className: teacher ? 'Teacher' : '', createdAt: Date.now() };
   }
 
   async setLearner(learner: Learner | null): Promise<void> {

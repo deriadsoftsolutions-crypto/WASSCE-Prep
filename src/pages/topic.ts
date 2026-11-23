@@ -4,7 +4,7 @@ import type { Paper1Question, Topic } from '../types';
 import { esc } from '../lib/dom';
 import { learner } from '../lib/session';
 import { storage } from '../storage';
-import { mountActivity } from '../activities';
+import { ACTIVITIES } from '../activities';
 import { mountPracticeQuiz } from '../quiz/quiz';
 import { topicIcon } from '../lib/icons';
 import { ledHTML, masteryLevel } from './home';
@@ -55,9 +55,20 @@ export async function topicPage(el: HTMLElement, params: Record<string, string>)
     </div>
     <section>
       <h2>Activities</h2>
-      ${t.activities.map((a, i) => `<div data-activity="${esc(a)}" id="act-${i}"></div>`).join('')}
+      <div class="act-cards">
+        ${t.activities.map((a, i) => {
+          const it = prog?.topics[id]?.items[`activity:${a}`];
+          const info = ACTIVITIES[a];
+          return `<a class="act-card" href="/topic/${id}/${esc(a)}">
+            <span class="muted small">Activity ${i + 1} of ${t.activities.length}</span>
+            <span class="ac-title">${esc(info?.title ?? a)}</span>
+            <span class="ac-blurb">${esc(info?.blurb ?? '')}</span>
+            <span class="ac-foot">${it ? `<span class="pill ${it.best >= 0.8 ? 'ok' : 'accent'}">Best ${Math.round(it.best * 100)}%</span>` : '<span class="pill">Not tried yet</span>'}<span class="ac-go">${it ? 'Try again' : 'Start'}</span></span>
+          </a>`;
+        }).join('')}
+      </div>
     </section>
-    <section>
+    <section id="questions">
       <div class="card">
         <h2>Paper 1 questions for this topic</h2>
         <p class="muted">Answer each question to see if you are right and why.</p>
@@ -82,9 +93,5 @@ export async function topicPage(el: HTMLElement, params: Record<string, string>)
   window.addEventListener('progress-changed', refreshRing);
   cleanups.push(() => window.removeEventListener('progress-changed', refreshRing));
 
-  for (const host of el.querySelectorAll<HTMLElement>('[data-activity]')) {
-    const c = await mountActivity(host, host.dataset.activity!, id);
-    cleanups.push(c);
-  }
   return () => cleanups.forEach((c) => c());
 }

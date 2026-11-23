@@ -55,9 +55,9 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     <div class="tray" data-tray aria-label="Blocks to place"></div>
     <div class="svg-wrap" style="margin-top:12px"><svg viewBox="0 0 700 790" data-fc role="img" aria-label="Flowchart with empty slots"></svg></div>
     <div class="row" style="margin-top:12px">
-      <button class="btn btn-primary btn-big" data-act="check" type="button">Check flowchart</button>
-      <button class="btn" data-act="reset" type="button">Try again</button>
-      <button class="btn btn-ghost" data-act="show" type="button">Show answer</button>
+      <button class="btn btn-primary btn-big" data-act="check" data-bar type="button">Check flowchart</button>
+      <button class="btn" data-act="reset" data-bar type="button">Try again</button>
+      <button class="btn btn-ghost" data-act="show" data-bar type="button">Show answer</button>
     </div>
     <div data-fb></div>`;
   const tray = el.querySelector('[data-tray]') as HTMLElement;

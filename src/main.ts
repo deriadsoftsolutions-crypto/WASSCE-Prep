@@ -11,6 +11,7 @@ import { isTeacher } from './firebase/account';
 import { mockPage } from './pages/mock';
 import { homePage } from './pages/home';
 import { topicPage } from './pages/topic';
+import { activityPage } from './pages/activity';
 import { paper2ListPage, paper2QuestionPage } from './pages/paper2';
 import { progressPage } from './pages/progress';
 import { assignmentsPage, assignmentPage } from './pages/assignments';
@@ -50,6 +51,7 @@ async function boot() {
   initNav();
   route('/', homePage, 'home');
   route('/topic/:id', topicPage);
+  route('/topic/:id/:activity', activityPage);
   route('/mock', mockPage, 'mock');
   route('/paper2', paper2ListPage, 'paper2');
   route('/paper2/:id', paper2QuestionPage, 'paper2');

@@ -147,8 +147,8 @@ export function mount(el: HTMLElement, ctx: ActivityContext, param?: string) {
         ${hintBox('unit')}<div data-fb="unit"></div>
       </div>
       <div class="row">
-        <button class="btn btn-primary btn-big" data-act="check" type="button">Check my working</button>
-        <button class="btn" data-act="retry" type="button">Try again</button>
+        <button class="btn btn-primary btn-big" data-act="check" data-bar type="button">Check my working</button>
+        <button class="btn" data-act="retry" data-bar type="button">Try again</button>
       </div>
       <div data-fb="all"></div>`;
   };

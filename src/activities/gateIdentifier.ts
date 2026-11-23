@@ -49,13 +49,13 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     if (i >= order.length) {
       el.innerHTML = `<div class="center stack"><div class="scorebig">${score} / ${total}</div>
         <p>${score === total ? 'You know all seven gates!' : 'Read the explanations and try again to get them all.'}</p>
-        <button class="btn btn-primary" data-act="again" type="button">Try again</button></div>`;
+        <button class="btn btn-primary" data-act="again" data-bar type="button">Try again</button></div>`;
       return;
     }
     const nameDone = nameAns !== null;
     const ttDone = ttAns !== null;
     el.innerHTML = `
-      <div class="qmeta"><span>Gate ${i + 1} of ${order.length}</span><span>Score: ${score}</span></div>
+      <div class="qmeta"><span data-bar-status>Gate ${i + 1} of ${order.length}, ${score} point${score === 1 ? '' : 's'} so far</span><span>Score: ${score}</span></div>
       <div class="center" style="margin:10px 0">${gateSymbolSVG(g, 280)}</div>
       <p><b>1. What is the name of this gate?</b></p>
       <div class="row">${GATE_TYPES.map((t) => {
@@ -76,7 +76,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
           }).join('')}
         </div>` : ''}
       ${ttDone ? feedbackHTML(ttAns === g ? 'ok' : 'bad', ttAns === g ? 'Correct truth table!' : 'That is not the right table.', `<p>The ${g} gate's output column reads ${ttFor(g).rows.map((r) => r.out).join(', ')} from top to bottom.</p>`)
-        + `<div class="row" style="margin-top:10px"><button class="btn btn-primary" data-act="next" type="button">${i === order.length - 1 ? 'See my score' : 'Next gate'}</button></div>` : ''}`;
+        + `<div class="row" style="margin-top:10px"><button class="btn btn-primary" data-act="next" data-bar type="button">${i === order.length - 1 ? 'See my score' : 'Next gate'}</button></div>` : ''}`;
   };
 
   el.addEventListener('click', (e) => {

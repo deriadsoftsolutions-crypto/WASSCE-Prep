@@ -67,8 +67,8 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
           </div>`).join('')}
         <label class="switch"><input type="checkbox" data-slope checked /> Slope pushes the robot back (causes drift)</label>
         <div class="row">
-          <button class="btn btn-primary btn-big" data-act="run" type="button">▶ Run robot</button>
-          <button class="btn" data-act="reset" type="button">Try again</button>
+          <button class="btn btn-primary btn-big" data-act="run" data-bar type="button">Run robot</button>
+          <button class="btn" data-act="reset" data-bar type="button">Try again</button>
         </div>
         <div class="row small">
           <span class="muted">Try:</span>

@@ -58,7 +58,10 @@ export async function render() {
       nav = r.nav ?? '';
       document.querySelectorAll<HTMLAnchorElement>('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === nav));
       cleanup = await r.handler(page, params);
-      window.scrollTo(0, 0);
+      // Jump to #section if the link asked for one, otherwise start at the top.
+      const target = location.hash ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+      if (target) target.scrollIntoView();
+      else window.scrollTo(0, 0);
       return;
     }
   }

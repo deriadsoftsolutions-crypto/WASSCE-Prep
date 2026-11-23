@@ -10,6 +10,7 @@ const PRECACHE = __PRECACHE__;
 const APP_ROUTES = [
   /^\/$/,
   /^\/topic\/\d+\/?$/,
+  /^\/topic\/\d+\/[a-z0-9-]+\/?$/,
   /^\/mock\/?$/,
   /^\/paper2\/?$/,
   /^\/paper2\/Q\d+\/?$/i,

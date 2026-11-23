@@ -114,9 +114,9 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
         </tr>`).join('')}</tbody>
       </table></div>
       <div class="row" style="margin-top:12px">
-        <button class="btn btn-primary" data-act="check" type="button">Check</button>
-        <button class="btn" data-act="clear" type="button">Try again</button>
-        ${mode === 'random' ? '<button class="btn" data-act="new" type="button">New expression</button>' : ''}
+        <button class="btn btn-primary" data-act="check" data-bar type="button">Check</button>
+        <button class="btn" data-act="clear" data-bar type="button">Try again</button>
+        ${mode === 'random' ? '<button class="btn" data-act="new" data-bar type="button">New expression</button>' : ''}
       </div>
       <div data-fb></div>`;
   };

@@ -35,50 +35,115 @@ for (const [id, s] of Object.entries(sorting)) {
   ACTIVITIES[id] = { title: s.title, blurb: 'Sort each card into the correct bin.', load: () => import('./sorter'), param: id };
 }
 
-/** Render an activity inside `host`, with a title bar showing the learner's best score. */
-export async function mountActivity(host: HTMLElement, id: string, topicId?: number, opts: { heading?: boolean; param?: string } = {}): Promise<() => void> {
+export interface MountOptions {
+  heading?: boolean;
+  param?: string;
+  /** 'focus': the activity has the whole screen and the action bar is fixed to the bottom. */
+  mode?: 'inline' | 'focus';
+  /** Where "Next activity" goes (focus mode). */
+  next?: { href: string; label: string };
+}
+
+/**
+ * Render an activity inside the shared shell: optional step indicator, the activity itself,
+ * and an action bar. Activities stay simple: they mark the buttons that belong in the bar with
+ * `data-bar`, a status line with `data-bar-status`, and their stages with
+ * `<span data-steps="A|B|C" data-step="1" hidden>`. The shell mirrors these and keeps them in sync.
+ */
+export async function mountActivity(host: HTMLElement, id: string, topicId?: number, opts: MountOptions = {}): Promise<() => void> {
   const entry = ACTIVITIES[id];
   if (!entry) {
     host.innerHTML = `<p class="muted">Activity "${esc(id)}" not found.</p>`;
     return () => {};
   }
-  host.classList.add('card', 'activity');
+  const focus = opts.mode === 'focus';
+  host.classList.add('act-shell', focus ? 'act-focus' : 'card');
   host.innerHTML = `
-    <div class="activity-head">
-      ${opts.heading === false ? '<span></span>' : `<h3>${esc(entry.title)}</h3>`}
-      <span class="best-badge" hidden></span>
-    </div>
+    ${focus ? '' : `<div class="activity-head">${opts.heading === false ? '<span></span>' : `<h3>${esc(entry.title)}</h3>`}<span class="best-badge" hidden></span></div>`}
+    <ol class="act-steps" aria-label="Steps" hidden></ol>
     <p class="instructions">${esc(entry.blurb)}</p>
-    <div class="activity-body"><p class="muted">Loading...</p></div>`;
-  const badge = host.querySelector('.best-badge') as HTMLElement;
+    <div class="activity-body"><div class="skel"><span class="tall"></span><span></span></div></div>
+    <div class="act-bar ${focus ? 'fixed' : ''}" role="group" aria-label="Activity actions">
+      <div class="act-status" aria-live="polite"></div>
+      <div class="act-actions"></div>
+    </div>`;
+  const badge = host.querySelector('.best-badge') as HTMLElement | null;
+  const body = host.querySelector('.activity-body') as HTMLElement;
+  const stepsEl = host.querySelector('.act-steps') as HTMLOListElement;
+  const statusEl = host.querySelector('.act-status') as HTMLElement;
+  const actionsEl = host.querySelector('.act-actions') as HTMLElement;
+  let lastResult = '';
+  let best: number | null = null;
+
   const showBest = async () => {
     const l = learner();
     if (!l) return;
     const list = await storage.getAttempts({ learnerId: l.id, itemId: `activity:${id}` });
     if (!list.length) return;
-    const best = Math.max(...list.map((a) => (a.max ? a.score / a.max : 0)));
-    badge.hidden = false;
-    badge.textContent = `Best: ${Math.round(best * 100)}%`;
+    best = Math.max(...list.map((a) => (a.max ? a.score / a.max : 0)));
+    if (badge) { badge.hidden = false; badge.textContent = `Best: ${Math.round(best * 100)}%`; }
+    sync();
   };
-  void showBest();
+
+  /* Mirror the activity's own controls into the shell. */
+  let queued = false;
+  const visible = (e: Element) => !e.closest('[hidden]:not([data-bar-status])') && !(e.parentElement?.closest('[hidden]'));
+  const sync = () => {
+    queued = false;
+    // Steps
+    const st = body.querySelector<HTMLElement>('[data-steps]');
+    if (st) {
+      const labels = (st.dataset.steps ?? '').split('|');
+      const cur = Number(st.dataset.step ?? 0);
+      stepsEl.hidden = false;
+      stepsEl.innerHTML = labels.map((l, i) => `<li class="${i < cur ? 'done' : i === cur ? 'current' : ''}" ${i === cur ? 'aria-current="step"' : ''}><span></span>${esc(l)}</li>`).join('');
+    } else stepsEl.hidden = true;
+    // Status
+    const status = [...body.querySelectorAll<HTMLElement>('[data-bar-status]')].find(visible);
+    const text = status?.textContent?.trim() || lastResult || (best !== null ? `Your best: ${Math.round(best * 100)}%` : '');
+    if (statusEl.textContent !== text) statusEl.textContent = text;
+    // Actions: one proxy per visible [data-bar] button, in order
+    const srcs = [...body.querySelectorAll<HTMLButtonElement>('[data-bar]')].filter((b) => !b.hidden && visible(b));
+    srcs.forEach((b) => b.classList.add('bar-src'));
+    const proxies = srcs.map((b, i) => {
+      const primary = b.classList.contains('btn-primary') || b.classList.contains('btn-accent');
+      return `<button type="button" class="btn ${primary ? 'btn-primary' : ''}" data-proxy="${i}" ${b.disabled ? 'disabled' : ''}>${esc(b.textContent?.trim() ?? '')}</button>`;
+    });
+    if (opts.next) proxies.push(`<a class="btn ${lastResult && !srcs.some((b) => b.classList.contains('btn-primary')) ? 'btn-primary' : ''}" href="${opts.next.href}">${esc(opts.next.label)}</a>`);
+    const html = proxies.join('');
+    if (actionsEl.dataset.html !== html) {
+      actionsEl.dataset.html = html;
+      actionsEl.innerHTML = html;
+      actionsEl.querySelectorAll<HTMLButtonElement>('[data-proxy]').forEach((p) => {
+        p.addEventListener('click', () => srcs[Number(p.dataset.proxy)]?.click());
+      });
+    }
+    host.classList.toggle('has-bar', !!html || !!text);
+  };
+  const queue = () => { if (!queued) { queued = true; requestAnimationFrame(sync); } };
+  const observer = new MutationObserver(queue);
+  observer.observe(body, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'hidden', 'data-step', 'class'], characterData: true });
 
   const ctx: ActivityContext = {
     id,
     topicId,
     save: async (score, max, details) => {
+      lastResult = `Saved: ${score} / ${max} (${max ? Math.round((score / max) * 100) : 0}%)`;
+      queue();
       await saveResult({ kind: 'activity', itemId: `activity:${id}`, topicId, score, max, details });
       void showBest();
     },
   };
-  const body = host.querySelector('.activity-body') as HTMLElement;
+  void showBest();
   try {
     const mod = await entry.load();
     body.innerHTML = '';
     const c = mod.mount(body, ctx, opts.param ?? entry.param);
-    return typeof c === 'function' ? c : () => {};
+    queue();
+    return () => { observer.disconnect(); if (typeof c === 'function') c(); };
   } catch (e) {
     console.error(e);
     body.innerHTML = '<p class="mark-bad">This activity could not load. Check your connection and refresh.</p>';
-    return () => {};
+    return () => observer.disconnect();
   }
 }

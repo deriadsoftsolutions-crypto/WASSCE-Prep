@@ -50,8 +50,8 @@ export function mount(el: HTMLElement, ctx: ActivityContext, param?: string) {
         </div>
       </div>
       <div class="row" style="margin-top:12px">
-        <button class="btn btn-primary btn-big" data-act="check" type="button">Check</button>
-        <button class="btn" data-act="reset" type="button">Try again</button>
+        <button class="btn btn-primary btn-big" data-act="check" data-bar type="button">Check</button>
+        <button class="btn" data-act="reset" data-bar type="button">Try again</button>
       </div>
       <div data-fb></div>`;
   };

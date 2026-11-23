@@ -198,6 +198,16 @@ Data: `assessments/{id}`, `assessments/{id}/content/questions`, `assessments/{id
 - **Navigation**: a top menu on wide screens; a bottom tab bar under 1024 px wide, with a badge on Classwork for work still to do.
 - **Home**: WASSCE countdown, "Today's circuit" (three suggested steps joined by a trace that lights up as they are done), due work, and topic tiles whose LED bar shows mastery (Not started, Learning, Practising, Nearly there, Mastered).
 
+## Activity screens
+
+Each activity opens on its own screen at `/topic/<id>/<activity>` (the topic page lists them as cards). The screen has a back button, steps across the top when the activity has stages, the activity itself, and an action bar fixed to the bottom with its main buttons and **Next activity** (or **Topic questions** after the last one). The tab bar is hidden there to give the activity room. Inside Paper 2 questions the same activities appear inline, with the bar at the bottom of the card.
+
+The shell (`mountActivity` in `src/activities/index.ts`) keeps activities simple. An activity only marks things in its own HTML:
+
+- `data-bar` on a button that belongs in the action bar (Check, Try again, Next round...). The shell shows it in the bar and hides the original; tapping the bar button clicks the original.
+- `data-bar-status` on an element whose text should show on the left of the bar (for example "Round 3 of 6").
+- `<span data-steps="Read|Offset|Verify" data-step="1" hidden></span>` for a step indicator; change `data-step` as the learner moves on.
+
 ## Project structure
 
 ```
