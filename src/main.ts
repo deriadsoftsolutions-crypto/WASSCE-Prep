@@ -7,6 +7,7 @@ import { topicPage } from './pages/topic';
 import { paper2ListPage, paper2QuestionPage } from './pages/paper2';
 import { progressPage } from './pages/progress';
 import { teacherPage } from './pages/teacher';
+import { initPWA } from './lib/pwa';
 
 function initTheme() {
   const btn = document.getElementById('theme-toggle')!;
@@ -29,6 +30,7 @@ function updateChip() {
 
 async function boot() {
   initTheme();
+  initPWA();
   route('/', homePage, 'home');
   route('/topic/:id', topicPage, 'home');
   route('/mock', mockPage, 'mock');
