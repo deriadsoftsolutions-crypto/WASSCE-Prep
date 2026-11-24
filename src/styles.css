@@ -299,7 +299,7 @@ table.data td.left, table.data th.left { text-align: left; }
 /* ---------- Forms ---------- */
 label.field { display: block; font-weight: 600; margin-bottom: 12px; }
 label.field span { display: block; margin-bottom: 4px; }
-input[type='text'], input[type='number'], input[type='password'], input:not([type]), select, textarea {
+input[type='text'], input[type='number'], input[type='password'], input[type='date'], input[type='datetime-local'], input:not([type]), select, textarea {
   width: 100%; min-height: var(--tap); padding: 10px 12px; border-radius: 10px;
   border: 2px solid var(--border); background: var(--surface); font-size: 1.05rem;
 }
@@ -484,7 +484,7 @@ h1, h2, h3 { letter-spacing: -0.01em; }
 .bar.weak > span { background: var(--urgent); }
 table.data th { background: var(--surface-2); }
 table.data th, table.data td { border-color: var(--line); }
-input[type='text'], input[type='number'], input[type='password'], input[type='email'], input[type='datetime-local'], input:not([type]), select, textarea {
+input[type='text'], input[type='number'], input[type='password'], input[type='email'], input[type='date'], input[type='datetime-local'], input:not([type]), select, textarea {
   border: 1.5px solid var(--border);
 }
 .expr { font-family: var(--font); border: 1.5px solid var(--ink); }
@@ -527,6 +527,13 @@ input[type='text'], input[type='number'], input[type='password'], input[type='em
 }
 @media (max-width: 560px) {
   .brand span { display: none; }
+}
+/* Laptops: keep up to seven menu items on one line */
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .brand span { display: none; }
+  .mainnav { gap: 2px; flex-wrap: nowrap; }
+  .mainnav a { padding: 10px 10px; }
+  .mainnav a .ico { display: none; }
 }
 
 /* ---------- Loading placeholders ---------- */

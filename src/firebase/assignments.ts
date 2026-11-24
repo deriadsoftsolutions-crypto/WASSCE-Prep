@@ -118,13 +118,13 @@ export async function saveFeedback(fb: Feedback): Promise<void> {
   await setDoc(doc(db, 'learners', fb.learnerId, 'feedback', fb.assignmentId), fb);
 }
 
-export interface LearnerInfo { id: string; name: string; className: string }
+export interface LearnerInfo { id: string; name: string; className: string; year?: number }
 
 /** Teacher: every learner account (from learners/{uid} profiles). */
 export async function listLearners(): Promise<LearnerInfo[]> {
   const snap = await getDocs(collection(db, 'learners'));
   return snap.docs
-    .map((d) => { const x = d.data() as { name?: string; className?: string }; return { id: d.id, name: x.name ?? '', className: x.className ?? '' }; })
+    .map((d) => { const x = d.data() as { name?: string; className?: string; year?: number }; return { id: d.id, name: x.name ?? '', className: x.className ?? '', year: x.year }; })
     .filter((x) => x.name)
     .sort((a, b) => a.className.localeCompare(b.className, undefined, { numeric: true }) || a.name.localeCompare(b.name));
 }
