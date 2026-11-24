@@ -19,6 +19,7 @@ const APP_ROUTES = [
   /^\/learn\/[A-Za-z0-9_-]+\/?$/,
   /^\/wassce\/?$/,
   /^\/profile\/?$/,
+  /^\/python\/?$/,
   /^\/portfolio\/?$/,
   /^\/portfolio\/print(\/[A-Za-z0-9_-]+)?\/?$/,
   /^\/assignments\/?$/,
@@ -27,6 +28,9 @@ const APP_ROUTES = [
   /^\/lessons\/[A-Za-z0-9_-]+\/?$/,
   /^\/teacher\/?$/,
 ];
+// Python for the practice page (about 13 MB). Kept in its own cache, named after the Pyodide version,
+// so it survives site updates and is downloaded once. Change the name when Pyodide is upgraded.
+const PY_CACHE = 'pyodide-314.0.7';
 const isAppRoute = (path) => APP_ROUTES.some((re) => re.test(path));
 
 /** Worth keeping offline: a real, complete file that is not a video and not huge. */
@@ -71,7 +75,7 @@ self.addEventListener('activate', (event) => {
   // Delete every older cache, including ones from earlier versions that held junk entries.
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && k !== PY_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -92,6 +96,15 @@ self.addEventListener('fetch', (event) => {
       if (keepable(res)) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
       return res;
     })));
+    return;
+  }
+
+  // Python files: downloaded once when the practice page is first opened, then always from the cache.
+  if (url.pathname.startsWith('/pyodide/')) {
+    event.respondWith(caches.open(PY_CACHE).then((c) => c.match(req, { ignoreSearch: true }).then((hit) => hit || fetch(req).then((res) => {
+      if (res.ok && res.status === 200) c.put(req, res.clone());
+      return res;
+    }))));
     return;
   }
 

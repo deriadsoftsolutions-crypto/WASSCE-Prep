@@ -296,6 +296,21 @@ Tapping their name at the top opens **My profile** (`/profile`). It holds the le
 - **Change my PIN:** the learner types their current PIN and the new 6-digit PIN twice. A forgotten PIN still needs the console steps above.
 - Firestore: `learners/{uid}/profile/photo` (`pending`, `approved`, `rejectedReason`, times). The rules let a learner set only a pending JPEG under 90,000 characters; they cannot approve their own photo or read anyone else's. Publish the latest `firestore.rules`.
 
+## Python practice page
+
+`/python` (linked from **Learn**) lets anyone write and run Python on a tablet or computer with no install. It uses [Pyodide](https://pyodide.org) 314.0.7 (Python compiled to WebAssembly), served from this site at `/pyodide/` (copied from `node_modules/pyodide` at build time).
+
+- **Run**, **Stop** (ends a loop that never finishes), **Clear output**, **Save as .py** (for VS Code), and an **Input** box for programs that use `input()`.
+- Errors show only the learner's own lines, for example `Your code, line 2 ... NameError`.
+- Examples come from the Python 1 lesson files in `teaching/python-1/vscode-files/`, so the page and VS Code match.
+- The first visit downloads about 13 MB. It is kept in its own offline cache (`pyodide-314.0.7`), which survives site updates. When upgrading Pyodide, change the version in `package.json` and the cache name in `scripts/sw-template.js`.
+
+## Teaching materials
+
+`teaching/` holds lesson materials that are not part of the site:
+
+- `teaching/python-1/`: the 2-hour lesson "Python for robots: variables, data types and operations" (STEM 3, Section 5). It has the slide deck, with timings and notes in the speaker notes, and `vscode-files/` with the starter files for learners' computers and `answers/` for the teacher. The detailed lesson plan is a separate document.
+
 ## Project structure
 
 ```

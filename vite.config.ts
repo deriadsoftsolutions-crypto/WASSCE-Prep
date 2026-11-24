@@ -1,12 +1,36 @@
 import { defineConfig, type Plugin } from 'vite';
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 /**
  * After the build, list every file in dist/ and write dist/sw.js so the
  * service worker precaches the whole site for offline use.
  */
+/** Pyodide (Python in the browser) for the practice page, served from /pyodide/. Not precached: about 13 MB. */
+const PYODIDE_DIR = 'node_modules/pyodide';
+const PYODIDE_FILES = ['pyodide.mjs', 'pyodide.asm.mjs', 'pyodide.asm.wasm', 'python_stdlib.zip', 'pyodide-lock.json'];
+function pyodideFiles(): Plugin {
+  let outDir = 'dist';
+  return {
+    name: 'pyodide-files',
+    configResolved(c) { outDir = c.build.outDir; },
+    configureServer(server) {
+      server.middlewares.use('/pyodide/', (req, res, next) => {
+        const f = (req.url ?? '').split('?')[0].replace(/^\//, '');
+        if (!PYODIDE_FILES.includes(f)) return next();
+        const types: Record<string, string> = { mjs: 'text/javascript', wasm: 'application/wasm', zip: 'application/zip', json: 'application/json' };
+        res.setHeader('Content-Type', types[f.split('.').pop()!] ?? 'application/octet-stream');
+        res.end(readFileSync(join(PYODIDE_DIR, f)));
+      });
+    },
+    writeBundle() {
+      mkdirSync(join(outDir, 'pyodide'), { recursive: true });
+      for (const f of PYODIDE_FILES) copyFileSync(join(PYODIDE_DIR, f), join(outDir, 'pyodide', f));
+    },
+  };
+}
+
 function precacheServiceWorker(): Plugin {
   let outDir = 'dist';
   return {
@@ -23,7 +47,7 @@ function precacheServiceWorker(): Plugin {
           const p = join(dir, f);
           if (statSync(p).isDirectory()) walk(p);
           // .woff copies are fallbacks for very old browsers; every supported tablet uses .woff2.
-          else if (!skip.has(relative(outDir, p)) && !f.endsWith('.map') && !f.endsWith('.woff')) files.push(p);
+          else if (!skip.has(relative(outDir, p)) && !relative(outDir, p).startsWith('pyodide') && !f.endsWith('.map') && !f.endsWith('.woff')) files.push(p);
         }
       };
       walk(outDir);
@@ -56,5 +80,6 @@ export default defineConfig({
       },
     },
   },
-  plugins: [precacheServiceWorker()],
+  worker: { format: 'es' },
+  plugins: [pyodideFiles(), precacheServiceWorker()],
 });

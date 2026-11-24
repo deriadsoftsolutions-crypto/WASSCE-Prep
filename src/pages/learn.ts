@@ -54,7 +54,7 @@ export async function learnPage(el: HTMLElement) {
     const yearRes = materials.filter((m) => m.year === year && !m.unitId);
     const strands = [...new Set(yu.map((u) => u.strand))].sort();
     el.innerHTML = `
-      <div class="page-head"><h1>Learn</h1><span class="muted">Robotics${l.year ? `, you are in STEM ${l.year}` : ''}</span></div>
+      <div class="page-head"><h1>Learn</h1><span class="row"><span class="muted">Robotics${l.year ? `, you are in STEM ${l.year}` : ''}</span><a class="btn btn-sm" href="/python">${icon('play', 18)} Python practice</a></span></div>
       <div class="tabs" role="tablist" aria-label="Year">
         ${[1, 2, 3].map((y) => `<button class="tab" role="tab" type="button" data-year="${y}" aria-selected="${y === year}">STEM ${y}${y === l.year ? ' (your year)' : ''}</button>`).join('')}
       </div>

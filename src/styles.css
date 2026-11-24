@@ -789,3 +789,20 @@ textarea[data-final] { width: 100%; }
 .name-with-avatar { display: inline-flex; align-items: center; gap: 10px; }
 .photo-row { display: flex; gap: 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .photo-row:first-of-type { border-top: 0; }
+
+/* ---------- Python practice ---------- */
+.py-bar { display: flex; gap: 12px 16px; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; margin-bottom: 12px; }
+.py-example { margin: 0; min-width: 260px; }
+.py-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 900px) { .py-grid { grid-template-columns: minmax(0, 1fr); } }
+.py-editor-wrap, .py-out-wrap { background: #1E1E1E; border-radius: 10px; padding: 10px 12px 12px; min-width: 0; display: flex; flex-direction: column; }
+.py-file { font-family: 'Courier New', monospace; font-size: 0.8rem; color: #A0A0A0; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; }
+.py-status { color: #7FD1A6; }
+textarea.py-editor { flex: 1; min-height: 380px; width: 100%; background: #1E1E1E; color: #D4D4D4; border: 0; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 16px; line-height: 1.5; tab-size: 4; padding: 6px; resize: vertical; white-space: pre; overflow: auto; }
+textarea.py-editor:focus { outline: 2px solid var(--accent); }
+.py-out { flex: 1; min-height: 380px; max-height: 70vh; margin: 0; overflow: auto; background: #0C0C0C; color: #E5E5E5; border-radius: 6px; padding: 8px; font-family: 'Courier New', monospace; font-size: 15px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+.py-err { color: #FF8A8A; }
+.py-echo { color: #F5B700; }
+.py-input { margin-top: 8px; color: #D4D4D4; }
+.py-input summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; font-size: 0.9rem; }
+.py-input textarea { background: #0C0C0C; color: #E5E5E5; font-family: 'Courier New', monospace; min-height: 70px; border-color: #444; }
