@@ -77,7 +77,7 @@ function signInDialog(): Promise<Learner> {
         <label class="field" data-confirm hidden><span>Type the PIN again</span><input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" /></label>
         <div data-err></div>
         <button class="btn btn-primary btn-big btn-block" type="submit" data-submit>Sign in</button>
-        <p class="muted small" data-help>Forgot your PIN? Ask your teacher. On a shared tablet, tap your name at the top and choose Sign out when you finish.</p>
+        <p class="muted small" data-help>Forgot your PIN? Ask your teacher. On a shared tablet, tap your name at the top, then Sign out when you finish.</p>
         <p class="small" style="margin:0"><a href="/teacher" data-teacher>Teacher sign in</a></p>
       </form>`, { dismissible: false });
     const form = m.root.querySelector('form') as HTMLFormElement;

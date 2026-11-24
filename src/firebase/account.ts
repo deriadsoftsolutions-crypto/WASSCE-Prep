@@ -1,5 +1,6 @@
 import {
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, updateProfile,
+  createUserWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential, signInWithEmailAndPassword,
+  signOut as fbSignOut, updatePassword, updateProfile,
 } from 'firebase/auth';
 import { doc, getDoc, getDocFromCache, setDoc } from 'firebase/firestore';
 import { auth, db } from './app';
@@ -65,6 +66,27 @@ export async function isTeacher(): Promise<boolean> {
 }
 
 /** Plain-English messages for the Firebase errors learners are likely to see. */
+/** Learner: change the 6-digit PIN (their Firebase password). Checks the current PIN first. */
+export async function changePin(current: string, next: string): Promise<void> {
+  const u = auth.currentUser;
+  if (!u?.email) throw new Error('Please sign in again.');
+  try {
+    await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, current));
+  } catch (e) {
+    const code = (e as { code?: string }).code ?? '';
+    if (/wrong-password|invalid-credential|invalid-login-credentials/.test(code)) throw new Error('Your current PIN is not right.');
+    if (/too-many-requests/.test(code)) throw new Error('Too many tries. Wait a few minutes and try again.');
+    if (/network-request-failed/.test(code)) throw new Error('No internet connection. Try again when you are online.');
+    throw new Error('Could not check your PIN. Try again.');
+  }
+  try {
+    await updatePassword(u, next);
+  } catch (e) {
+    if (/network-request-failed/.test((e as { code?: string }).code ?? '')) throw new Error('No internet connection. Try again when you are online.');
+    throw new Error('Could not change your PIN. Try again.');
+  }
+}
+
 export function authErrorMessage(e: unknown): string {
   const code = (e as { code?: string }).code ?? '';
   switch (code) {

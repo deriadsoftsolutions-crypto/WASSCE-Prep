@@ -2,7 +2,9 @@ import '@fontsource/atkinson-hyperlegible/latin-400.css';
 import '@fontsource/atkinson-hyperlegible/latin-700.css';
 import '@fontsource/barlow-condensed/latin-700.css';
 import './styles.css';
-import { route, startRouter, render } from './router';
+import { route, startRouter, render, navigate } from './router';
+import { avatarHTML } from './lib/avatar';
+import { esc } from './lib/dom';
 import { learner, loadLearner, askLearner, askYear, signOutOrSwitch } from './lib/session';
 import { usingFirebase } from './storage';
 import { getSettings, saveSettings } from './lib/settings';
@@ -38,8 +40,13 @@ function updateChip() {
   const chip = document.getElementById('learner-chip')!;
   const l = learner();
   chip.hidden = !l;
-  if (l) chip.textContent = l.className ? `${l.name}, ${l.className}` : l.name;
-  chip.title = usingFirebase ? 'Sign out' : 'Switch learner';
+  const label = l ? (l.className ? `${l.name}, ${l.className}` : l.name) : '';
+  const draw = (photo: string | null) => { chip.innerHTML = `${usingFirebase ? avatarHTML(l!.name, photo, 30) : ''}<span>${esc(label)}</span>`; };
+  if (l) {
+    draw(null);
+    if (usingFirebase) void import('./firebase/profilePhoto').then((m) => m.getPhoto(l.id)).then((p) => { if (learner()?.id === l.id) draw(p.approved); }).catch(() => {});
+  }
+  chip.title = usingFirebase ? 'My profile' : 'Switch learner';
   // Show a Teacher link in the menu for teacher accounts.
   const link = document.querySelector<HTMLElement>('[data-nav="teacher"]')!;
   link.hidden = true;
@@ -67,6 +74,7 @@ async function boot() {
   route('/assignments/:id', assignmentPage, 'assignments');
   route('/tests/:id', testPage, 'assignments');
   route('/lessons/:id', lessonPage, 'assignments');
+  route('/profile', async (el) => (await import('./pages/profile')).profilePage(el), 'progress');
   route('/portfolio', async (el) => (await import('./pages/portfolio')).portfolioPage(el), 'portfolio');
   route('/portfolio/print', async (el, p) => (await import('./pages/portfolioPrint')).portfolioPrintPage(el, p), 'portfolio');
   route('/portfolio/print/:uid', async (el, p) => (await import('./pages/portfolioPrint')).portfolioPrintPage(el, p), 'portfolio');
@@ -74,7 +82,7 @@ async function boot() {
   route('/teacher', async (el) => (await import('./pages/teacher')).teacherPage(el), 'teacher');
   await loadLearner();
   updateChip();
-  document.getElementById('learner-chip')!.addEventListener('click', () => void signOutOrSwitch());
+  document.getElementById('learner-chip')!.addEventListener('click', () => { if (usingFirebase) navigate('/profile'); else void signOutOrSwitch(); });
   window.addEventListener('learner-changed', () => {
     updateChip();
     void render();

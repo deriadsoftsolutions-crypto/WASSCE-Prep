@@ -778,3 +778,11 @@ textarea[data-final] { width: 100%; }
   .p-thumbs.big .p-thumb img { max-height: 70vh; }
   a { color: #000; text-decoration: none; }
 }
+
+/* ---------- Profile and avatars ---------- */
+.avatar { border-radius: 50%; object-fit: cover; flex: none; display: inline-block; vertical-align: middle; border: 1.5px solid var(--ink); background: var(--surface-2); }
+.avatar-initials { display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: var(--ink); background: var(--primary-soft); box-sizing: border-box; }
+.learner-chip { display: inline-flex; align-items: center; gap: 8px; }
+.profile-head { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+.profile-main { flex: 1 1 260px; min-width: 0; }
+.name-with-avatar { display: inline-flex; align-items: center; gap: 10px; }

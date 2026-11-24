@@ -18,6 +18,7 @@ const APP_ROUTES = [
   /^\/learn\/?$/,
   /^\/learn\/[A-Za-z0-9_-]+\/?$/,
   /^\/wassce\/?$/,
+  /^\/profile\/?$/,
   /^\/portfolio\/?$/,
   /^\/portfolio\/print(\/[A-Za-z0-9_-]+)?\/?$/,
   /^\/assignments\/?$/,

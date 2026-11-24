@@ -2,7 +2,7 @@ import topicsData from '../data/topics.json';
 import type { Topic } from '../types';
 import { esc, fmtDate, fmtTime } from '../lib/dom';
 import { confirmDialog, toast } from '../lib/ui';
-import { askYear, learner, signOutOrSwitch } from '../lib/session';
+import { learner, signOutOrSwitch } from '../lib/session';
 import { storage, usingFirebase, topicItemIds } from '../storage';
 import { ACTIVITIES } from '../activities';
 import { topicIcon } from '../lib/icons';
@@ -71,14 +71,13 @@ export async function progressPage(el: HTMLElement) {
     <div class="card">
       <h2>Settings</h2>
       <div class="row">
-        ${usingFirebase ? `<button class="btn" data-act="year" type="button">${l.year ? `Change my year (STEM ${l.year})` : 'Choose my year'}</button>` : ''}
+        ${usingFirebase ? '<a class="btn" href="/profile">My profile, year and PIN</a>' : ''}
         <button class="btn" data-act="switch" type="button">${usingFirebase ? 'Sign out' : 'Switch learner'}</button>
         <button class="btn btn-danger" data-act="reset" type="button">Reset my progress</button>
       </div>
     </div>`;
 
   el.querySelector('[data-act="switch"]')!.addEventListener('click', () => void signOutOrSwitch());
-  el.querySelector('[data-act="year"]')?.addEventListener('click', () => void askYear(l.year));
   el.querySelector('[data-act="reset"]')!.addEventListener('click', async () => {
     if (await confirmDialog(`Delete all saved progress for ${l.name}${usingFirebase ? '' : ' on this tablet'}? This cannot be undone.`, 'Delete progress', true)) {
       await storage.clearProgress(l.id);
