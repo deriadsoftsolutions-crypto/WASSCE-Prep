@@ -102,7 +102,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
       </div>
       <p><span class="expr">${esc(table.title)}</span></p>
       <p class="muted">Tap a cell to set it to 0 or 1. Tap again to change it.</p>
-      <div class="table-wrap"><table class="data">
+      <div class="table-wrap"><table class="data" data-nocards>
         <thead><tr>${table.inputs.map((i) => `<th>${i}</th>`).join('')}${table.cols.map((c) => `<th>${esc(c.name)}</th>`).join('')}</tr></thead>
         <tbody>${Array.from({ length: rows }, (_, r) => `<tr>
           ${table.inputs.map((_, j) => `<td style="font-weight:700">${(r >> (n - 1 - j)) & 1}</td>`).join('')}

@@ -28,7 +28,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     <div class="card" style="background:var(--surface-2);margin-top:12px">
       <label class="field"><span>Input voltage: <b data-v></b></span><input type="range" min="0" max="5" step="0.01" data-volts /></label>
       <label class="field"><span>ADC value (analogRead): <b data-a></b></span><input type="range" min="0" max="1023" step="1" data-adc /></label>
-      <div class="bar" style="height:22px"><span data-bar></span></div>
+      <div class="bar" style="height:22px"><span data-fill></span></div>
       <p class="mono" style="margin:10px 0 0">binary: <b data-bin></b></p>
       <p class="muted small" style="margin:4px 0 0">Each step is 5 ÷ 1024 ≈ 4.9 mV. A temperature sensor such as the LM35 gives 10 mV per °C, so the code converts the ADC value to volts and then to °C.</p>
     </div>
@@ -41,7 +41,7 @@ export function mount(el: HTMLElement, ctx: ActivityContext) {
     (el.querySelector('[data-a]') as HTMLElement).textContent = String(a);
     (el.querySelector('[data-volts]') as HTMLInputElement).value = String(volts);
     (el.querySelector('[data-adc]') as HTMLInputElement).value = String(a);
-    (el.querySelector('[data-bar]') as HTMLElement).style.width = `${(a / 1023) * 100}%`;
+    (el.querySelector('[data-fill]') as HTMLElement).style.width = `${(a / 1023) * 100}%`;
     (el.querySelector('[data-bin]') as HTMLElement).textContent = a.toString(2).padStart(10, '0');
   };
 

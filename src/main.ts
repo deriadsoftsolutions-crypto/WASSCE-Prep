@@ -36,6 +36,28 @@ function initTheme() {
   });
 }
 
+/**
+ * Phones: give every data table's cells their column name (shown as a label when the table turns into
+ * one card per row, see styles.css), and put a "swipe sideways" hint under drawings wider than the screen.
+ */
+function phoneHelpers(root: HTMLElement) {
+  const run = () => {
+    root.querySelectorAll<HTMLTableElement>('table.data:not(.cards):not([data-nocards])').forEach((t) => {
+      const heads = [...t.querySelectorAll('thead th')].map((th) => (th.textContent ?? '').trim());
+      if (!heads.length) return;
+      t.querySelectorAll('tbody tr').forEach((tr) => [...tr.children].forEach((td, i) => { if (heads[i]) td.setAttribute('data-label', heads[i]); }));
+      t.classList.add('cards');
+    });
+    root.querySelectorAll<HTMLElement>('.svg-wrap').forEach((w) => {
+      if (w.nextElementSibling?.classList.contains('swipe-hint')) return;
+      w.insertAdjacentHTML('afterend', '<p class="swipe-hint">Swipe sideways to see the whole drawing.</p>');
+    });
+  };
+  let queued = false;
+  new MutationObserver(() => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; run(); }); } })
+    .observe(root, { childList: true, subtree: true });
+}
+
 function updateChip() {
   const chip = document.getElementById('learner-chip')!;
   const l = learner();
@@ -50,7 +72,8 @@ function updateChip() {
   // Show a Teacher link in the menu for teacher accounts.
   const link = document.querySelector<HTMLElement>('[data-nav="teacher"]')!;
   link.hidden = true;
-  if (usingFirebase && l) void isTeacher().then((t) => { link.hidden = !t; }).catch(() => {});
+  document.body.classList.remove('is-teacher');
+  if (usingFirebase && l) void isTeacher().then((t) => { link.hidden = !t; document.body.classList.toggle('is-teacher', t); }).catch(() => {});
 }
 
 async function boot() {
@@ -60,6 +83,7 @@ async function boot() {
   (document.querySelector('[data-nav="learn"]') as HTMLElement).hidden = !usingFirebase;
   (document.querySelector('[data-nav="portfolio"]') as HTMLElement).hidden = !usingFirebase;
   initNav();
+  phoneHelpers(document.getElementById('app')!);
   route('/', homePage, 'home');
   route('/topic/:id', topicPage, 'wassce');
   route('/topic/:id/:activity', activityPage);

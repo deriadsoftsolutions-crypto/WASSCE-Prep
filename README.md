@@ -426,6 +426,23 @@ VITE_FIREBASE_EMULATOR=1 npm run dev                         # terminal 2
 
 The emulators use `firestore.rules`, so the security rules are tested too, and nothing touches the real project.
 
+### Testing on phones
+
+`tests/e2e/phone-audit.cjs` sets up a class (units, the Python 1 lesson, a test and an assignment), then opens every learner and teacher screen at phone size (360 by 740 by default) as a touch device. It reports sideways scrolling, buttons or boxes smaller than 40 px, anything wider than the screen, and inputs with text under 16 px (iPhones zoom in on those). It also saves a screenshot of each screen.
+
+```bash
+VITE_FIREBASE_EMULATOR=1 npm run build
+npx wrangler pages dev dist --port 8788 --ip 127.0.0.1      # with the emulators running and .dev.vars set
+node tests/e2e/phone-audit.cjs                               # W=390 H=844 for a larger phone
+```
+
+How the site adapts on phones (under 600 px wide):
+
+- Data tables become one card per row.
+- The teacher's section menu becomes one row that scrolls sideways.
+- Teachers' Progress link makes room for Teacher in the bottom menu.
+- Wide drawings in activities scroll sideways, with a hint under them.
+
 ### Costs
 
 The free Spark plan allows 50,000 reads and 20,000 writes per day, which is plenty for a class. Each finished quiz or activity is one write. Opening the teacher page reads every result once (cached for a minute), so a class of 100 with a few hundred results each stays well within the limit.

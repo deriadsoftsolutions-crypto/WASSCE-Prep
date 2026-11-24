@@ -42,7 +42,8 @@ export function viewerPage(el: HTMLElement): (() => void) | void {
 function slides(body: HTMLElement, tools: HTMLElement, src: string, start: number) {
   const deck = SLIDE_DECKS[src];
   let n = Math.min(Math.max(1, start), deck.count);
-  body.innerHTML = `<div class="slide-stage" data-stage><img data-slide alt="" /></div>`;
+  body.innerHTML = `<div class="slide-stage" data-stage><img data-slide alt="" /></div>
+    <p class="swipe-hint">Swipe or tap the slide to move on. Turn your phone sideways, or tap Full screen, for bigger slides.</p>`;
   tools.innerHTML = `<button class="btn btn-sm" data-prev type="button" aria-label="Previous slide">${icon('back', 18)}</button>
     <span class="viewer-count" data-count aria-live="polite"></span>
     <button class="btn btn-sm" data-next type="button" aria-label="Next slide"><span style="display:inline-flex;transform:scaleX(-1)">${icon('back', 18)}</span></button>

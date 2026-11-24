@@ -77,6 +77,8 @@ async function renderDashboard(el: HTMLElement) {
       <div class="t-main" data-tabbody></div>
     </div>`;
   const body = el.querySelector('[data-tabbody]') as HTMLElement;
+  // Phones: the section menu is one sideways-scrolling row; bring the open section into view.
+  el.querySelector<HTMLElement>('.t-menu [aria-current="page"]')?.scrollIntoView({ inline: 'center', block: 'nearest' });
   el.onclick = async (e) => {
     const t = e.target as HTMLElement;
     const next = t.closest<HTMLElement>('[data-tab]')?.dataset.tab;

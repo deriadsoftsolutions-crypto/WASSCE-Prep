@@ -19,7 +19,7 @@ function notDistractors(): TT[] {
 
 function ttHTML(t: TT): string {
   const two = t.rows[0].ins.includes(' ');
-  return `<table class="data" style="min-width:0;width:auto;margin:0 auto">
+  return `<table class="data" data-nocards style="min-width:0;width:auto;margin:0 auto">
     <thead><tr>${two ? '<th>A</th><th>B</th>' : '<th>A</th>'}<th>F</th></tr></thead>
     <tbody>${t.rows.map((r) => `<tr>${r.ins.split(' ').map((x) => `<td>${x}</td>`).join('')}<td><b>${r.out}</b></td></tr>`).join('')}</tbody>
   </table>`;

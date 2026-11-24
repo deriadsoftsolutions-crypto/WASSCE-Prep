@@ -299,7 +299,7 @@ table.data td.left, table.data th.left { text-align: left; }
 /* ---------- Forms ---------- */
 label.field { display: block; font-weight: 600; margin-bottom: 12px; }
 label.field span { display: block; margin-bottom: 4px; }
-input[type='text'], input[type='number'], input[type='password'], input[type='date'], input[type='datetime-local'], input:not([type]), select, textarea {
+input[type='text'], input[type='number'], input[type='password'], input[type='email'], input[type='url'], input[type='tel'], input[type='search'], input[type='date'], input[type='datetime-local'], input:not([type]), select, textarea {
   width: 100%; min-height: var(--tap); padding: 10px 12px; border-radius: 10px;
   border: 2px solid var(--border); background: var(--surface); font-size: 1.05rem;
 }
@@ -418,7 +418,12 @@ canvas { width: 100%; display: block; border-radius: 12px; background: var(--sur
 .bar.weak > span { background: var(--bad); }
 .prog-row { display: grid; grid-template-columns: minmax(140px, 1.3fr) 2fr 70px; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .prog-row.weak { background: var(--bad-soft); border-radius: 10px; padding: 10px; }
-@media (max-width: 600px) { .prog-row { grid-template-columns: 1fr 70px; } .prog-row .bar { grid-column: 1 / -1; grid-row: 2; } }
+@media (max-width: 600px) {
+  .prog-row { grid-template-columns: 1fr auto; }
+  .prog-row > :nth-child(1) { grid-column: 1; grid-row: 1; }
+  .prog-row > :nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+  .prog-row > :nth-child(3) { grid-column: 2; grid-row: 1; }
+}
 
 /* Modal and toast */
 .modal-back { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 50; display: grid; place-items: center; padding: 16px; }
@@ -689,7 +694,7 @@ body.focus-mode .mainnav { display: none !important; }
 body.focus-mode main { padding-bottom: 40px; }
 body.focus-mode #toast { bottom: 100px; }
 .act-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
-.act-header .back {
+.act-header .back, .viewer-head .back {
   flex: none; width: var(--tap); height: var(--tap); display: inline-flex; align-items: center; justify-content: center;
   border: 1.5px solid var(--ink); border-radius: var(--radius); color: var(--text);
 }
@@ -824,3 +829,44 @@ textarea.py-editor:focus { outline: 2px solid var(--accent); }
 .pdf-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #9AA3AE; font-size: 1.5rem; }
 .pdf-page canvas { position: relative; display: block; }
 .office-frame { width: 100%; height: calc(100vh - 220px); min-height: 420px; border: 1.5px solid var(--ink); border-radius: 10px; background: #FFFFFF; }
+
+/* ---------- Phones ---------- */
+/* Expanders are easy to tap. */
+details > summary { min-height: var(--tap); padding: 10px 0; box-sizing: border-box; cursor: pointer; }
+.viewer-head .back { background: none; cursor: pointer; }
+/* A drawing wider than the screen scrolls sideways: soft shadows at the edges show there is more. */
+.svg-wrap {
+  background:
+    linear-gradient(to right, var(--surface) 30%, transparent) left / 40px 100% no-repeat local,
+    linear-gradient(to left, var(--surface) 30%, transparent) right / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.22), transparent) left / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.22), transparent) right / 14px 100% no-repeat scroll,
+    var(--surface);
+}
+.swipe-hint { display: none; }
+@media (max-width: 560px) {
+  .swipe-hint { display: block; font-size: 0.85rem; color: var(--muted); margin: 4px 0 0; }
+}
+@media (max-width: 600px) {
+  /* Data tables become one card per row, each value with its column name (see labelTables in main.ts). */
+  table.data.cards, table.data.cards tbody, table.data.cards tr, table.data.cards td { display: block; width: auto; }
+  table.data.cards thead { display: none; }
+  table.data.cards tr { border: 1.5px solid var(--line); border-radius: var(--radius); margin: 0 0 12px; padding: 6px 12px; background: var(--surface); }
+  table.data.cards td { border: 0; padding: 6px 0; text-align: left !important; display: flex; gap: 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+  table.data.cards td[data-label]::before { content: attr(data-label); font-weight: 700; color: var(--muted); font-size: 0.85rem; flex: none; }
+  table.data.cards td.left:first-child { font-size: 1.05rem; display: block; }
+  table.data.cards td.left:first-child::before { display: none; }
+  table.data.cards td > .row { justify-content: flex-start !important; flex-wrap: wrap !important; }
+  .table-wrap:has(> table.data.cards) { overflow: visible; border: 0; }
+  /* Teacher menu: one row that scrolls sideways instead of a tall block. */
+  .t-layout { gap: 14px; }
+  .t-menu { flex-wrap: nowrap !important; overflow-x: auto; padding: 6px; gap: 4px; scrollbar-width: none; }
+  .t-menu::-webkit-scrollbar { display: none; }
+  .t-menu button { flex: none; white-space: nowrap; }
+}
+@media (max-width: 420px) {
+  .mainnav a { font-size: 0.68rem; letter-spacing: -0.01em; }
+  .mainnav a span:not(.nav-badge) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+/* Teachers on phones: Progress makes room for the Teacher link. */
+@media (max-width: 560px) { body.is-teacher .mainnav a[data-nav='progress'] { display: none; } }
