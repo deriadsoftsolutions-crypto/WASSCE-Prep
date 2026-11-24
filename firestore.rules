@@ -126,6 +126,20 @@ service cloud.firestore {
         allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
         allow write: if isTeacher();
       }
+
+      // Profile photo: the learner sends a small JPEG for approval; only a teacher can approve it.
+      // Only the learner and teachers can see it.
+      match /profile/{docId} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow write: if isTeacher();
+        allow create, update: if signedIn() && request.auth.uid == uid && docId == 'photo'
+          && request.resource.data.pending is string
+          && request.resource.data.pending.size() < 90000
+          && request.resource.data.pending.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+          && request.resource.data.rejectedReason == null
+          && request.resource.data.approved == (resource == null ? null : resource.data.approved)
+          && request.resource.data.approvedAt == (resource == null ? null : resource.data.approvedAt);
+      }
     }
 
     // Teacher page: read all learners' attempts, submissions and feedback at once.
@@ -145,6 +159,9 @@ service cloud.firestore {
       allow read: if isTeacher();
     }
     match /{path=**}/portfolioMark/{id} {
+      allow read: if isTeacher();
+    }
+    match /{path=**}/profile/{id} {
       allow read: if isTeacher();
     }
 
