@@ -10,8 +10,8 @@ import topicsData from '../data/topics.json';
 import type { Paper1Question, Topic } from '../types';
 import { richText } from './assignments';
 import { topicIcon } from '../lib/icons';
-import { READY_TESTS } from '../data/readyAssessments';
-import { readyPickerHTML } from './readyPicker';
+import { READY_TESTS } from '../data/ready';
+import { mountReadyPicker } from './readyPicker';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const P1 = paper1 as Paper1Question[];
@@ -58,8 +58,8 @@ export async function mountTeacherTests(host: HTMLElement) {
       const t = e.target as HTMLElement;
       if (t.closest('[data-new]')) return void renderEditor();
       if (t.closest('[data-ready]')) {
-        (host.querySelector('[data-readybox]') as HTMLElement).innerHTML = readyPickerHTML('Ready-made tests',
-          READY_TESTS.map((r) => ({ key: r.key, title: r.title, when: r.when, added: tests.some((x) => x.title === r.title) })));
+        mountReadyPicker(host.querySelector('[data-readybox]') as HTMLElement, 'Ready-made tests',
+          READY_TESTS.map((r) => ({ key: r.key, title: r.title, when: r.when, year: r.year, unitId: r.unitId, added: tests.some((x) => x.title === r.title) })));
         return;
       }
       const rk = t.closest<HTMLElement>('[data-addready]')?.dataset.addready;

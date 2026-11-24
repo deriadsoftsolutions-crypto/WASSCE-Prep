@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { READY_LESSONS } from '../src/data/readyLessons.ts';
+import { READY_LESSONS } from '../src/data/ready/index.ts';
 import { markdown } from '../src/lib/markdown.ts';
 
 test('every file a ready-made lesson links to is in public/', () => {
@@ -29,10 +29,10 @@ test('ready-made lesson text renders cleanly', () => {
   }
 });
 
-import { READY_ASSIGNMENTS, READY_TESTS } from '../src/data/readyAssessments.ts';
+import { READY_ASSIGNMENTS, READY_TESTS } from '../src/data/ready/index.ts';
 
 test('ready-made tests: marks add up and every auto-marked answer scores full marks', () => {
-  const totals: Record<string, number> = { 'python-1-check': 30, 'python-key-written': 20 };
+  const totals: Record<string, number> = { 'python-1-check': 30, 'python-2-check': 18, 'python-key-written': 20 };
   for (const t of READY_TESTS) {
     assert.equal(t.questions.reduce((n, q) => n + q.marks, 0), totals[t.key], t.key);
     for (const q of t.questions) {

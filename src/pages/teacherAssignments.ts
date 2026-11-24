@@ -6,8 +6,8 @@ import {
 } from '../firebase/assignments';
 import { dueText, richText } from './assignments';
 import { icon } from '../lib/icons';
-import { READY_ASSIGNMENTS } from '../data/readyAssessments';
-import { readyPickerHTML } from './readyPicker';
+import { READY_ASSIGNMENTS } from '../data/ready';
+import { mountReadyPicker } from './readyPicker';
 import { avatarHTML } from '../lib/avatar';
 import { allPhotos, approvedPhotoOf } from '../firebase/profilePhoto';
 
@@ -224,8 +224,8 @@ export async function mountTeacherAssignments(host: HTMLElement) {
     const t = e.target as HTMLElement;
     if (t.closest('[data-new]')) return renderForm();
     if (t.closest('[data-ready]')) {
-      (host.querySelector('[data-readybox]') as HTMLElement).innerHTML = readyPickerHTML('Ready-made assignments',
-        READY_ASSIGNMENTS.map((r) => ({ key: r.key, title: r.title, when: r.when, added: assignments.some((x) => x.title === r.title) })));
+      mountReadyPicker(host.querySelector('[data-readybox]') as HTMLElement, 'Ready-made assignments',
+        READY_ASSIGNMENTS.map((r) => ({ key: r.key, title: r.title, when: r.when, year: r.year, unitId: r.unitId, added: assignments.some((x) => x.title === r.title) })));
       return;
     }
     const rk = t.closest<HTMLElement>('[data-addready]')?.dataset.addready;

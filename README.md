@@ -332,6 +332,8 @@ Teacher-only Office files are never sent to Microsoft's viewer; they stay plain 
 
 ### Ready-made lessons
 
+How to add a lesson (content file, slide deck, starter files): see `scripts/decks/README.md`. In the pickers, ready-made items are grouped by STEM year and unit.
+
 Teacher > Lessons > **+ Add ready-made lesson** adds a finished lesson as a draft (defined in `src/data/readyLessons.ts`), with its year, unit, text, code, book figures, quick checks and download links. It also adds the slides and files to the unit's materials. Check it, choose a class if you want to, and switch on Published. Lesson text supports code boxes: put the code between two lines of three backticks (```).
 
 ### Ready-made tests and assignments

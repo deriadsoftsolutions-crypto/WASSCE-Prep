@@ -1,27 +1,9 @@
-/**
- * Ready-made lessons a teacher can add to the class with one tap (Teacher > Lessons).
- * Each is saved as an ordinary draft lesson, so the teacher can edit, assign and publish it.
- * Files they link to live in public/teaching/.
- */
-import type { Block } from '../firebase/lessons';
-import type { Material } from '../firebase/units';
-
-export interface ReadyLesson {
-  key: string;
-  title: string;
-  summary: string;
-  year: number;
-  unitId: string;
-  topicId: number;
-  blocks: Block[];
-  /** Added to the unit's materials (skipped if one with the same title already exists). */
-  materials: Omit<Material, 'id' | 'createdAt' | 'order'>[];
-}
+/** STEM 3, unit 3.3.2 (Section 5, Focal Area 1): Python 1, variables, data types and operations. */
+import { build, mcq, num, short, type ReadyAssignment, type ReadyLesson, type ReadyTest } from './types';
 
 const T = '/teaching/python-1';
 
-export const READY_LESSONS: ReadyLesson[] = [
-  {
+export const lesson: ReadyLesson = {
     key: 'python-1',
     title: 'Python for robots 1: variables, data types and operations',
     summary: 'Store robot data in variables, name them correctly, choose data types and calculate. Double period (2 hours) in VS Code.',
@@ -181,5 +163,80 @@ time_left = current_power_level_percent / 0.5
 
 **Homework:** write status.py for your robot. Store its name, its speed in cm per second, the distance travelled and whether it is charging. Work out how long it takes to travel 200 cm at its speed, and print everything with labels. Read pages 90 to 92 (Lists) for next lesson.` },
     ],
-  },
-];
+  };
+
+const lessonCheck = build([
+  mcq('Which of these is a valid Python variable name?', ['3speed', 'speed 3', 'speed_3', 'battery%'], 2, 'speed_3 uses letters, a number and an underscore and does not start with a number.'),
+  mcq('What does this print?\nx = 4\nx = x * 3\nprint(x)', ['4', '7', '12', 'x * 3'], 2, 'Python works out the right side first: 4 * 3 = 12, then stores 12 in x.'),
+  mcq('In Python, what does the = sign do in  speed = 50 ?', ['Checks whether speed is equal to 50', 'Stores the value 50 in the variable speed', 'Prints 50 on the screen', 'Adds 50 to speed'], 1, '= is assignment: it stores the value on the right in the variable on the left.'),
+  mcq('What is the data type of 45.0 ?', ['int', 'float', 'bool', 'str'], 1, 'It has a decimal point, so it is a float.'),
+  mcq('What is the data type of "25" ?', ['int', 'float', 'bool', 'str'], 3, 'The quotation marks make it text (a string), even though it looks like a number.'),
+  mcq('A robot must remember whether its gripper is open. Which value suits this best?', ['"open"', 'True', '1.0', 'gripper'], 1, 'Open or closed is a yes/no fact, so a bool (True or False) fits best.'),
+  mcq('Which line will cause a SyntaxError?', ['robot_name = "Zeta"', '_count = 3', 'robot name = "Zeta"', 'distance_cm = 12.5'], 2, 'Variable names cannot contain spaces.'),
+  mcq('What happens when Python runs  print(7 + "ab") ?', ['It prints 7ab', 'It prints 7 ab', 'TypeError: a number cannot be added to text', 'NameError'], 2, 'You cannot add an int to a str. print(7, "ab") would show both.'),
+  mcq('What does print(10 / 2) show?', ['5', '5.0', '5.00', '10 / 2'], 1, 'The / operator always gives a float.'),
+  num('What is 17 // 5 ?', 3, '// keeps only the whole number part: 17 divided by 5 is 3 remainder 2.'),
+  num('What is 17 % 5 ?', 2, '% gives the remainder: 17 = 3 x 5 + 2.'),
+  num('What is 2 ** 4 ?', 16, '** is power: 2 x 2 x 2 x 2 = 16.'),
+  num('A robot uses 0.5% of its power every minute. How much power (in %) does a 90-minute mission use?', 45, 'power_used = 90 * 0.5 = 45.', '%'),
+  num('The battery has 62.5% left and the robot uses 0.5% per minute. How many more minutes can it run?', 125, 'time_left = 62.5 / 0.5 = 125.', 'minutes'),
+  short('A robot that delivers medical supplies to remote villages in Ghana must manage a lot of data. Give TWO reasons why it should be programmed in Python rather than with blocks. (4 marks)',
+    'Teacher Manual rubric: 2 marks for two distinct, well-reasoned reasons; 2 marks for linking them to this robot\'s needs.\nAcceptable reasons: Python scales to large, complex programs (routes, payload, events); it gives precise control and custom behaviours; it works with advanced libraries and tools (maps, sensors, data); it has detailed error messages and debugging tools, important when a fault could stop an emergency delivery.', 4),
+  short('For the same delivery robot, state the best Python data type for each piece of information and justify each choice (2 marks each: 1 for the type, 1 for the reason):\ni. Robot identification number, e.g. "DRONE-GH-001"\nii. Current payload weight in kilograms (may not be a whole number)\niii. Total number of successful deliveries\niv. Whether the delivery hatch is open or closed',
+    'i. str: it is text made of letters, numbers and dashes, never used for maths.\nii. float: weight can have a decimal part (e.g. 2.75 kg).\niii. int: you count whole deliveries; there is no half delivery.\niv. bool: only two states, open or closed (True or False), used for decisions.', 8),
+  short('Write four lines of Python that create variables for i to iv above, with suitable names and example values. (4 marks)',
+    'One mark per correct line: a valid, meaningful name and a value of the right type, e.g.\nrobot_id = "DRONE-GH-001"\npayload_weight_kg = 2.75\nsuccessful_deliveries = 14\nhatch_is_open = False', 4),
+]);
+
+export const test: ReadyTest = {
+    key: 'python-1-check',
+    year: 3,
+    unitId: 'u3-3-2',
+    title: 'Python 1 check: variables, data types and operations',
+    when: 'Straight after the Python 1 lesson. 14 auto-marked questions and 3 written answers you mark (30 marks, 40 minutes).',
+    instructions: 'Answer every question on your own.\nQuestions 1 to 14 are marked automatically.\nQuestions 15 to 17 are written answers your teacher will mark.\nYou may not use VS Code or the Python practice page during this test.',
+    timeLimitMin: 40,
+    showResults: 'teacher',
+    portfolioSection: 'tests',
+    ...lessonCheck,
+  };
+
+export const practical: ReadyAssignment = {
+    key: 'python-1-reporter',
+    year: 3,
+    unitId: 'u3-3-2',
+    title: 'Python 1 practical: Robot System Status Reporter',
+    when: 'Straight after the Python 1 lesson. The Teacher Manual\'s learning task (requirements 1, 2, 3 and 5), 20 marks.',
+    maxMarks: 20,
+    allowText: true,
+    allowFiles: true,
+    portfolioSection: 'assignments',
+    instructions: `Write ONE Python program called status_reporter.py for your own simulated robot. Work on your own.
+
+1. Robot identification
+- robot_id: a string with a unique name, e.g. "AccraBot-Alpha"
+- system_purpose: a string describing what the robot does, e.g. "Urban sanitation support"
+
+2. Operational data
+- mission_duration_minutes: an int, e.g. 120
+- current_power_level_percent: a float, e.g. 78.5
+- is_operational: a bool, True or False
+
+3. Performance calculation (the robot uses 0.5% of its power every minute)
+- total_power_consumed_percent = mission_duration_minutes * 0.5
+- estimated_remaining_operating_minutes = current_power_level_percent / 0.5
+
+4. Report
+- Print a report that starts with the title ROBOT SYSTEM DAILY STATUS REPORT
+- Show every value with a clear label, in a tidy order
+
+Hand in: upload status_reporter.py AND a screenshot (or photo) of the output.
+
+Marking (20 marks)
+- Identification: correct string variables (2), printed with labels (2)
+- Operational data: correct int, float and bool (3), printed with labels (3)
+- Calculations: power consumed correct (2), remaining minutes correct (2), both printed with clear meaning (2)
+- Report: title at the top (1), clear and well organised (2), program runs without errors (1)
+
+Extra challenge (not marked): ask for the robot's name with input(), or show the remaining time in hours and minutes using // and %.`,
+  };

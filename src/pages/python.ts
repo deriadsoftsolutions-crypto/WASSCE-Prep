@@ -16,17 +16,28 @@ import naming from '../../teaching/python-1/vscode-files/03_naming_game.py?raw';
 import types from '../../teaching/python-1/vscode-files/04_types.py?raw';
 import mission from '../../teaching/python-1/vscode-files/05_mission.py?raw';
 import operators from '../../teaching/python-1/vscode-files/06_operators.py?raw';
+import lists from '../../teaching/python-2/vscode-files/07_lists.py?raw';
+import activityLog from '../../teaching/python-2/vscode-files/08_activity_log.py?raw';
+import statusReport from '../../teaching/python-2/vscode-files/09_status_report.py?raw';
 
-const EXAMPLES: { id: string; label: string; code: string }[] = [
-  { id: 'blank', label: 'Blank file', code: '' },
-  { id: 'hello', label: '0. Hello, robot', code: hello },
-  { id: 'variables', label: '1. Variables', code: variables },
-  { id: 'robot-id', label: '2. Robot ID card (Activity 5.2)', code: robotId },
-  { id: 'naming', label: '3. Naming game', code: naming },
-  { id: 'types', label: '4. Data types', code: types },
-  { id: 'mission', label: '5. Mission (Activities 5.3 and 5.4)', code: mission },
-  { id: 'operators', label: '6. Operators', code: operators },
+const EXAMPLES: { id: string; label: string; code: string; group: string }[] = [
+  { id: 'blank', label: 'Blank file', code: '', group: '' },
+  { id: 'hello', label: 'Hello, robot', code: hello, group: 'Python 1: variables, data types, operations' },
+  { id: 'variables', label: 'Variables', code: variables, group: 'Python 1: variables, data types, operations' },
+  { id: 'robot-id', label: 'Robot ID card (Activity 5.2)', code: robotId, group: 'Python 1: variables, data types, operations' },
+  { id: 'naming', label: 'Naming game', code: naming, group: 'Python 1: variables, data types, operations' },
+  { id: 'types', label: 'Data types', code: types, group: 'Python 1: variables, data types, operations' },
+  { id: 'mission', label: 'Mission (Activities 5.3 and 5.4)', code: mission, group: 'Python 1: variables, data types, operations' },
+  { id: 'operators', label: 'Operators', code: operators, group: 'Python 1: variables, data types, operations' },
+  { id: 'lists', label: 'Lists', code: lists, group: 'Python 2: lists and the status report' },
+  { id: 'activity-log', label: 'Activity log (Activity 5.5)', code: activityLog, group: 'Python 2: lists and the status report' },
+  { id: 'status-report', label: 'Status report (Activity 5.6)', code: statusReport, group: 'Python 2: lists and the status report' },
 ];
+/** Dropdown options, grouped by lesson. */
+const exampleOptions = () => [...new Set(EXAMPLES.map((x) => x.group))].map((g) => {
+  const opts = EXAMPLES.filter((x) => x.group === g).map((x) => `<option value="${x.id}">${esc(x.label)}</option>`).join('');
+  return g ? `<optgroup label="${esc(g)}">${opts}</optgroup>` : opts;
+}).join('');
 const DRAFT_KEY = 'wassce.py.draft';
 const STDIN_KEY = 'wassce.py.stdin';
 const store = {
@@ -59,7 +70,7 @@ export function pythonPage(el: HTMLElement) {
     <div class="card py-banner" data-forbanner hidden></div>
     <div class="py-bar">
       <label class="field py-example"><span>Start from</span><select data-example aria-label="Start from an example">
-        <option value="">Choose an example...</option>${EXAMPLES.map((x) => `<option value="${x.id}">${esc(x.label)}</option>`).join('')}</select></label>
+        <option value="">Choose an example...</option>${exampleOptions()}</select></label>
       <div class="row">
         <button class="btn btn-primary" data-run type="button">${icon('play', 18)} Run</button>
         <button class="btn" data-stop type="button" disabled>Stop</button>

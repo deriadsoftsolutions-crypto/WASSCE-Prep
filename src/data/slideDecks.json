@@ -1,0 +1,12 @@
+{
+  "/teaching/python-1/Python-1-Variables-Data-Types-Operations.pptx": {
+    "dir": "/teaching/python-1/slides",
+    "count": 25,
+    "title": "Python 1 slides: variables, data types and operations"
+  },
+  "/teaching/python-2/Python-2-Lists-and-Status-Report.pptx": {
+    "dir": "/teaching/python-2/slides",
+    "count": 17,
+    "title": "Python 2 slides: lists and the robot status report"
+  }
+}

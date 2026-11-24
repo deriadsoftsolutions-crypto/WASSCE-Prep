@@ -6,8 +6,8 @@ import { storage } from '../storage';
 import { ACTIVITIES } from '../activities';
 import { classKey, classesOf, listLearners, type LearnerInfo } from '../firebase/assignments';
 import { listMaterials, listUnits, saveMaterial, type Unit } from '../firebase/units';
-import { READY_LESSONS } from '../data/readyLessons';
-import { readyPickerHTML } from './readyPicker';
+import { READY_LESSONS } from '../data/ready';
+import { mountReadyPicker } from './readyPicker';
 import { NEW_LESSON_KEY } from './teacherCurriculum';
 import { deleteLesson, listLessons, saveLesson, uploadLessonImage, youtubeId, type Block, type Lesson } from '../firebase/lessons';
 
@@ -63,9 +63,8 @@ export async function mountTeacherLessons(host: HTMLElement) {
       if (t.closest('[data-new]')) return renderEditor();
       if (t.closest('[data-ready]')) {
         const box = host.querySelector('[data-readybox]') as HTMLElement;
-        box.innerHTML = readyPickerHTML('Ready-made lessons', READY_LESSONS.map((r) => ({
-          key: r.key, title: r.title, added: lessons.some((x) => x.title === r.title),
-          when: `STEM ${r.year}, unit ${r.unitId.replace(/^u/, '').replace(/-/g, '.')}. ${r.summary}`,
+        mountReadyPicker(box, 'Ready-made lessons', READY_LESSONS.map((r) => ({
+          key: r.key, title: r.title, year: r.year, unitId: r.unitId, added: lessons.some((x) => x.title === r.title), when: r.summary,
         })));
         return;
       }

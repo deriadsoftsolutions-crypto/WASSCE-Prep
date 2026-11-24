@@ -19,3 +19,14 @@ test('stars inside code spans are not bold or italic', () => {
   assert.match(h, /<li><code>\*<\/code> multiply: <code>4 \* 2<\/code><\/li>/);
   assert.ok(!h.includes('<strong>') && !h.includes('<em>'));
 });
+
+test('pipe tables', () => {
+  const h = markdown('Intro\n| What | How |\n|---|---|\n| Add | `append()` |\n| Count | **len** |\nAfter');
+  assert.match(h, /<div class="table-wrap"><table class="data md-table"><thead><tr><th>What<\/th><th>How<\/th><\/tr><\/thead><tbody><tr><td>Add<\/td><td><code>append\(\)<\/code><\/td><\/tr><tr><td>Count<\/td><td><strong>len<\/strong><\/td><\/tr><\/tbody><\/table><\/div>/);
+  assert.match(h, /<p>Intro<\/p>/);
+  assert.match(h, /<p>After<\/p>/);
+});
+
+test('a line with a pipe that is not a table stays text', () => {
+  assert.match(markdown('a | b'), /<p>a \| b<\/p>/);
+});

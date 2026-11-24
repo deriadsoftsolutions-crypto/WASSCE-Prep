@@ -874,3 +874,6 @@ details > summary { min-height: var(--tap); padding: 10px 0; box-sizing: border-
 .code-view { margin: 10px 0 0; }
 .code-view .lesson-code { max-height: 420px; overflow: auto; margin: 6px 0; }
 .code-view .code-out { background: #0C0C0C; color: #E5E5E5; }
+.ready-unit { margin: 16px 0 4px; font-size: 1rem; color: var(--primary); }
+.ready-row { justify-content: space-between; border-top: 1px solid var(--line); padding: 10px 0; flex-wrap: nowrap; }
+@media (max-width: 600px) { .ready-row { flex-wrap: wrap; } }
