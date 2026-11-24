@@ -309,7 +309,12 @@ Tapping their name at the top opens **My profile** (`/profile`). It holds the le
 
 `teaching/` holds lesson materials that are not part of the site:
 
-- `teaching/python-1/`: the 2-hour lesson "Python for robots: variables, data types and operations" (STEM 3, Section 5). It has the slide deck, with timings and notes in the speaker notes, and `vscode-files/` with the starter files for learners' computers and `answers/` for the teacher. The detailed lesson plan is a separate document.
+- `teaching/python-1/`: the 2-hour lesson "Python for robots: variables, data types and operations" (STEM 3, Section 5). It has `vscode-files/` (the starter files for learners' computers) and `answers/` (for the teacher only, never published). The detailed lesson plan is a separate document.
+- `public/teaching/python-1/`: what learners download: the slide deck (timings and notes in the speaker notes), `python-1-starter-files.zip` and the book figures. After changing the starter files, run `python3 scripts/zip-teaching.py`. These files are not precached; a tablet keeps a copy once it is opened.
+
+### Ready-made lessons
+
+Teacher > Lessons > **+ Add ready-made lesson** adds a finished lesson as a draft (defined in `src/data/readyLessons.ts`), with its year, unit, text, code, book figures, quick checks and download links. It also adds the slides and files to the unit's materials. Check it, choose a class if you want to, and switch on Published. Lesson text supports code boxes: put the code between two lines of three backticks (```).
 
 ## Project structure
 

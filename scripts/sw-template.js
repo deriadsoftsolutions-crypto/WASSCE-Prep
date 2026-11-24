@@ -43,7 +43,7 @@ function keepable(res) {
 
 /** Files that may be added to the cache at runtime (built assets and icons only). */
 // Lesson images never change at the same address, so they can be kept for offline reading.
-const RUNTIME_CACHEABLE = /^\/(assets|icons|api\/lesson-file)\//;
+const RUNTIME_CACHEABLE = /^\/(assets|icons|teaching|api\/lesson-file)\//;
 
 /**
  * Fill the new cache. Files under /assets/ have a fingerprint in their name, so if an older

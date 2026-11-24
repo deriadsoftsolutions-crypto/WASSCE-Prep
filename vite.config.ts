@@ -47,7 +47,7 @@ function precacheServiceWorker(): Plugin {
           const p = join(dir, f);
           if (statSync(p).isDirectory()) walk(p);
           // .woff copies are fallbacks for very old browsers; every supported tablet uses .woff2.
-          else if (!skip.has(relative(outDir, p)) && !relative(outDir, p).startsWith('pyodide') && !f.endsWith('.map') && !f.endsWith('.woff')) files.push(p);
+          else if (!skip.has(relative(outDir, p)) && !relative(outDir, p).startsWith('pyodide') && !relative(outDir, p).startsWith('teaching') && !f.endsWith('.map') && !f.endsWith('.woff')) files.push(p);
         }
       };
       walk(outDir);

@@ -5,7 +5,8 @@ import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import { storage } from '../storage';
 import { ACTIVITIES } from '../activities';
 import { classKey, classesOf, listLearners, type LearnerInfo } from '../firebase/assignments';
-import { listUnits, type Unit } from '../firebase/units';
+import { listMaterials, listUnits, saveMaterial, type Unit } from '../firebase/units';
+import { READY_LESSONS } from '../data/readyLessons';
 import { NEW_LESSON_KEY } from './teacherCurriculum';
 import { deleteLesson, listLessons, saveLesson, uploadLessonImage, youtubeId, type Block, type Lesson } from '../firebase/lessons';
 
@@ -42,7 +43,8 @@ export async function mountTeacherLessons(host: HTMLElement) {
     host.onclick = null;
     host.innerHTML = `
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
-        <h2 style="margin:0">Lessons</h2><button class="btn btn-primary" data-new type="button">+ New lesson</button></div>
+        <h2 style="margin:0">Lessons</h2><div class="row"><button class="btn" data-ready type="button">+ Add ready-made lesson</button><button class="btn btn-primary" data-new type="button">+ New lesson</button></div></div>
+      <div data-readybox></div>
       ${lessons.length ? `<div class="table-wrap"><table class="data">
         <thead><tr><th class="left">Lesson</th><th>Unit</th><th>Topic</th><th>Class</th><th>Finished</th><th></th></tr></thead>
         <tbody>${lessons.map((l) => `<tr>
@@ -55,9 +57,43 @@ export async function mountTeacherLessons(host: HTMLElement) {
             <a class="btn btn-sm" href="/lessons/${l.id}">View</a>
             <button class="btn btn-sm btn-primary" data-edit="${l.id}" type="button">Edit</button></div></td></tr>`).join('')}</tbody></table></div>`
         : '<div class="card"><p style="margin:0">No lessons yet. Tap <b>New lesson</b> to write your first one: text, pictures, a video, an activity and a quick check.</p></div>'}`;
-    host.onclick = (e) => {
+    host.onclick = async (e) => {
       const t = e.target as HTMLElement;
       if (t.closest('[data-new]')) return renderEditor();
+      if (t.closest('[data-ready]')) {
+        const box = host.querySelector('[data-readybox]') as HTMLElement;
+        box.innerHTML = `<div class="card"><h3>Ready-made lessons</h3>
+          <p class="muted small" style="margin-top:-6px">Added as a draft for you to check, edit and publish. Its slides and files are also added to the unit's materials.</p>
+          ${READY_LESSONS.map((r) => {
+            const have = lessons.some((x) => x.title === r.title);
+            return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding:10px 0">
+              <span><b>${esc(r.title)}</b><br><span class="muted small">STEM ${r.year}, unit ${esc(r.unitId.replace(/^u/, '').replace(/-/g, '.'))}. ${esc(r.summary)}</span></span>
+              <button class="btn btn-primary btn-sm" data-addready="${r.key}" type="button" ${have ? 'disabled' : ''}>${have ? 'Already added' : 'Add as draft'}</button></div>`;
+          }).join('')}</div>`;
+        return;
+      }
+      const rk = t.closest<HTMLElement>('[data-addready]')?.dataset.addready;
+      if (rk) {
+        const r = READY_LESSONS.find((x) => x.key === rk)!;
+        (t.closest('[data-addready]') as HTMLButtonElement).disabled = true;
+        try {
+          const id = await saveLesson({ title: r.title, summary: r.summary, topicId: r.topicId, year: r.year, unitId: r.unitId, className: '', classKey: '', blocks: r.blocks, published: false });
+          const existing = await listMaterials(true).catch(() => []);
+          let order = existing.filter((m) => m.unitId === r.unitId).reduce((n, m) => Math.max(n, m.order), 0);
+          for (const m of r.materials) {
+            if (existing.some((x) => x.unitId === m.unitId && x.title === m.title)) continue;
+            await saveMaterial({ ...m, order: ++order, createdAt: Date.now() });
+          }
+          toast('Lesson added as a draft. Check it, then switch on Published.');
+          await load();
+          renderEditor(lessons.find((x) => x.id === id));
+        } catch (ex) {
+          console.error(ex);
+          toast('Could not add the lesson. Check your connection and that the latest rules are published.');
+          renderList();
+        }
+        return;
+      }
       const ed = t.closest<HTMLElement>('[data-edit]')?.dataset.edit;
       if (ed) renderEditor(lessons.find((x) => x.id === ed));
     };
@@ -100,7 +136,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
       </div>
       <div class="card">
         <h2>Lesson content</h2>
-        <p class="muted small" style="margin-top:-6px">Build the lesson from blocks, top to bottom. Text formatting: <code># Heading</code>, <code>**bold**</code>, <code>*italic*</code>, <code>- bullet</code>, <code>1. numbered</code>, <code>[link text](https://...)</code>.</p>
+        <p class="muted small" style="margin-top:-6px">Build the lesson from blocks, top to bottom. Text formatting: <code># Heading</code>, <code>**bold**</code>, <code>*italic*</code>, <code>- bullet</code>, <code>1. numbered</code>, <code>[link text](https://...)</code>, and code between two lines of <code>\`\`\`</code>.</p>
         <div data-blocks></div>
         <div class="row" style="margin-top:12px">
           ${(Object.keys(BLOCK_NAMES) as Block['type'][]).map((k) => `<button class="btn" data-add="${k}" type="button">+ ${BLOCK_NAMES[k]}</button>`).join('')}
@@ -249,7 +285,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
         blocks = blocks.filter((b) => !(b.type === 'text' && !b.md.trim()) && !(b.type === 'image' && !b.url));
         for (const [i, b] of blocks.entries()) {
           if (b.type === 'video' && !b.youtubeId) return err(`Block ${i + 1}: paste a YouTube link, or remove the block.`);
-          if (b.type === 'link' && !/^https?:\/\//.test(b.url)) return err(`Block ${i + 1}: the link must start with https://`);
+          if (b.type === 'link' && !/^(https?:\/\/|\/)/.test(b.url)) return err(`Block ${i + 1}: the link must start with https:// (or / for a page on this site)`);
           if (b.type === 'check') {
             b.options = b.options.map((o) => o.trim());
             if (!b.question.trim()) return err(`Block ${i + 1}: the quick check needs a question.`);
