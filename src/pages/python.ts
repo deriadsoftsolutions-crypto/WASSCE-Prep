@@ -19,6 +19,10 @@ import operators from '../../teaching/python-1/vscode-files/06_operators.py?raw'
 import lists from '../../teaching/python-2/vscode-files/07_lists.py?raw';
 import activityLog from '../../teaching/python-2/vscode-files/08_activity_log.py?raw';
 import statusReport from '../../teaching/python-2/vscode-files/09_status_report.py?raw';
+import conditions from '../../teaching/python-3/vscode-files/10_conditions.py?raw';
+import trafficLight from '../../teaching/python-3/vscode-files/11_traffic_light.py?raw';
+import nested from '../../teaching/python-3/vscode-files/12_nested.py?raw';
+import temperature from '../../teaching/python-3/vscode-files/13_temperature.py?raw';
 
 const EXAMPLES: { id: string; label: string; code: string; group: string }[] = [
   { id: 'blank', label: 'Blank file', code: '', group: '' },
@@ -32,6 +36,10 @@ const EXAMPLES: { id: string; label: string; code: string; group: string }[] = [
   { id: 'lists', label: 'Lists', code: lists, group: 'Python 2: lists and the status report' },
   { id: 'activity-log', label: 'Activity log (Activity 5.5)', code: activityLog, group: 'Python 2: lists and the status report' },
   { id: 'status-report', label: 'Status report (Activity 5.6)', code: statusReport, group: 'Python 2: lists and the status report' },
+  { id: 'conditions', label: 'Conditions, if and if-else', code: conditions, group: 'Python 3: making decisions' },
+  { id: 'traffic-light', label: 'if-elif-else: traffic light', code: trafficLight, group: 'Python 3: making decisions' },
+  { id: 'nested', label: 'Nested decisions', code: nested, group: 'Python 3: making decisions' },
+  { id: 'temperature', label: 'Temperature robot (Activity 5.9)', code: temperature, group: 'Python 3: making decisions' },
 ];
 /** Dropdown options, grouped by lesson. */
 const exampleOptions = () => [...new Set(EXAMPLES.map((x) => x.group))].map((g) => {

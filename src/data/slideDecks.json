@@ -8,5 +8,10 @@
     "dir": "/teaching/python-2/slides",
     "count": 17,
     "title": "Python 2 slides: lists and the robot status report"
+  },
+  "/teaching/python-3/Python-3-Making-Decisions.pptx": {
+    "dir": "/teaching/python-3/slides",
+    "count": 17,
+    "title": "Python 3 slides: making decisions with if, elif and else"
   }
 }

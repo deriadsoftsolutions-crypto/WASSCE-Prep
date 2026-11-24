@@ -6,13 +6,14 @@
 import curriculum from '../curriculum.json';
 import * as python1 from './python-1';
 import * as python2 from './python-2';
+import * as python3 from './python-3';
 import * as fa1Key from './fa1-key';
 export type { ReadyAssignment, ReadyLesson, ReadyTest } from './types';
 import type { ReadyAssignment, ReadyLesson, ReadyTest } from './types';
 
-export const READY_LESSONS: ReadyLesson[] = [python1.lesson, python2.lesson];
-export const READY_TESTS: ReadyTest[] = [python1.test, python2.test, fa1Key.keyWritten];
-export const READY_ASSIGNMENTS: ReadyAssignment[] = [python1.practical, python2.practical, fa1Key.keyPractical];
+export const READY_LESSONS: ReadyLesson[] = [python1.lesson, python2.lesson, python3.lesson];
+export const READY_TESTS: ReadyTest[] = [python1.test, python2.test, fa1Key.keyWritten, python3.test];
+export const READY_ASSIGNMENTS: ReadyAssignment[] = [python1.practical, python2.practical, fa1Key.keyPractical, python3.practical];
 
 /** "STEM 3, 3.3.2 Robot programming" style heading for a unit, from the curriculum. */
 export function unitLabel(unitId: string): string {

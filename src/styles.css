@@ -877,3 +877,5 @@ details > summary { min-height: var(--tap); padding: 10px 0; box-sizing: border-
 .ready-unit { margin: 16px 0 4px; font-size: 1rem; color: var(--primary); }
 .ready-row { justify-content: space-between; border-top: 1px solid var(--line); padding: 10px 0; flex-wrap: nowrap; }
 @media (max-width: 600px) { .ready-row { flex-wrap: wrap; } }
+/* Quick-check questions keep their line breaks (code snippets in questions). */
+.lesson-check .qtext { white-space: pre-line; }
