@@ -316,6 +316,19 @@ Tapping their name at the top opens **My profile** (`/profile`). It holds the le
 
 Teacher > Lessons > **+ Add ready-made lesson** adds a finished lesson as a draft (defined in `src/data/readyLessons.ts`), with its year, unit, text, code, book figures, quick checks and download links. It also adds the slides and files to the unit's materials. Check it, choose a class if you want to, and switch on Published. Lesson text supports code boxes: put the code between two lines of three backticks (```).
 
+### Ready-made tests and assignments
+
+Teacher > Tests > **+ Add ready-made test** and Teacher > Assignments > **+ Add ready-made assignment** add these as drafts (defined in `src/data/readyAssessments.ts`). Choose a class and dates, check them, then publish.
+
+| Item | Where | When to set it | Marks |
+|---|---|---|---|
+| Python 1 check: variables, data types and operations | Tests | Straight after the Python 1 lesson | 30: 14 auto-marked, 16 written, marked against model answers |
+| Python 1 practical: Robot System Status Reporter | Assignments | Straight after the Python 1 lesson | 20, rubric in the instructions |
+| Key assessment: data management strategy for a humanitarian robot | Tests | After the Lists lesson | 20 (Teacher Manual DoK 3 task and rubric) |
+| Key assessment: Advanced Robot Data Analyser | Assignments | After the Lists lesson | 18 + 2 bonus (Teacher Manual DoK 4 task and rubric) |
+
+Tests with written answers are set to show results only when you release them, so mark the written answers first.
+
 ## Project structure
 
 ```

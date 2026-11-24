@@ -7,6 +7,7 @@ import { ACTIVITIES } from '../activities';
 import { classKey, classesOf, listLearners, type LearnerInfo } from '../firebase/assignments';
 import { listMaterials, listUnits, saveMaterial, type Unit } from '../firebase/units';
 import { READY_LESSONS } from '../data/readyLessons';
+import { readyPickerHTML } from './readyPicker';
 import { NEW_LESSON_KEY } from './teacherCurriculum';
 import { deleteLesson, listLessons, saveLesson, uploadLessonImage, youtubeId, type Block, type Lesson } from '../firebase/lessons';
 
@@ -62,14 +63,10 @@ export async function mountTeacherLessons(host: HTMLElement) {
       if (t.closest('[data-new]')) return renderEditor();
       if (t.closest('[data-ready]')) {
         const box = host.querySelector('[data-readybox]') as HTMLElement;
-        box.innerHTML = `<div class="card"><h3>Ready-made lessons</h3>
-          <p class="muted small" style="margin-top:-6px">Added as a draft for you to check, edit and publish. Its slides and files are also added to the unit's materials.</p>
-          ${READY_LESSONS.map((r) => {
-            const have = lessons.some((x) => x.title === r.title);
-            return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding:10px 0">
-              <span><b>${esc(r.title)}</b><br><span class="muted small">STEM ${r.year}, unit ${esc(r.unitId.replace(/^u/, '').replace(/-/g, '.'))}. ${esc(r.summary)}</span></span>
-              <button class="btn btn-primary btn-sm" data-addready="${r.key}" type="button" ${have ? 'disabled' : ''}>${have ? 'Already added' : 'Add as draft'}</button></div>`;
-          }).join('')}</div>`;
+        box.innerHTML = readyPickerHTML('Ready-made lessons', READY_LESSONS.map((r) => ({
+          key: r.key, title: r.title, added: lessons.some((x) => x.title === r.title),
+          when: `STEM ${r.year}, unit ${r.unitId.replace(/^u/, '').replace(/-/g, '.')}. ${r.summary}`,
+        })));
         return;
       }
       const rk = t.closest<HTMLElement>('[data-addready]')?.dataset.addready;

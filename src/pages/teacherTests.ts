@@ -10,6 +10,8 @@ import topicsData from '../data/topics.json';
 import type { Paper1Question, Topic } from '../types';
 import { richText } from './assignments';
 import { topicIcon } from '../lib/icons';
+import { READY_TESTS } from '../data/readyAssessments';
+import { readyPickerHTML } from './readyPicker';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const P1 = paper1 as Paper1Question[];
@@ -37,7 +39,8 @@ export async function mountTeacherTests(host: HTMLElement) {
     host.onclick = null;
     host.innerHTML = `
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
-        <h2 style="margin:0">Tests</h2><button class="btn btn-primary" data-new type="button">+ New test</button></div>
+        <h2 style="margin:0">Tests</h2><div class="row"><button class="btn" data-ready type="button">+ Add ready-made test</button><button class="btn btn-primary" data-new type="button">+ New test</button></div></div>
+      <div data-readybox></div>
       ${tests.length ? `<div class="table-wrap"><table class="data">
         <thead><tr><th class="left">Title</th><th>Class</th><th>Status</th><th>Questions</th><th>Submitted</th><th>Released</th><th></th></tr></thead>
         <tbody>${tests.map((a) => `<tr>
@@ -54,6 +57,32 @@ export async function mountTeacherTests(host: HTMLElement) {
     host.onclick = (e) => {
       const t = e.target as HTMLElement;
       if (t.closest('[data-new]')) return void renderEditor();
+      if (t.closest('[data-ready]')) {
+        (host.querySelector('[data-readybox]') as HTMLElement).innerHTML = readyPickerHTML('Ready-made tests',
+          READY_TESTS.map((r) => ({ key: r.key, title: r.title, when: r.when, added: tests.some((x) => x.title === r.title) })));
+        return;
+      }
+      const rk = t.closest<HTMLElement>('[data-addready]')?.dataset.addready;
+      if (rk) {
+        const r = READY_TESTS.find((x) => x.key === rk)!;
+        (t.closest('[data-addready]') as HTMLButtonElement).disabled = true;
+        void (async () => {
+          try {
+            const id = await saveAssessment({
+              title: r.title, instructions: r.instructions, classKey: '', className: '', opensAt: null, closesAt: null,
+              timeLimitMin: r.timeLimitMin, showResults: r.showResults, portfolioSection: r.portfolioSection, published: false,
+            }, r.questions, r.answers);
+            toast('Test added as a draft. Check it, choose a class and dates, then publish.');
+            await load();
+            renderEditor(tests.find((x) => x.id === id));
+          } catch (ex) {
+            console.error(ex);
+            toast('Could not add the test. Check your connection and that the latest rules are published.');
+            renderList();
+          }
+        })();
+        return;
+      }
       const ed = t.closest<HTMLElement>('[data-edit]')?.dataset.edit;
       if (ed) return void renderEditor(tests.find((x) => x.id === ed));
       const rs = t.closest<HTMLElement>('[data-results]')?.dataset.results;

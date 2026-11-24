@@ -6,6 +6,8 @@ import {
 } from '../firebase/assignments';
 import { dueText, richText } from './assignments';
 import { icon } from '../lib/icons';
+import { READY_ASSIGNMENTS } from '../data/readyAssessments';
+import { readyPickerHTML } from './readyPicker';
 import { avatarHTML } from '../lib/avatar';
 import { allPhotos, approvedPhotoOf } from '../firebase/profilePhoto';
 
@@ -27,8 +29,9 @@ export async function mountTeacherAssignments(host: HTMLElement) {
     host.innerHTML = `
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
         <h2 style="margin:0">Assignments</h2>
-        <button class="btn btn-primary" data-new type="button">+ New assignment</button>
+        <div class="row"><button class="btn" data-ready type="button">+ Add ready-made assignment</button><button class="btn btn-primary" data-new type="button">+ New assignment</button></div>
       </div>
+      <div data-readybox></div>
       ${assignments.length ? `<div class="table-wrap"><table class="data">
         <thead><tr><th class="left">Title</th><th>Class</th><th>Due</th><th>Submitted</th><th>Marked</th><th></th></tr></thead>
         <tbody>${assignments.map((a) => {
@@ -192,6 +195,32 @@ export async function mountTeacherAssignments(host: HTMLElement) {
   const listClick = (e: MouseEvent) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-new]')) return renderForm();
+    if (t.closest('[data-ready]')) {
+      (host.querySelector('[data-readybox]') as HTMLElement).innerHTML = readyPickerHTML('Ready-made assignments',
+        READY_ASSIGNMENTS.map((r) => ({ key: r.key, title: r.title, when: r.when, added: assignments.some((x) => x.title === r.title) })));
+      return;
+    }
+    const rk = t.closest<HTMLElement>('[data-addready]')?.dataset.addready;
+    if (rk) {
+      const r = READY_ASSIGNMENTS.find((x) => x.key === rk)!;
+      (t.closest('[data-addready]') as HTMLButtonElement).disabled = true;
+      void (async () => {
+        try {
+          const id = await saveAssignment({
+            title: r.title, instructions: r.instructions, classKey: '', className: '', dueAt: null, maxMarks: r.maxMarks,
+            allowText: r.allowText, allowFiles: r.allowFiles, portfolioSection: r.portfolioSection, published: false,
+          });
+          toast('Assignment added as a draft. Check it, choose a class and a due date, then publish.');
+          await load();
+          renderForm(assignments.find((x) => x.id === id));
+        } catch (ex) {
+          console.error(ex);
+          toast('Could not add the assignment. Check your connection and that the latest rules are published.');
+          renderList();
+        }
+      })();
+      return;
+    }
     const edit = t.closest<HTMLElement>('[data-edit]')?.dataset.edit;
     if (edit) return renderForm(assignments.find((x) => x.id === edit));
     const open = t.closest<HTMLElement>('[data-open]')?.dataset.open;
