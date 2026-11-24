@@ -10,6 +10,8 @@ import {
 } from '../firebase/portfolio';
 import { fmtDay, loadThumbs, portfolioSectionsHTML } from './portfolioView';
 import { reviewsHTML } from './portfolio';
+import { avatarHTML } from '../lib/avatar';
+import { allPhotos, approvedPhotoOf } from '../firebase/profilePhoto';
 
 const YEAR_KEY = 'wassce.portfolioYear';
 const STATUS: Record<PMeta['status'], string> = { building: 'Building', 'handed-in': 'Handed in', returned: 'Returned', marked: 'Marked' };
@@ -21,7 +23,7 @@ export async function mountTeacherPortfolios(host: HTMLElement) {
   try { const y = Number(sessionStorage.getItem(YEAR_KEY)); if ([1, 2, 3].includes(y)) year = y as Year; } catch { /* ignore */ }
   let cls = '';
   let learners: LearnerInfo[] = [], settings: PSettings, sums: Awaited<ReturnType<typeof allPortfolioSummaries>>;
-  const load = async () => { [learners, settings, sums] = await Promise.all([listLearners(), getPortfolioSettings(), allPortfolioSummaries()]); };
+  const load = async () => { [learners, settings, sums] = await Promise.all([listLearners(), getPortfolioSettings(), allPortfolioSummaries(), allPhotos().catch(() => [])]); };
 
   /* ---------------- List ---------------- */
   const renderList = () => {
@@ -51,7 +53,7 @@ export async function mountTeacherPortfolios(host: HTMLElement) {
       ${rows.length ? `<div class="table-wrap"><table class="data">
         <thead><tr><th class="left">Learner</th><th>Class</th><th>Items added</th><th>Updated</th><th>Status</th><th>Mark</th><th></th></tr></thead>
         <tbody>${rows.map((r) => `<tr>
-          <td class="left"><b>${esc(r.l.name)}</b></td><td>${esc(r.l.className)}</td><td>${r.items}</td>
+          <td class="left"><span class="name-with-avatar">${avatarHTML(r.l.name, approvedPhotoOf(r.l.id), 32)}<b>${esc(r.l.name)}</b></span></td><td>${esc(r.l.className)}</td><td>${r.items}</td>
           <td class="small">${r.meta?.updatedAt ? fmtDay(r.meta.updatedAt) : '-'}</td>
           <td><span class="pill ${r.meta?.status === 'handed-in' ? 'urgent' : r.meta?.status === 'marked' ? 'ok' : ''}">${STATUS[r.meta?.status ?? 'building']}</span></td>
           <td>${r.mark ? `${r.mark.total} / 40` : '-'}</td>
@@ -87,7 +89,7 @@ export async function mountTeacherPortfolios(host: HTMLElement) {
     const meta = input.meta;
     host.innerHTML = `
       <button class="btn btn-sm" data-back type="button">← All STEM ${year} portfolios</button>
-      <div class="page-head" style="margin-top:12px"><h2 style="margin:0">${esc(l.name)}, ${esc(l.className)}: STEM ${year} portfolio</h2>
+      <div class="page-head" style="margin-top:12px"><h2 style="margin:0" class="name-with-avatar">${avatarHTML(l.name, approvedPhotoOf(l.id), 40)}${esc(l.name)}, ${esc(l.className)}: STEM ${year} portfolio</h2>
         <span class="pill">${STATUS[meta.status]}${meta.submittedAt ? `, ${fmtDay(meta.submittedAt)}` : ''}</span></div>
       <div class="row" style="margin-bottom:12px">
         <a class="btn" href="/portfolio/print/${l.id}?y=${year}">Print or save as PDF</a>

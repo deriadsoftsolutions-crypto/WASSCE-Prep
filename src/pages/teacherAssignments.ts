@@ -6,6 +6,8 @@ import {
 } from '../firebase/assignments';
 import { dueText, richText } from './assignments';
 import { icon } from '../lib/icons';
+import { avatarHTML } from '../lib/avatar';
+import { allPhotos, approvedPhotoOf } from '../firebase/profilePhoto';
 
 /** Teacher dashboard: Assignments tab. */
 export async function mountTeacherAssignments(host: HTMLElement) {
@@ -16,7 +18,7 @@ export async function mountTeacherAssignments(host: HTMLElement) {
   let feedback: Feedback[] = [];
 
   const load = async () => {
-    [assignments, learners, { subs, feedback }] = await Promise.all([listAssignments(), listLearners(), allSubmissions()]);
+    [assignments, learners, { subs, feedback }] = await Promise.all([listAssignments(), listLearners(), allSubmissions(), allPhotos().catch(() => [])]);
   };
   const inClass = (a: Assignment) => learners.filter((l) => !a.classKey || classKey(l.className) === a.classKey);
 
@@ -143,7 +145,7 @@ export async function mountTeacherAssignments(host: HTMLElement) {
         const s = subFor(p.id);
         const f = fbFor(p.id);
         return `<div class="card" data-learner="${esc(p.id)}">
-          <div class="row"><b>${esc(p.name)}</b><span class="muted small">${esc(p.className)}</span><span class="spacer"></span>
+          <div class="row">${avatarHTML(p.name, approvedPhotoOf(p.id), 32)}<b>${esc(p.name)}</b><span class="muted small">${esc(p.className)}</span><span class="spacer"></span>
             ${s ? `<span class="pill ok">Submitted ${fmtDate(s.submittedAt)}</span>${s.late ? ' <span class="pill" style="background:var(--bad-soft);color:var(--bad)">Late</span>' : ''}` : '<span class="pill">Not submitted</span>'}
             ${f ? `<span class="pill ok">Marked ${f.mark} / ${f.maxMarks}</span>` : ''}</div>
           ${s ? `

@@ -14,6 +14,7 @@ import { mountTeacherTests } from './teacherTests';
 import { mountTeacherLessons } from './teacherLessons';
 import { mountTeacherCurriculum } from './teacherCurriculum';
 import { mountTeacherPortfolios } from './teacherPortfolios';
+import { mountTeacherPhotos } from './teacherPhotos';
 
 const topics = topicsData as Topic[];
 const UNLOCK_KEY = 'wassce.teacher.unlocked';
@@ -65,7 +66,7 @@ async function renderDashboard(el: HTMLElement) {
   let tab = 'overview';
   try { tab = sessionStorage.getItem(TAB_KEY) ?? 'overview'; } catch { /* ignore */ }
   if (!usingFirebase) tab = 'overview';
-  const tabs = [['overview', 'Overview'], ['curriculum', 'Curriculum'], ['lessons', 'Lessons'], ['tests', 'Tests'], ['assignments', 'Assignments'], ['portfolios', 'Portfolios']];
+  const tabs = [['overview', 'Overview'], ['curriculum', 'Curriculum'], ['lessons', 'Lessons'], ['tests', 'Tests'], ['assignments', 'Assignments'], ['portfolios', 'Portfolios'], ['photos', 'Photos']];
   const me = learner();
   el.innerHTML = `
     <div class="t-layout">
@@ -94,13 +95,14 @@ async function renderDashboard(el: HTMLElement) {
       renderLock(el);
     }
   };
-  if (usingFirebase) void menuCounts(el);
   if (tab === 'assignments') await mountTeacherAssignments(body);
   else if (tab === 'tests') await mountTeacherTests(body);
   else if (tab === 'lessons') await mountTeacherLessons(body);
   else if (tab === 'portfolios') await mountTeacherPortfolios(body);
+  else if (tab === 'photos') await mountTeacherPhotos(body, () => void menuCounts(el));
   else if (tab === 'curriculum') await mountTeacherCurriculum(body, () => (el.querySelector('[data-tab="lessons"]') as HTMLElement | null)?.click());
   else await renderOverview(body);
+  if (usingFirebase) void menuCounts(el);
 }
 
 /** Live counts in the side menu: tests open now, submissions waiting for a mark. */
@@ -116,6 +118,11 @@ async function menuCounts(el: HTMLElement) {
     };
     set('tests', c.openTests ? `${c.openTests} open` : '');
     set('assignments', c.toMark ? `${c.toMark} to mark` : '', true);
+    const { allPhotos } = await import('../firebase/profilePhoto');
+    const waiting = (await allPhotos()).filter((p) => p.pending).length;
+    set('photos', waiting ? `${waiting} waiting` : '', true);
+    const ov = el.querySelector<HTMLElement>('[data-ovphotos]');
+    if (ov) ov.innerHTML = waiting ? `<div class="card" style="margin-bottom:16px"><p style="margin:0"><b>${waiting} profile photo${waiting === 1 ? '' : 's'}</b> waiting for your approval. <button type="button" class="btn btn-sm" data-tab="photos">Review photos</button></p></div>` : '';
   } catch { /* counts are optional */ }
 }
 
@@ -156,6 +163,7 @@ async function renderOverview(el: HTMLElement) {
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
 
   el.innerHTML = `
+    ${usingFirebase ? '<div data-ovphotos></div>' : ''}
     <div class="page-head"><h1>Overview</h1><span class="muted">${today}</span></div>
     <section class="t-summary" aria-label="Needs attention">
       ${usingFirebase ? `
