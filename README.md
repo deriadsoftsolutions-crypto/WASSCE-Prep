@@ -317,6 +317,12 @@ Materials and lesson buttons open files inside the site at `/view` instead of do
 
 Teacher-only Office files are never sent to Microsoft's viewer; they stay plain downloads. To add slide pictures for a new deck: convert it to PDF (`soffice --headless --convert-to pdf deck.pptx`), then run `pdftoppm -jpeg -jpegopt quality=80 -scale-to-x 1600 -scale-to-y -1 deck.pdf public/teaching/<lesson>/slides/slide`, and add the deck to `src/data/slideDecks.ts`.
 
+## Handing in code from Python practice
+
+- **Learners:** on an assignment that takes files, **Write it in Python practice** opens the editor linked to that assignment, with its own saved draft. **Hand in** (also available from the plain practice page) saves the code as a `.py` file and, if ticked, what the program printed as `<name>_output.txt`. The file name comes from the instructions (e.g. `status_reporter.py`). Handing in again replaces those two files and keeps everything else (photos, typed answer). Learners can do this until the work is marked.
+- **Teachers:** in marking, `.py` and `.txt` files show inline. **Run it** opens a copy of the code in Python practice in a new tab; changes there are not saved.
+- `.py` files uploaded from VS Code are stored as plain text, so they work whatever type the computer reports.
+
 ## Teaching materials
 
 `teaching/` holds lesson materials that are not part of the site:

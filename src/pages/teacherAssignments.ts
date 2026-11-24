@@ -1,7 +1,7 @@
 import { esc, fmtDate } from '../lib/dom';
 import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import {
-  allSubmissions, classKey, classesOf, deleteAssignment, listAssignments, listLearners, openFile, saveAssignment, saveFeedback,
+  allSubmissions, classKey, classesOf, deleteAssignment, fetchFileText, isPythonFile, isTextFile, listAssignments, listLearners, openFile, saveAssignment, saveFeedback,
   type Assignment, type Feedback, type LearnerInfo, type Submission,
 } from '../firebase/assignments';
 import { dueText, richText } from './assignments';
@@ -154,6 +154,7 @@ export async function mountTeacherAssignments(host: HTMLElement) {
           ${s ? `
             ${s.text ? `<div class="model" style="margin-top:10px">${richText(s.text)}</div>` : ''}
             ${s.files.length ? `<div class="row" style="margin-top:10px">${s.files.map((file, i) => `<button class="btn btn-sm" data-file="${i}" type="button">${icon('file', 18)} ${esc(file.name)}</button>`).join('')}</div>` : ''}
+            ${s.files.some(isTextFile) ? `<div class="code-view" data-codeview="${esc(p.id)}"><p class="muted small">Loading the code...</p></div>` : ''}
             <div class="grid-2" style="margin-top:12px;align-items:end">
               <label class="field" style="margin:0"><span>Mark (out of ${a.maxMarks})</span><input type="number" data-mark min="0" max="${a.maxMarks}" step="0.5" value="${f ? f.mark : ''}" /></label>
               <label class="field" style="margin:0"><span>Comment for the learner</span><textarea data-comment rows="2">${esc(f?.comment ?? '')}</textarea></label>
@@ -162,9 +163,36 @@ export async function mountTeacherAssignments(host: HTMLElement) {
         </div>`;
       }).join('') : '<div class="card"><p style="margin:0">No learners in this class yet.</p></div>'}`;
 
+    // Code and output files show inline, so the teacher can read them without downloading.
+    host.querySelectorAll<HTMLElement>('[data-codeview]').forEach(async (box) => {
+      const s = subFor(box.dataset.codeview!);
+      if (!s) return;
+      const parts = await Promise.all(s.files.map(async (f, i) => {
+        if (!isTextFile(f)) return '';
+        const text = await fetchFileText(f).catch(() => null);
+        if (text === null) return `<p class="mark-bad small">Could not open ${esc(f.name)}.</p>`;
+        const py = isPythonFile(f);
+        return `<div class="row" style="margin-top:8px"><b>${esc(f.name)}</b>${py ? `<button class="btn btn-sm" data-run="${i}" type="button">${icon('play', 16)} Run it</button>` : ''}</div>
+          <pre class="lesson-code ${py ? '' : 'code-out'}"><code>${esc(text)}</code></pre>`;
+      }));
+      box.innerHTML = parts.join('');
+    });
+
     host.onclick = async (e) => {
       const t = e.target as HTMLElement;
       if (t.closest('[data-back]')) { host.onclick = listClick; renderList(); return; }
+      const runBtn = t.closest<HTMLElement>('[data-run]');
+      if (runBtn) {
+        const card2 = runBtn.closest<HTMLElement>('[data-learner]')!;
+        const s2 = subFor(card2.dataset.learner!)!;
+        const f = s2.files[Number(runBtn.dataset.run)];
+        try {
+          const code = await fetchFileText(f);
+          localStorage.setItem('wassce.py.load', JSON.stringify({ code, title: `${s2.learnerName}: ${f.name}` }));
+          window.open('/python?load=1', '_blank');
+        } catch (ex) { toast((ex as Error).message); }
+        return;
+      }
       const card = t.closest<HTMLElement>('[data-learner]');
       if (!card) return;
       const s = subFor(card.dataset.learner!);

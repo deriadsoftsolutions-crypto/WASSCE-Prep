@@ -14,7 +14,7 @@ import {
 } from '../firebase/assignments';
 
 const MAX_FILES = 5;
-const ACCEPT = 'image/*,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt';
+const ACCEPT = 'image/*,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.py';
 
 /** Turn plain text into HTML with line breaks and clickable links. */
 export function richText(s: string): string {
@@ -113,7 +113,9 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
       ${a.allowFiles ? `
         <p style="margin-bottom:6px"><b>Files</b> <span class="muted small">Photos of your work, PDF or Word. Up to ${MAX_FILES} files, 10 MB each.</span></p>
         <div data-files></div>
-        ${locked ? '' : `<label class="btn" style="margin-top:8px"><input type="file" data-pick accept="${ACCEPT}" multiple hidden />${icon('upload', 20)} Add files or take a photo</label>`}` : ''}
+        ${locked ? '' : `<div class="row" style="margin-top:8px"><label class="btn"><input type="file" data-pick accept="${ACCEPT}" multiple hidden />${icon('upload', 20)} Add files or take a photo</label>
+          <a class="btn" href="/python?for=${a.id}">${icon('play', 18)} Write it in Python practice</a></div>
+          <p class="muted small" style="margin:6px 0 0">Writing Python? Use Python practice and press Hand in there. Your code and its output are added here.</p>`}` : ''}
       ${locked ? '' : `<div class="row" style="margin-top:16px"><button class="btn btn-primary btn-big" data-submit type="button">${existing ? 'Update my submission' : 'Submit'}</button></div>`}
       <div data-fb></div>
     </div>`;

@@ -172,7 +172,8 @@ export async function uploadFile(assignmentId: string, file: File, onProgress?: 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `/api/upload?assignment=${encodeURIComponent(assignmentId)}&name=${encodeURIComponent(file.name)}`);
     xhr.setRequestHeader('Authorization', `Bearer ${t}`);
-    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+    // Python files arrive with many different types (or none); store code and text as plain text so it can be read in the browser.
+    xhr.setRequestHeader('Content-Type', /\.(py|txt)$/i.test(file.name) ? 'text/plain' : file.type || 'application/octet-stream');
     xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(e.loaded / e.total); };
     xhr.onload = () => {
       let body: { error?: string } & Partial<SubmittedFile> = {};
@@ -207,6 +208,40 @@ export async function openFile(f: SubmittedFile, download = false): Promise<void
     win?.close();
     throw e;
   }
+}
+
+/** A short text file that can be shown inline (Python code, program output, notes). */
+export const isTextFile = (f: SubmittedFile) => /\.(py|txt)$/i.test(f.name) && f.size <= 200 * 1024;
+export const isPythonFile = (f: SubmittedFile) => /\.py$/i.test(f.name);
+
+/** Read a stored text file (the request carries the sign-in token). */
+export async function fetchFileText(f: SubmittedFile): Promise<string> {
+  const res = await fetch(`/api/file?key=${encodeURIComponent(f.key)}`, { headers: { Authorization: `Bearer ${await token()}` } });
+  if (!res.ok) throw new Error('Could not open the file.');
+  return res.text();
+}
+
+/**
+ * Hand in code written on the Python practice page: saves it as a .py file (and the last output as a .txt file)
+ * in the learner's submission for that assignment, replacing earlier copies with the same names and keeping
+ * every other file and the typed answer.
+ */
+export async function handInCode(a: Assignment, learner: { id: string; name: string; className: string }, fileName: string, code: string, output: string | null): Promise<Submission> {
+  const existing = await mySubmission(a.id);
+  const base = fileName.replace(/\.py$/i, '');
+  const outName = `${base}_output.txt`;
+  const kept = (existing?.files ?? []).filter((f) => f.name !== fileName && f.name !== outName);
+  const replaced = (existing?.files ?? []).filter((f) => !kept.includes(f));
+  if (kept.length + (output ? 2 : 1) > 5) throw new Error('This assignment already has 5 files. Remove one on the assignment page first.');
+  const files = [...kept, await uploadFile(a.id, new File([code], fileName, { type: 'text/plain' }))];
+  if (output) files.push(await uploadFile(a.id, new File([output], outName, { type: 'text/plain' })));
+  const s: Submission = {
+    assignmentId: a.id, learnerId: learner.id, learnerName: learner.name, className: learner.className,
+    text: existing?.text ?? '', files, submittedAt: Date.now(), late: !!a.dueAt && Date.now() > a.dueAt,
+  };
+  await submit(s);
+  replaced.forEach((f) => void deleteFile(f.key).catch(() => undefined));
+  return s;
 }
 
 export const fmtSize = (n: number) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
