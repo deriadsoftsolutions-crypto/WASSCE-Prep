@@ -288,6 +288,14 @@ When a learner changes STEM year they start a new portfolio; the previous year's
 - Rules: publish the latest `firestore.rules`. Learners can only set their own portfolio to building or handed in, cannot change it once handed in or marked, and cannot write marks or feedback.
 - Unit tests for the sorting and marking logic: `npm test`.
 
+## Learner profile and photos
+
+Tapping their name at the top opens **My profile** (`/profile`). It holds the learner's photo, name, class and STEM year (**Change my year**), this year's portfolio status, **Change my PIN** and **Sign out**.
+
+- **Photo:** **Take a photo** or **Choose a photo**. The tablet crops it to a square and shrinks it to 256 by 256 pixels (well under 60 KB) before sending. It waits for approval. On `/teacher` > **Photos** (the menu shows how many are waiting, and so does Overview) you **Approve** or **Reject** with a reason the learner sees. An approved photo stays until a new one is approved, and you can **Take down** any approved photo. Only the learner and teachers can ever see photos; they appear on the learner's name button and beside their name in your Portfolios and assignment marking lists.
+- **Change my PIN:** the learner types their current PIN and the new 6-digit PIN twice. A forgotten PIN still needs the console steps above.
+- Firestore: `learners/{uid}/profile/photo` (`pending`, `approved`, `rejectedReason`, times). The rules let a learner set only a pending JPEG under 90,000 characters; they cannot approve their own photo or read anyone else's. Publish the latest `firestore.rules`.
+
 ## Project structure
 
 ```
