@@ -93,6 +93,39 @@ service cloud.firestore {
         allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
         allow write: if isTeacher();
       }
+
+      // Portfolio (Ministry portfolio assessment), one per STEM year. The learner builds it and hands it in;
+      // once handed in or marked only the teacher can change it, until the teacher returns it for changes.
+      function portfolioDoc(y) {
+        return /databases/$(database)/documents/learners/$(uid)/portfolio/$('y' + string(y));
+      }
+      function portfolioOpen(y) {
+        return !exists(portfolioDoc(y)) || !(get(portfolioDoc(y)).data.status in ['handed-in', 'marked']);
+      }
+      match /portfolio/{y} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow write: if isTeacher();
+        allow create, update: if signedIn() && request.auth.uid == uid
+          && (resource == null || resource.data.status in ['building', 'returned'])
+          && (request.resource.data.status in ['building', 'handed-in']
+              || (resource != null && resource.data.status == 'returned' && request.resource.data.status == 'returned'));
+      }
+      match /portfolioItems/{id} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow create, update: if signedIn() && request.auth.uid == uid
+          && request.resource.data.year is int
+          && portfolioOpen(request.resource.data.year)
+          && (resource == null || portfolioOpen(resource.data.year));
+        allow delete: if signedIn() && request.auth.uid == uid && portfolioOpen(resource.data.year);
+      }
+      match /portfolioReviews/{id} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow write: if isTeacher();
+      }
+      match /portfolioMark/{y} {
+        allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
+        allow write: if isTeacher();
+      }
     }
 
     // Teacher page: read all learners' attempts, submissions and feedback at once.
@@ -103,6 +136,15 @@ service cloud.firestore {
       allow read: if isTeacher();
     }
     match /{path=**}/feedback/{id} {
+      allow read: if isTeacher();
+    }
+    match /{path=**}/portfolio/{id} {
+      allow read: if isTeacher();
+    }
+    match /{path=**}/portfolioItems/{id} {
+      allow read: if isTeacher();
+    }
+    match /{path=**}/portfolioMark/{id} {
       allow read: if isTeacher();
     }
 

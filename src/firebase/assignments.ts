@@ -25,6 +25,8 @@ export interface Assignment {
   maxMarks: number;
   allowText: boolean;
   allowFiles: boolean;
+  /** Where it goes in the learner's portfolio (Ministry sections). Missing = assignments. */
+  portfolioSection?: 'assignments' | 'projects';
   published: boolean;
   createdAt: number;
 }
@@ -75,7 +77,7 @@ export async function saveAssignment(a: Omit<Assignment, 'id' | 'createdAt'> & {
   const ref = a.id ? doc(db, 'assignments', a.id) : doc(collection(db, 'assignments'));
   const data: Omit<Assignment, 'id'> = {
     title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, dueAt: a.dueAt,
-    maxMarks: a.maxMarks, allowText: a.allowText, allowFiles: a.allowFiles, published: a.published,
+    maxMarks: a.maxMarks, allowText: a.allowText, allowFiles: a.allowFiles, portfolioSection: a.portfolioSection ?? 'assignments', published: a.published,
     createdAt: a.createdAt ?? Date.now(),
   };
   await setDoc(ref, data);

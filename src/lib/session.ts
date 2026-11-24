@@ -189,6 +189,7 @@ export function askYear(current?: 1 | 2 | 3): Promise<void> {
       if (![1, 2, 3].includes(y)) return;
       const next = { ...l, year: y };
       await storage.setLearner(next).catch(console.error);
+      if (l.year && l.year !== y) await import('../firebase/portfolio').then((p) => p.recordYearChange(l.id, l.year!)).catch(console.error);
       m.close();
       setCurrent(next);
       resolve();

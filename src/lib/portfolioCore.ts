@@ -57,7 +57,8 @@ export interface BuildInput {
     assignmentId: string; title: string; portfolioSection?: 'assignments' | 'projects'; submittedAt: number;
     files: PFile[]; text: string; mark?: { mark: number; maxMarks: number; comment: string };
   }[];
-  testResults: { assessmentId: string; title: string; portfolioSection?: 'tests' | 'semester'; total: number; max: number; comment: string; releasedAt: number }[];
+  /** Every test the learner submitted; `result` only once the teacher has released marks. */
+  testResults: { assessmentId: string; title: string; portfolioSection?: 'tests' | 'semester'; submittedAt: number; result?: { total: number; max: number; comment: string; releasedAt: number } }[];
   items: (Omit<PItem, 'auto' | 'hidden'> & { year: number })[];
   meta: PMeta;
 }
@@ -82,10 +83,11 @@ export function buildPortfolio(input: BuildInput): Built {
     });
   }
   for (const r of input.testResults) {
-    if (yearOf(r.releasedAt) !== year) continue;
+    if (yearOf(r.submittedAt) !== year) continue;
     auto({
       id: `test:${r.assessmentId}`, section: r.portfolioSection === 'semester' ? 'semester' : 'tests', title: r.title,
-      date: r.releasedAt, files: [], source: `/tests/${r.assessmentId}`, result: `${r.total} / ${r.max}`,
+      date: r.submittedAt, files: [], source: `/tests/${r.assessmentId}`,
+      result: r.result ? `${r.result.total} / ${r.result.max}` : 'Submitted, result not released yet',
     });
   }
   const practice: BuildInput['attempts'] = [];

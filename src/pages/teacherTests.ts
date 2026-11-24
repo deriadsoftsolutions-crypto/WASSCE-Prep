@@ -95,6 +95,9 @@ export async function mountTeacherTests(host: HTMLElement) {
               <option value="immediately" ${a?.showResults === 'immediately' || !a ? 'selected' : ''}>Straight after submitting (with answers)</option>
               <option value="after-close" ${a?.showResults === 'after-close' ? 'selected' : ''}>After the test closes</option>
               <option value="teacher" ${a?.showResults === 'teacher' ? 'selected' : ''}>Only when I release them</option></select></label>
+            <label class="field"><span>Portfolio section</span><select name="psec">
+              <option value="tests">Quiz or test</option>
+              <option value="semester" ${a?.portfolioSection === 'semester' ? 'selected' : ''}>Mid-semester or end-of-semester paper</option></select></label>
           </div>
           <label class="switch"><input type="checkbox" name="published" ${a?.published ?? false ? 'checked' : ''} /> Published (learners can see it; leave off while you build it)</label>
         </form>
@@ -260,6 +263,7 @@ export async function mountTeacherTests(host: HTMLElement) {
             id: a?.id, createdAt: a?.createdAt, title, instructions: String(fd.get('instructions') ?? '').trim(),
             className, classKey: classKey(className), opensAt, closesAt,
             timeLimitMin: Math.max(0, Math.round(Number(fd.get('limit')) || 0)), showResults: String(fd.get('show')) as ShowResults,
+            portfolioSection: fd.get('psec') === 'semester' ? 'semester' : 'tests',
             published: fd.get('published') === 'on',
           }, items.map((x) => x.q), Object.fromEntries(items.map((x) => [x.q.id, x.k])));
           toast('Test saved.');

@@ -58,6 +58,8 @@ export interface Assessment {
   /** 0 = no time limit */
   timeLimitMin: number;
   showResults: ShowResults;
+  /** Where it goes in the learner's portfolio (Ministry sections). Missing = tests. */
+  portfolioSection?: 'tests' | 'semester';
   published: boolean;
   totalMarks: number;
   questionCount: number;
@@ -97,7 +99,7 @@ function fromDoc(id: string, d: Record<string, unknown>): Assessment {
     classKey: String(d.classKey ?? ''), className: String(d.className ?? ''),
     opensAt: ms(d.opensAt), closesAt: ms(d.closesAt),
     timeLimitMin: Number(d.timeLimitMin ?? 0), showResults: (d.showResults as ShowResults) ?? 'immediately',
-    published: !!d.published, totalMarks: Number(d.totalMarks ?? 0), questionCount: Number(d.questionCount ?? 0),
+    portfolioSection: d.portfolioSection === 'semester' ? 'semester' : 'tests', published: !!d.published, totalMarks: Number(d.totalMarks ?? 0), questionCount: Number(d.questionCount ?? 0),
     createdAt: ms(d.createdAt) ?? 0,
   };
 }
@@ -164,7 +166,7 @@ export async function saveAssessment(
   batch.set(ref, {
     title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className,
     opensAt: ts(a.opensAt), closesAt: ts(a.closesAt), timeLimitMin: Math.max(0, Math.round(a.timeLimitMin)),
-    showResults: a.showResults, published: a.published,
+    showResults: a.showResults, portfolioSection: a.portfolioSection ?? 'tests', published: a.published,
     totalMarks: questions.reduce((s, q) => s + q.marks, 0), questionCount: questions.length,
     createdAt: ts(a.createdAt ?? Date.now()),
   });

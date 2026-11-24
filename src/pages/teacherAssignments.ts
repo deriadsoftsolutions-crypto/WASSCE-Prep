@@ -67,6 +67,9 @@ export async function mountTeacherAssignments(host: HTMLElement) {
             <label class="field" data-otherwrap ${custom ? '' : 'hidden'}><span>Class name</span><input name="other" value="${esc(custom ? a!.className : '')}" placeholder="e.g. 2 Sci A" /></label>
             <label class="field"><span>Due date and time (optional)</span><input name="due" type="datetime-local" value="${dueLocal}" /></label>
             <label class="field"><span>Total marks</span><input name="marks" type="number" min="1" max="200" value="${a?.maxMarks ?? 10}" /></label>
+            <label class="field"><span>Portfolio section</span><select name="psec">
+              <option value="assignments">Assignment or exercise</option>
+              <option value="projects" ${a?.portfolioSection === 'projects' ? 'selected' : ''}>Project or case study</option></select></label>
           </div>
           <label class="switch"><input type="checkbox" name="allowText" ${a?.allowText ?? true ? 'checked' : ''} /> Learners can type an answer</label>
           <label class="switch"><input type="checkbox" name="allowFiles" ${a?.allowFiles ?? true ? 'checked' : ''} /> Learners can upload files (photos, PDF, Word)</label>
@@ -102,7 +105,7 @@ export async function mountTeacherAssignments(host: HTMLElement) {
         await saveAssignment({
           id: a?.id, createdAt: a?.createdAt, title, instructions: String(fd.get('instructions') ?? '').trim(),
           className, classKey: classKey(className), dueAt: due ? new Date(due).getTime() : null, maxMarks: marks,
-          allowText, allowFiles, published: fd.get('published') === 'on',
+          allowText, allowFiles, portfolioSection: fd.get('psec') === 'projects' ? 'projects' : 'assignments', published: fd.get('published') === 'on',
         });
         toast('Assignment saved.');
         await load();

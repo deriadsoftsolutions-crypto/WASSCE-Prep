@@ -22,7 +22,7 @@ test('sorts sources into sections', () => {
       { assignmentId: 'a1', title: 'Gates', submittedAt: D(1), files: [], text: 'x', mark: { mark: 7, maxMarks: 10, comment: 'Good' } },
       { assignmentId: 'a2', title: 'Line robot', portfolioSection: 'projects', submittedAt: D(2), files: [], text: '' },
     ],
-    testResults: [{ assessmentId: 't1', title: 'Mid-semester', portfolioSection: 'semester', total: 15, max: 20, comment: '', releasedAt: D(3) }],
+    testResults: [{ assessmentId: 't1', title: 'Mid-semester', portfolioSection: 'semester', submittedAt: D(3), result: { total: 15, max: 20, comment: '', releasedAt: D(6) } }],
     attempts: [
       { id: 'm1', kind: 'mock', itemId: 'mock:paper1', score: 31, max: 40, timestamp: D(4) },
       { id: 'p1', kind: 'paper2', itemId: 'paper2:Q4', score: 6, max: 10, timestamp: D(5) },
@@ -46,9 +46,13 @@ test('practice summary', () => {
   assert.match(t[0].result!, /4 quizzes and activities/);
 });
 
-test('unreleased test hidden, unmarked assignment', () => {
-  const b = buildPortfolio(base({ submissions: [{ assignmentId: 'a1', title: 'Gates', submittedAt: D(1), files: [], text: '' }] }));
-  assert.equal(sec(b, 'tests').items.length, 0);
+test('unreleased test shows no score, unmarked assignment', () => {
+  const b = buildPortfolio(base({
+    submissions: [{ assignmentId: 'a1', title: 'Gates', submittedAt: D(1), files: [], text: '' }],
+    testResults: [{ assessmentId: 't9', title: 'Quiz 2', submittedAt: D(2) }],
+  }));
+  assert.equal(sec(b, 'tests').items.length, 1);
+  assert.equal(sec(b, 'tests').items[0].result, 'Submitted, result not released yet');
   assert.equal(sec(b, 'assignments').items[0].result, 'Handed in, not marked yet');
 });
 
