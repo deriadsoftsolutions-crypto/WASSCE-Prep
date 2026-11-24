@@ -264,6 +264,30 @@ materials/{id}   unitId ('' = whole-year resource), year, title, kind (file, vid
 
 Learners can read units and only the materials with audience `learners`; only teachers can write either.
 
+## Portfolio (Ministry portfolio assessment)
+
+Built from Appendix A of the Year 2 Robotics Teacher Manual: one portfolio per learner per STEM year, in the Ministry's sections, marked out of 40.
+
+| Section (marks) | Added automatically | Learners add |
+|---|---|---|
+| Assignments and exercises (10) | Assignments they hand in, with your mark once marked | Photos of class exercises |
+| Projects and case studies (10) | Assignments you set as **Portfolio section: Project** | Photos of builds, with a description |
+| Quizzes and tests (10) | Your tests (the score appears once results are released), every Paper 1 mock and Paper 2 practice, and one "Practice record" for topic quizzes and activities | Photos of paper quizzes |
+| Reflective pieces (5) | | Written reflections |
+| Semester papers (5) | Tests you set as **Portfolio section: Semester paper** | Photos of marked scripts |
+| Certificates and other documents (not marked) | | Certificates, awards, testimonials |
+
+**Learners** (`/portfolio`): add items with **Take a photo** or **Choose files** (photos are shrunk on the tablet; up to 10 MB each), describe every item, add a note to or hide automatic items (their scores cannot be changed), write the **Final reflection**, then **Hand in my portfolio**. Handing in locks it. **Print or save as PDF** (`/portfolio/print`) gives a cover page (name, class, subject, period), a numbered table of contents and every item with its photos, for paper submission or a single PDF file.
+
+**Teachers** (`/teacher` > **Portfolios**): set the due date for each STEM year and the period printed on the cover; see every learner's status and mark; open a portfolio to add **check-in feedback** (the Ministry asks for one every 3 to 4 weeks), enter the **mark** in the five sections (the total out of 40 is worked out for you; the learner sees it), **Return for changes** (unlocks it for revisions), or print it.
+
+When a learner changes STEM year they start a new portfolio; the previous year's stays available on a STEM tab.
+
+- Firestore: `learners/{uid}/portfolio/y{year}` (hidden items, notes, final reflection, status), `learners/{uid}/portfolioItems/{id}`, `learners/{uid}/portfolioReviews/{id}`, `learners/{uid}/portfolioMark/y{year}`, `settings/portfolio`. Automatic items are worked out from results each time (`src/lib/portfolioCore.ts`), never copied, so they always match.
+- Photos use the private assignment upload (`/api/upload`, assignment id `portfolio`): only the learner and teachers can open them.
+- Rules: publish the latest `firestore.rules`. Learners can only set their own portfolio to building or handed in, cannot change it once handed in or marked, and cannot write marks or feedback.
+- Unit tests for the sorting and marking logic: `npm test`.
+
 ## Project structure
 
 ```
@@ -328,7 +352,7 @@ Learners have no real email, so a PIN cannot be reset by email. In the Firebase 
 ### Data layout
 
 ```
-learners/{uid}                  name, className, year, createdAt
+learners/{uid}                  name, className, year, createdAt (prevYear, yearSetAt after a year change)
 learners/{uid}/attempts/{id}    one Attempt (see src/types.ts)
 teachers/{uid}                  added by hand in the console
 settings/global                 mockMinutes, shuffle (set from /teacher)
