@@ -3,6 +3,7 @@ import type { Topic } from '../types';
 import { esc, fmtDate } from '../lib/dom';
 import { feedbackHTML, toast } from '../lib/ui';
 import { icon, topicIcon } from '../lib/icons';
+import { viewerHref } from '../lib/viewable';
 import { markdown } from '../lib/markdown';
 import { learner, saveResult } from '../lib/session';
 import { storage, usingFirebase } from '../storage';
@@ -68,8 +69,12 @@ function blockHTML(b: Block, i: number): string {
         <p class="qtext" style="margin:0 0 12px">${esc(b.question)}</p>
         <div class="options">${b.options.map((o, k) => `<button type="button" class="option" data-ans="${k}"><span class="letter">${LETTERS[k]}</span><span>${esc(o)}</span></button>`).join('')}</div>
         <div data-checkfb></div></div>`;
-    case 'link':
-      return `<p><a class="btn" href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.label || b.url)}</a></p>`;
+    case 'link': {
+      const inSite = viewerHref(b.url);
+      return inSite
+        ? `<p class="row"><a class="btn" href="${esc(inSite)}">${esc(b.label || b.url)}</a><a class="btn btn-sm" href="${esc(b.url)}" download>Download</a></p>`
+        : `<p><a class="btn" href="${esc(b.url)}" ${b.url.startsWith('/') ? '' : 'target="_blank" rel="noopener"'}>${esc(b.label || b.url)}</a></p>`;
+    }
   }
 }
 

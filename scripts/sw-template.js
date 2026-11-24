@@ -20,6 +20,7 @@ const APP_ROUTES = [
   /^\/wassce\/?$/,
   /^\/profile\/?$/,
   /^\/python\/?$/,
+  /^\/view\/?$/,
   /^\/portfolio\/?$/,
   /^\/portfolio\/print(\/[A-Za-z0-9_-]+)?\/?$/,
   /^\/assignments\/?$/,

@@ -305,6 +305,18 @@ Tapping their name at the top opens **My profile** (`/profile`). It holds the le
 - Examples come from the Python 1 lesson files in `teaching/python-1/vscode-files/`, so the page and VS Code match.
 - The first visit downloads about 13 MB. It is kept in its own offline cache (`pyodide-314.0.7`), which survives site updates. When upgrading Pyodide, change the version in `package.json` and the cache name in `scripts/sw-template.js`.
 
+## File viewer
+
+Materials and lesson buttons open files inside the site at `/view` instead of downloading them. A **Download** button is always there too.
+
+| File | How it is shown | Offline |
+|---|---|---|
+| PDF (books, notes, a "section of a book") | Rendered in the page with PDF.js (`pdfjs-dist` 5.7.284, legacy build for older tablets); opens at the section's page; page box, zoom | Yes, once opened (files up to 30 MB are kept) |
+| Ready-made decks (Python 1 slides) | Slide pictures from `public/teaching/<lesson>/slides/`, listed in `src/data/slideDecks.ts`; tap, swipe or arrow keys; full screen | Yes, for slides already viewed |
+| PowerPoint, Word, Excel uploads | Microsoft's free online viewer (`view.officeapps.live.com`) in a frame | No (needs internet) |
+
+Teacher-only Office files are never sent to Microsoft's viewer; they stay plain downloads. To add slide pictures for a new deck: convert it to PDF (`soffice --headless --convert-to pdf deck.pptx`), then run `pdftoppm -jpeg -jpegopt quality=80 -scale-to-x 1600 -scale-to-y -1 deck.pdf public/teaching/<lesson>/slides/slide`, and add the deck to `src/data/slideDecks.ts`.
+
 ## Teaching materials
 
 `teaching/` holds lesson materials that are not part of the site:

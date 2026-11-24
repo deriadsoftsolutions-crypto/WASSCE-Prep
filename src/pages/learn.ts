@@ -10,6 +10,7 @@ import { STRANDS, getUnit, listMaterials, listUnits, materialHref, materialKindL
 import { finishedLessons, lessonCardsHTML } from './lessons';
 import { lessonsFor, type Lesson } from '../firebase/lessons';
 import { ledHTML, masteryLevel } from './home';
+import { viewerHref } from '../lib/viewable';
 
 const topics = topicsData as Topic[];
 const YEAR_KEY = 'wassce.learnYear';
@@ -92,9 +93,10 @@ export function materialsListHTML(list: Material[]): string {
   return `<div class="due-list">${list.map((m) => {
     const kindIcon = m.kind === 'youtube' || m.kind === 'video' ? 'play' : m.kind === 'link' ? 'clip' : 'file';
     const external = m.kind === 'link' || m.kind === 'youtube';
-    const href = m.kind === 'youtube' ? `https://www.youtube.com/watch?v=${encodeURIComponent(m.url)}` : materialHref(m);
+    const inSite = m.kind === 'file' ? viewerHref(m.url, { name: m.fileName, title: m.title, page: m.page, teacherOnly: m.audience === 'teachers' }) : null;
+    const href = m.kind === 'youtube' ? `https://www.youtube.com/watch?v=${encodeURIComponent(m.url)}` : inSite ?? materialHref(m);
     const extra = [materialKindLabel(m), m.page ? `from page ${m.page}` : '', fmtSize(m.size), m.audience === 'teachers' ? 'teachers only' : ''].filter(Boolean).join(', ');
-    return `<a class="due-row" href="${esc(href)}" ${external || m.kind === 'file' || m.kind === 'video' ? 'target="_blank" rel="noopener"' : ''}>
+    return `<a class="due-row" href="${esc(href)}" ${!inSite && (external || m.kind === 'file' || m.kind === 'video') ? 'target="_blank" rel="noopener"' : ''}>
       ${icon(kindIcon, 24)}
       <span class="due-main"><b>${esc(m.title)}</b>${m.description ? `<br><span class="due-sub">${esc(m.description)}</span>` : ''}</span>
       <span class="pill ${m.audience === 'teachers' ? 'urgent' : ''}">${esc(extra)}</span>

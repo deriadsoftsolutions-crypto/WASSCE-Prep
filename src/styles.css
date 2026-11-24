@@ -808,3 +808,19 @@ textarea.py-editor:focus { outline: 2px solid var(--accent); }
 .py-input textarea { background: #0C0C0C; color: #E5E5E5; font-family: 'Courier New', monospace; min-height: 70px; border-color: #444; }
 .lesson-code { background: #1E1E1E; color: #D4D4D4; border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 15px; line-height: 1.5; margin: 12px 0; }
 .lesson-text .lesson-code code, .lesson-code code { background: none; border: 0; border-radius: 0; color: inherit; padding: 0; font-size: inherit; }
+
+/* ---------- File viewer ---------- */
+.viewer-head { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.viewer-title { flex: 1 1 240px; margin: 0; font-size: 1.4rem; min-width: 0; overflow-wrap: anywhere; }
+.viewer-tools { gap: 8px; align-items: center; }
+.viewer-count { font-weight: 600; white-space: nowrap; }
+.viewer-count input { width: 4.5em; min-height: 40px; display: inline-block; padding: 4px 6px; }
+.slide-stage { background: #0C0C0C; border-radius: 10px; display: flex; align-items: center; justify-content: center; touch-action: pan-y; user-select: none; cursor: pointer; }
+.slide-stage img { width: 100%; height: auto; max-height: calc(100vh - 200px); object-fit: contain; display: block; border-radius: 10px; }
+.slide-stage:fullscreen { border-radius: 0; }
+.slide-stage:fullscreen img { max-height: 100vh; border-radius: 0; }
+.pdf-pages { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; overflow-x: auto; }
+.pdf-page { position: relative; background: #FFFFFF; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); max-width: none; flex: none; margin: 0 auto; }
+.pdf-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #9AA3AE; font-size: 1.5rem; }
+.pdf-page canvas { position: relative; display: block; }
+.office-frame { width: 100%; height: calc(100vh - 220px); min-height: 420px; border: 1.5px solid var(--ink); border-radius: 10px; background: #FFFFFF; }
