@@ -95,6 +95,12 @@ export async function recordYearChange(uid: string, from: Year): Promise<void> {
   await setDoc(doc(db, 'learners', uid), { prevYear: from, yearSetAt: Date.now() }, { merge: true });
 }
 
+export async function profileOf(uid: string): Promise<{ name: string; className: string }> {
+  const s = await getDoc(doc(db, 'learners', uid));
+  const d = (s.exists() ? s.data() : {}) as { name?: string; className?: string };
+  return { name: d.name ?? '', className: d.className ?? '' };
+}
+
 export async function yearInfo(uid: string): Promise<YearInfo> {
   const s = await getDoc(doc(db, 'learners', uid));
   const d = (s.exists() ? s.data() : {}) as { year?: Year; yearSetAt?: number; prevYear?: Year };

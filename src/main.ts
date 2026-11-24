@@ -68,6 +68,8 @@ async function boot() {
   route('/tests/:id', testPage, 'assignments');
   route('/lessons/:id', lessonPage, 'assignments');
   route('/portfolio', async (el) => (await import('./pages/portfolio')).portfolioPage(el), 'portfolio');
+  route('/portfolio/print', async (el, p) => (await import('./pages/portfolioPrint')).portfolioPrintPage(el, p), 'portfolio');
+  route('/portfolio/print/:uid', async (el, p) => (await import('./pages/portfolioPrint')).portfolioPrintPage(el, p), 'portfolio');
   // Teacher pages load only when opened, so learners never download them.
   route('/teacher', async (el) => (await import('./pages/teacher')).teacherPage(el), 'teacher');
   await loadLearner();
