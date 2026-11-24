@@ -23,6 +23,7 @@ const P: Record<string, string> = {
   moon: 'M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z',
   upload: 'M12 16V4M7 9l5-5 5 5M4 20h16',
   play: 'M7 4.5l12.5 7.5L7 19.5z',
+  lock: 'M7 11V8a5 5 0 0110 0v3M5.5 11h13v10h-13z',
   book: 'M4 4.5h6a2 2 0 012 2V20a2 2 0 00-2-2H4zM20 4.5h-6a2 2 0 00-2 2V20a2 2 0 012-2h6z',
   // Topics 1 to 10
   t1: 'M4 8h16v11H4zM9 13h.01M15 13h.01M12 8V4M10 4h4M8 19v2M16 19v2',

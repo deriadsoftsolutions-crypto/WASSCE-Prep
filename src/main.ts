@@ -51,6 +51,7 @@ async function boot() {
   initPWA();
   (document.querySelector('[data-nav="assignments"]') as HTMLElement).hidden = !usingFirebase;
   (document.querySelector('[data-nav="learn"]') as HTMLElement).hidden = !usingFirebase;
+  (document.querySelector('[data-nav="portfolio"]') as HTMLElement).hidden = !usingFirebase;
   initNav();
   route('/', homePage, 'home');
   route('/topic/:id', topicPage, 'wassce');
@@ -66,6 +67,7 @@ async function boot() {
   route('/assignments/:id', assignmentPage, 'assignments');
   route('/tests/:id', testPage, 'assignments');
   route('/lessons/:id', lessonPage, 'assignments');
+  route('/portfolio', async (el) => (await import('./pages/portfolio')).portfolioPage(el), 'portfolio');
   // Teacher pages load only when opened, so learners never download them.
   route('/teacher', async (el) => (await import('./pages/teacher')).teacherPage(el), 'teacher');
   await loadLearner();
@@ -103,7 +105,7 @@ async function maybeAskYear() {
   }
 }
 
-const NAV_ICONS: Record<string, string> = { home: 'home', learn: 'book', assignments: 'classwork', wassce: 'test', progress: 'progress', teacher: 'teacher' };
+const NAV_ICONS: Record<string, string> = { home: 'home', learn: 'book', assignments: 'classwork', portfolio: 'file', wassce: 'test', progress: 'progress', teacher: 'teacher' };
 
 /** Give each menu link its icon, and Classwork a badge for work still to do. */
 function initNav() {

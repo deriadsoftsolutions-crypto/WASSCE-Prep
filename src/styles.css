@@ -719,3 +719,24 @@ body.focus-mode #toast { bottom: 100px; }
 .lesson-end .mark-ok { display: flex; gap: 8px; align-items: center; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Portfolio ---------- */
+.p-sec .section-head { margin-top: 0; }
+.p-item { border-top: 1px solid var(--line); padding: 14px 0; }
+.p-sec .p-item:first-of-type { border-top: 0; }
+.p-head { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.p-head [data-lock] { color: var(--muted); display: inline-flex; }
+.p-title { font-size: 1.05rem; }
+.p-desc { margin: 6px 0 0; white-space: pre-wrap; }
+.p-empty { margin: 0; }
+.p-actions { margin-top: 10px; }
+.p-thumbs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.p-thumb { width: 104px; height: 104px; padding: 0; border: 1.5px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface-2); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.p-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.p-thumb.p-doc { flex-direction: column; gap: 4px; padding: 6px; font-size: 0.75rem; text-align: center; word-break: break-word; color: var(--text); }
+.p-pending { display: flex; flex-wrap: wrap; gap: 12px; }
+.p-pend { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.p-pend .p-thumbs { margin-top: 0; }
+.p-review { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; margin: 10px 0; }
+.p-review p { margin: 4px 0 0; white-space: pre-wrap; }
+textarea[data-final] { width: 100%; }
