@@ -5,6 +5,7 @@ const T = '/teaching/society-1';
 const DECK = `${T}/Robots-and-Society-1-Impact-Analysis.pptx`;
 const CHART = `${T}/impact-analysis-chart.pdf`;
 const ELLIQ = `${T}/elli-q-scenario.pdf`;
+const SCENARIOS = `${T}/agribot-renurse-scenarios.pdf`;
 
 export const lesson: ReadyLesson = {
   key: 'society-1',
@@ -16,6 +17,7 @@ export const lesson: ReadyLesson = {
   materials: [
     { unitId: 'u2-1-1', year: 2, title: 'Robots and society 1 slides: weighing the good and the bad', description: 'PowerPoint', kind: 'file', url: DECK, fileName: 'Robots-and-Society-1-Impact-Analysis.pptx', mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', audience: 'learners', published: true },
     { unitId: 'u2-1-1', year: 2, title: 'Elli Q scenario (printable)', description: 'PDF, worked example for the impact analysis', kind: 'file', url: ELLIQ, fileName: 'elli-q-scenario.pdf', mime: 'application/pdf', audience: 'learners', published: true },
+    { unitId: 'u2-1-1', year: 2, title: 'AgriBot and ReNurse scenarios with questions (printable)', description: 'PDF, Activity 1.1 scenarios and the scenario questions assignment', kind: 'file', url: SCENARIOS, fileName: 'agribot-renurse-scenarios.pdf', mime: 'application/pdf', audience: 'learners', published: true },
     { unitId: 'u2-1-1', year: 2, title: 'Activity 1.1 impact analysis chart (printable)', description: 'PDF, one per group', kind: 'file', url: CHART, fileName: 'impact-analysis-chart.pdf', mime: 'application/pdf', audience: 'learners', published: true },
   ],
   blocks: [
@@ -97,6 +99,7 @@ Designers who follow these steps build robots that are useful **and** responsibl
 - **Caregivers:** Elli Q helps human carers; it does not replace them.` },
     { type: 'check', question: 'Elli Q records conversations and health data. Which design choice best reduces this negative impact?', options: ['Make the robot cheaper', 'Strong data security, and let the user choose what is collected', 'Add more memory games', 'Let the robot decide who sees the data'], correct: 1, explanation: 'This is data transparency and control: protect the data and give the user control over it.' },
 
+    { type: 'link', label: 'AgriBot and ReNurse scenarios (PDF to read or print)', url: SCENARIOS },
     { type: 'text', md: `## 5. Activity 1.1: analyse a robot in your group (groups of 3 to 5, 30 minutes)
 Choose **one** scenario. You may state assumptions and add functions, for example AgriBot on a cocoa or maize farm, or ReNurse in a district hospital.
 
@@ -246,4 +249,39 @@ Marking (20 marks)
 - Ethical issues discussed: safety, data security, bias (4)
 - The human role alongside the robot is emphasised throughout (3)
 - Written for a general reader and kept to 400 words or fewer (2)`,
+};
+
+export const scenarios: ReadyAssignment = {
+  key: 'society-1-scenarios',
+  year: 2,
+  unitId: 'u2-1-1',
+  title: 'Robots and society 1: AgriBot and ReNurse scenario questions',
+  when: 'After the lesson, or as class work: each learner analyses both Activity 1.1 scenarios on their own (20 marks). Answer online or upload a photo or PDF.',
+  maxMarks: 20,
+  allowText: true,
+  allowFiles: true,
+  portfolioSection: 'assignments',
+  instructions: `Read both scenarios first: [Open the AgriBot and ReNurse scenarios (PDF)](${SCENARIOS})
+Work on your own. Answer in one of two ways:
+- Type your answers in the box below, numbered 1 to 11, or
+- Write them in your exercise book or on paper, then upload a clear photo or a PDF of every page.
+
+Part A: AgriBot, the agricultural assistant robot
+1. In your own words, describe what AgriBot does and where it would be used. (1)
+2. List THREE positive impacts AgriBot could have on society. Think about jobs, the environment and well-being. (3)
+3. List THREE negative impacts AgriBot could have on society. Think about job loss, cost and fairness, and safety. (3)
+4. Explain ONE ethical issue raised by AgriBot, for example safety, data or bias. (1)
+5. Choose one negative impact from question 3. How could the designer reduce it? (1)
+
+Part B: ReNurse, the robotic nursing assistant
+6. In your own words, describe what ReNurse does and where it would be used. (1)
+7. List THREE positive impacts ReNurse could have on society. (3)
+8. List THREE negative impacts ReNurse could have on society. Think about privacy, less human contact and jobs. (3)
+9. Explain ONE ethical issue raised by ReNurse, for example patient data security or safety. (1)
+10. Choose one negative impact from question 8. How could the designer reduce it? (1)
+
+Part C: Humans and robots
+11. Choose ONE of the two robots. Explain what humans will still do alongside it, and why this human-robot partnership is important. (2)
+
+Total: 20 marks. One mark for each sensible, clearly explained point.`,
 };

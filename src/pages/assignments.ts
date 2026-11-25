@@ -16,12 +16,8 @@ import {
 const MAX_FILES = 5;
 const ACCEPT = 'image/*,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.py';
 
-/** Turn plain text into HTML with line breaks and clickable links. */
-export function richText(s: string): string {
-  return esc(s)
-    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
-    .replace(/\n/g, '<br>');
-}
+export { richText } from '../lib/richText';
+import { richText } from '../lib/richText';
 
 export function dueText(a: Assignment): string {
   if (!a.dueAt) return 'No due date';

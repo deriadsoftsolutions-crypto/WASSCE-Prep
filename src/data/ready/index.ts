@@ -14,7 +14,7 @@ import type { ReadyAssignment, ReadyLesson, ReadyTest } from './types';
 
 export const READY_LESSONS: ReadyLesson[] = [python1.lesson, python2.lesson, python3.lesson, society1.lesson];
 export const READY_TESTS: ReadyTest[] = [python1.test, python2.test, fa1Key.keyWritten, python3.test, society1.test];
-export const READY_ASSIGNMENTS: ReadyAssignment[] = [python1.practical, python2.practical, fa1Key.keyPractical, python3.practical, society1.presentation, society1.article];
+export const READY_ASSIGNMENTS: ReadyAssignment[] = [python1.practical, python2.practical, fa1Key.keyPractical, python3.practical, society1.presentation, society1.scenarios, society1.article];
 
 /** "STEM 3, 3.3.2 Robot programming" style heading for a unit, from the curriculum. */
 export function unitLabel(unitId: string): string {
