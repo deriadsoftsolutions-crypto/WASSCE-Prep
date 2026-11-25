@@ -6,6 +6,7 @@ const DECK = `${T}/Robots-and-Society-1-Impact-Analysis.pptx`;
 const CHART = `${T}/impact-analysis-chart.pdf`;
 const ELLIQ = `${T}/elli-q-scenario.pdf`;
 const SCENARIOS = `${T}/agribot-renurse-scenarios.pdf`;
+const EDUBOT = `${T}/edubot-scenario.pdf`;
 
 export const lesson: ReadyLesson = {
   key: 'society-1',
@@ -17,7 +18,8 @@ export const lesson: ReadyLesson = {
   materials: [
     { unitId: 'u2-1-1', year: 2, title: 'Robots and society 1 slides: weighing the good and the bad', description: 'PowerPoint', kind: 'file', url: DECK, fileName: 'Robots-and-Society-1-Impact-Analysis.pptx', mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', audience: 'learners', published: true },
     { unitId: 'u2-1-1', year: 2, title: 'Elli Q scenario (printable)', description: 'PDF, worked example for the impact analysis', kind: 'file', url: ELLIQ, fileName: 'elli-q-scenario.pdf', mime: 'application/pdf', audience: 'learners', published: true },
-    { unitId: 'u2-1-1', year: 2, title: 'AgriBot and ReNurse scenarios with questions (printable)', description: 'PDF, Activity 1.1 scenarios and the scenario questions assignment', kind: 'file', url: SCENARIOS, fileName: 'agribot-renurse-scenarios.pdf', mime: 'application/pdf', audience: 'learners', published: true },
+    { unitId: 'u2-1-1', year: 2, title: 'AgriBot and ReNurse scenarios (printable)', description: 'PDF, Activity 1.1 group work', kind: 'file', url: SCENARIOS, fileName: 'agribot-renurse-scenarios.pdf', mime: 'application/pdf', audience: 'learners', published: true },
+    { unitId: 'u2-1-1', year: 2, title: 'EduBot scenario and questions (printable)', description: 'PDF, individual assignment', kind: 'file', url: EDUBOT, fileName: 'edubot-scenario.pdf', mime: 'application/pdf', audience: 'learners', published: true },
     { unitId: 'u2-1-1', year: 2, title: 'Activity 1.1 impact analysis chart (printable)', description: 'PDF, one per group', kind: 'file', url: CHART, fileName: 'impact-analysis-chart.pdf', mime: 'application/pdf', audience: 'learners', published: true },
   ],
   blocks: [
@@ -155,7 +157,10 @@ Robots are fast, precise and never tired, but the best results come from a **par
 - Good designers plan to reduce harm before the robot is built.
 - Humans and robots work best as partners: robots bring precision and speed; humans bring creativity, empathy and ethical judgement.
 
+**Individual assignment:** analyse a new robot, EduBot the robot teaching assistant, with the four steps (see Classwork).
+
 **Homework (Activity 1.2):** write a newspaper article of no more than 400 words on the impact of your group's robot, for readers with no technical knowledge. Use your group's chart. Read pages 14 to 24 (robotics careers) for next lesson.` },
+    { type: 'link', label: 'EduBot scenario for the individual assignment (PDF)', url: EDUBOT },
   ],
 };
 
@@ -251,37 +256,40 @@ Marking (20 marks)
 - Written for a general reader and kept to 400 words or fewer (2)`,
 };
 
-export const scenarios: ReadyAssignment = {
-  key: 'society-1-scenarios',
+export const edubot: ReadyAssignment = {
+  key: 'society-1-edubot',
   year: 2,
   unitId: 'u2-1-1',
-  title: 'Robots and society 1: AgriBot and ReNurse scenario questions',
-  when: 'After the lesson, or as class work: each learner analyses both Activity 1.1 scenarios on their own (20 marks). Answer online or upload a photo or PDF.',
+  title: 'Robots and society 1: EduBot scenario questions',
+  when: 'After the lesson: each learner analyses a NEW scenario, EduBot the robot teaching assistant, on their own with the four steps (20 marks). Answer online or upload a photo or PDF.',
   maxMarks: 20,
   allowText: true,
   allowFiles: true,
   portfolioSection: 'assignments',
-  instructions: `Read both scenarios first: [Open the AgriBot and ReNurse scenarios (PDF)](${SCENARIOS})
-Work on your own. Answer in one of two ways:
-- Type your answers in the box below, numbered 1 to 11, or
+  instructions: `Read the scenario first: [Open the EduBot scenario (PDF)](${EDUBOT})
+In class your group analysed AgriBot or ReNurse. Now use the same four steps on your own for a new robot, EduBot.
+Answer in one of two ways:
+- Type your answers in the box below, numbered 1 to 7, or
 - Write them in your exercise book or on paper, then upload a clear photo or a PDF of every page.
 
-Part A: AgriBot, the agricultural assistant robot
-1. In your own words, describe what AgriBot does and where it would be used. (1)
-2. List THREE positive impacts AgriBot could have on society. Think about jobs, the environment and well-being. (3)
-3. List THREE negative impacts AgriBot could have on society. Think about job loss, cost and fairness, and safety. (3)
-4. Explain ONE ethical issue raised by AgriBot, for example safety, data or bias. (1)
-5. Choose one negative impact from question 3. How could the designer reduce it? (1)
+The scenario in short: many SHS classes in Ghana have 50 or more learners and one teacher. EduBot is a robot teaching assistant that would work in each class. It takes attendance with a face recognition camera and texts parents about absences, marks exercises and tests and gives feedback, tutors learners in English and some Ghanaian languages, moves between desks to help, and sends weekly reports that predict who may fail the WASSCE.
 
-Part B: ReNurse, the robotic nursing assistant
-6. In your own words, describe what ReNurse does and where it would be used. (1)
-7. List THREE positive impacts ReNurse could have on society. (3)
-8. List THREE negative impacts ReNurse could have on society. Think about privacy, less human contact and jobs. (3)
-9. Explain ONE ethical issue raised by ReNurse, for example patient data security or safety. (1)
-10. Choose one negative impact from question 8. How could the designer reduce it? (1)
+Step 1: The scenario
+1. Describe EduBot's role in your own words: what it does, who it is for, and where it would be used. (2)
 
-Part C: Humans and robots
-11. Choose ONE of the two robots. Explain what humans will still do alongside it, and why this human-robot partnership is important. (2)
+Step 2: Potential impacts
+2. List THREE positive impacts EduBot could have. Think about learners, teachers, parents and society. (3)
+3. List THREE negative impacts EduBot could have. Think about jobs, privacy, fairness, cost and human contact. (3)
+4. Explain TWO ethical issues raised by EduBot, for example the face recognition camera, learners' data, or fairness in marking and predictions. (4)
 
-Total: 20 marks. One mark for each sensible, clearly explained point.`,
+Step 3: Reduce the harm, increase the good
+5. Choose TWO of the negative impacts you listed in question 3. For each one, explain how the designers or the school could reduce it. (4)
+
+Step 4: The long term
+6. Describe ONE long-term impact of EduBot, for example e-waste, going out of date, or the effect on the teaching profession, and how it could be managed. (2)
+
+Humans and robots
+7. What will the class teacher still do that EduBot cannot? Explain why this human-robot partnership is important in a classroom. (2)
+
+Total: 20 marks. Marks are for sensible points that are clearly explained and linked to EduBot.`,
 };

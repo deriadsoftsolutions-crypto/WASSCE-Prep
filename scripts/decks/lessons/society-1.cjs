@@ -142,8 +142,8 @@ module.exports = {
     });
     L.summary({
       points: ['Every robot brings good and bad', 'Four steps: scenario, impacts, reduce harm, long term', 'Designers plan to reduce harm before building', 'Humans and robots work best as partners'],
-      homework: 'Activity 1.2: write a newspaper article of no more than 400 words on the impact of your group\'s robot, for readers with no technical knowledge. Use your group\'s chart. Read pages 14 to 24 (robotics careers).',
-      notes: 'Homework is the assignment "Robots and society 1: newspaper article" on the class site (20 marks). Learners type it in the box or upload a photo of handwritten work. The best articles can go in the school journal or on the notice board. Next lesson: Week 2, robotics careers, job postings, cover letters and CVs.',
+      homework: 'Analyse a new robot, EduBot the robot teaching assistant, on your own (Classwork). Activity 1.2: write a newspaper article of no more than 400 words on your group\'s robot. Read pages 14 to 24.',
+      notes: 'Individual assignment: "Robots and society 1: EduBot scenario questions" (20 marks), a new scenario learners analyse alone with the four steps; hand out the EduBot PDF or let them read it on the class site. Homework is the assignment "Robots and society 1: newspaper article" on the class site (20 marks). Learners type it in the box or upload a photo of handwritten work. The best articles can go in the school journal or on the notice board. Next lesson: Week 2, robotics careers, job postings, cover letters and CVs.',
     });
   },
 };

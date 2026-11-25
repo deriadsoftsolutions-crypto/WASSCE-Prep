@@ -1,14 +1,15 @@
-"""Printable AgriBot and ReNurse scenarios with the assignment questions
-(Robotics Year 2, Section 1, Activity 1.1, page 12; Teacher Manual Year 2 pages 14 to 15).
-Usage: python3 scripts/worksheets/society-1-scenarios.py  -> public/teaching/society-1/agribot-renurse-scenarios.pdf
-The questions must match the assignment 'society-1-scenarios' in src/data/ready/society-1.ts."""
+"""Printable robot scenarios for Robots and society 1 (STEM 2, Section 1, Week 1).
+Usage: python3 scripts/worksheets/society-1-scenarios.py
+  -> public/teaching/society-1/agribot-renurse-scenarios.pdf  (Activity 1.1 group work, Robotics Year 2 page 12)
+  -> public/teaching/society-1/edubot-scenario.pdf            (new scenario + questions for the individual assignment)
+The EduBot questions must match the assignment 'society-1-edubot' in src/data/ready/society-1.ts."""
 import pathlib
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.colors import HexColor
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 
-OUT = pathlib.Path(__file__).resolve().parents[2] / 'public/teaching/society-1/agribot-renurse-scenarios.pdf'
+DIR = pathlib.Path(__file__).resolve().parents[2] / 'public/teaching/society-1'
 GREEN, NAVY, GREY, PALE, BLUE = HexColor('#006B3F'), HexColor('#14213D'), HexColor('#5A6270'), HexColor('#F2F4EF'), HexColor('#1F6FB2')
 
 h1 = ParagraphStyle('h1', fontName='Helvetica-Bold', fontSize=18, leading=22, textColor=NAVY, spaceAfter=2)
@@ -46,29 +47,45 @@ SCENARIOS = [
     ),
 ]
 
+EDUBOT = dict(
+    title='Scenario: EduBot, the robot teaching assistant', colour=HexColor('#B8860B'),
+    source='STEM 2 Robotics  |  Section 1: Robots and Society  |  Individual assignment  |  A new scenario, not in the textbook',
+    intro='Many Senior High School classes in Ghana have 50 or more learners and one teacher. Imagine that the Ministry of Education plans to test <b>EduBot</b>, a robot teaching assistant, '
+          'in some SHS classrooms, with one EduBot in each class. EduBot moves around the classroom on wheels, has a camera, a microphone, a speaker and a touch screen, '
+          'and connects to the internet. It is meant to support the class teacher, not to replace them.',
+    functions=[
+        ('Attendance', 'A camera at the classroom door recognises each learner\'s face and takes the register automatically. If a learner is absent, EduBot sends a text message to their parent or guardian.'),
+        ('Marking and feedback', 'EduBot marks class exercises and tests in seconds, including short written answers, gives each learner feedback, and records every mark.'),
+        ('Personal tutoring', 'Learners can ask EduBot questions at any time. It explains topics step by step, in English and in some Ghanaian languages, and changes its pace to suit each learner.'),
+        ('Classroom support', 'EduBot moves between desks to help learners who are stuck, plays videos and simulations, and reads text aloud for learners with poor eyesight.'),
+        ('Reports and predictions', 'Every week EduBot sends reports to the teacher, the headteacher and parents. It also predicts which learners are likely to fail the WASSCE so that they can get extra help early.'),
+    ],
+    think=['How would learners, teachers and parents feel about EduBot?', 'What happens to learners\' faces, marks and messages that EduBot collects?', 'Can EduBot mark fairly? What if it is wrong?', 'What about schools with no reliable electricity or internet?', 'What can a human teacher do that EduBot cannot?'],
+)
+
 QUESTIONS = [
-    ('Part A: AgriBot', [
-        ('1', 'In your own words, describe what AgriBot does and where it would be used.', 1),
-        ('2', 'List THREE positive impacts AgriBot could have on society. Think about jobs, the environment and well-being.', 3),
-        ('3', 'List THREE negative impacts AgriBot could have on society. Think about job loss, cost and fairness, and safety.', 3),
-        ('4', 'Explain ONE ethical issue raised by AgriBot, for example safety, data or bias.', 1),
-        ('5', 'Choose one negative impact from question 3. How could the designer reduce it?', 1),
+    ('Step 1: The scenario', [
+        ('1', 'Describe EduBot\'s role in your own words: what it does, who it is for, and where it would be used.', 2),
     ]),
-    ('Part B: ReNurse', [
-        ('6', 'In your own words, describe what ReNurse does and where it would be used.', 1),
-        ('7', 'List THREE positive impacts ReNurse could have on society.', 3),
-        ('8', 'List THREE negative impacts ReNurse could have on society. Think about privacy, less human contact and jobs.', 3),
-        ('9', 'Explain ONE ethical issue raised by ReNurse, for example patient data security or safety.', 1),
-        ('10', 'Choose one negative impact from question 8. How could the designer reduce it?', 1),
+    ('Step 2: Potential impacts', [
+        ('2', 'List THREE positive impacts EduBot could have. Think about learners, teachers, parents and society.', 3),
+        ('3', 'List THREE negative impacts EduBot could have. Think about jobs, privacy, fairness, cost and human contact.', 3),
+        ('4', 'Explain TWO ethical issues raised by EduBot, for example the face recognition camera, learners\' data, or fairness in marking and predictions.', 4),
     ]),
-    ('Part C: Humans and robots', [
-        ('11', 'Choose ONE of the two robots. Explain what humans will still do alongside it, and why this human-robot partnership is important.', 2),
+    ('Step 3: Reduce the harm, increase the good', [
+        ('5', 'Choose TWO of the negative impacts you listed in question 3. For each one, explain how the designers or the school could reduce it.', 4),
+    ]),
+    ('Step 4: The long term', [
+        ('6', 'Describe ONE long-term impact of EduBot, for example e-waste, going out of date, or the effect on the teaching profession, and how it could be managed.', 2),
+    ]),
+    ('Humans and robots', [
+        ('7', 'What will the class teacher still do that EduBot cannot? Explain why this human-robot partnership is important in a classroom.', 2),
     ]),
 ]
 
 def scenario_page(s, sc, width):
     s += [Paragraph(sc['title'], ParagraphStyle('t', parent=h1, textColor=sc['colour'])),
-          Paragraph('STEM 2 Robotics  |  Section 1: Robots and Society  |  Activity 1.1, Robotics Year 2, page 12', sub)]
+          Paragraph(sc.get('source', 'STEM 2 Robotics  |  Section 1: Robots and Society  |  Activity 1.1, Robotics Year 2, page 12'), sub)]
     box = Table([[Paragraph(sc['intro'], body)]], colWidths=[width])
     box.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, -1), PALE), ('BOX', (0, 0), (-1, -1), 1, sc['colour']), ('LEFTPADDING', (0, 0), (-1, -1), 10), ('RIGHTPADDING', (0, 0), (-1, -1), 10), ('TOPPADDING', (0, 0), (-1, -1), 8), ('BOTTOMPADDING', (0, 0), (-1, -1), 4)]))
     s += [box, Paragraph('What it can do', h2)]
@@ -79,21 +96,27 @@ def scenario_page(s, sc, width):
     s += [Paragraph(x, item, bulletText='•') for x in sc['think']]
     s += [Paragraph('Use the four steps of a societal impact analysis: (1) define the scenario and the robot\'s role, (2) identify potential impacts, (3) reduce the negative impacts and increase the positive ones, (4) think about the long term.', ParagraphStyle('n', parent=body, textColor=GREY, fontSize=9.8, spaceBefore=8))]
 
+def frame(path, title):
+    return SimpleDocTemplate(str(path), pagesize=A4, leftMargin=42, rightMargin=42, topMargin=38, bottomMargin=38, title=title, author='STEM 2 Robotics')
+
 def main():
-    doc = SimpleDocTemplate(str(OUT), pagesize=A4, leftMargin=42, rightMargin=42, topMargin=38, bottomMargin=38,
-                            title='AgriBot and ReNurse scenarios', author='STEM 2 Robotics')
-    s = []
-    for sc in SCENARIOS:
-        scenario_page(s, sc, doc.width); s.append(PageBreak())
-    s += [Paragraph('Questions: AgriBot and ReNurse', h1),
-          Paragraph('Assignment "Robots and society 1: AgriBot and ReNurse scenario questions"  |  20 marks  |  Work on your own', sub),
-          Paragraph('Answer online on the class site (Classwork), or write your answers in your exercise book or on paper and upload a clear photo or a PDF of every page. '
-                    'Number your answers. The marks for each question are shown in brackets.', body)]
+    DIR.mkdir(parents=True, exist_ok=True)
+    out = DIR / 'agribot-renurse-scenarios.pdf'
+    doc = frame(out, 'AgriBot and ReNurse scenarios'); s = []
+    scenario_page(s, SCENARIOS[0], doc.width); s.append(PageBreak()); scenario_page(s, SCENARIOS[1], doc.width)
+    doc.build(s); print('wrote', out)
+
+    out = DIR / 'edubot-scenario.pdf'
+    doc = frame(out, 'EduBot scenario and questions'); s = []
+    scenario_page(s, EDUBOT, doc.width); s.append(PageBreak())
+    s += [Paragraph('Questions: EduBot', h1),
+          Paragraph('Assignment "Robots and society 1: EduBot scenario questions"  |  20 marks  |  Work on your own', sub),
+          Paragraph('Use the four steps of a societal impact analysis. Answer online on the class site (Classwork), or write your answers in your exercise book or on paper '
+                    'and upload a clear photo or a PDF of every page. Number your answers. The marks for each question are shown in brackets.', body)]
     for part, qs in QUESTIONS:
         s.append(Paragraph(part, h2))
         s += [Paragraph(f'<b>{n}.</b>&nbsp;&nbsp;{text} <font color="#5A6270">[{m} mark{"s" if m > 1 else ""}]</font>', q) for n, text, m in qs]
     s += [Spacer(1, 8), Paragraph('Total: 20 marks', ParagraphStyle('tot', parent=body, fontName='Helvetica-Bold'))]
-    doc.build(s)
-    print('wrote', OUT)
+    doc.build(s); print('wrote', out)
 
 main()
