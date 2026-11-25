@@ -13,5 +13,10 @@
     "dir": "/teaching/python-3/slides",
     "count": 17,
     "title": "Python 3 slides: making decisions with if, elif and else"
+  },
+  "/teaching/society-1/Robots-and-Society-1-Impact-Analysis.pptx": {
+    "dir": "/teaching/society-1/slides",
+    "count": 20,
+    "title": "Robots and society 1 slides: weighing the good and the bad"
   }
 }

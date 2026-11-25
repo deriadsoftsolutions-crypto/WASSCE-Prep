@@ -209,7 +209,7 @@ function createDeck({ title, footer, subject = 'Robotics' }) {
       });
     },
     /** Pair or group task: numbered tasks in a card, example code and its output on the right. */
-    activity({ title: t, intro, tasks, timer, code, label, codeSize = 14, output, footnote, notes }) {
+    activity({ title: t, intro, tasks, timer, code, label, codeSize = 14, output, sheet, footnote, notes }) {
       const s = content(t, notes);
       card(s, 0.6, 1.45, 5.0, 5.3, C.background2, 'task card');
       T(s, intro, { x: 0.9, y: 1.65, w: 4.4, h: 0.8, fontSize: 17, bold: true, color: C.text1, valign: 'top' });
@@ -223,6 +223,17 @@ function createDeck({ title, footer, subject = 'Robotics' }) {
         const ch = cth + 0.7;
         codePanel(s, code, { x: 5.9, y: 1.45, w: 6.8, h: ch, fontSize: cfs, label });
         if (output) outputPanel(s, output, { x: 5.9, y: 1.45 + ch + 0.2, w: 6.8, h: outH, fontSize: outFit[0] });
+      }
+      if (sheet) {
+        // A worksheet or chart: a heading, then one labelled box per section with a hint.
+        const sh = footnote ? 4.4 : 5.3;
+        T(s, sheet.heading, { x: 5.9, y: 1.45, w: 6.8, h: 0.45, fontSize: 18, bold: true, color: C.accent1 });
+        const top = 2.0; const step = (sh - 0.55) / sheet.items.length;
+        sheet.items.forEach(([head, hint], i) => {
+          const y = top + i * step;
+          s.addShape('rect', { x: 5.9, y, w: 6.8, h: step - 0.1, fill: { color: C.background1 }, line: { color: C.accent1, width: 1 }, objectName: `sheet ${head}` });
+          T(s, headBody(head, hint, 16, 13), { x: 6.05, y: y + 0.02, w: 6.5, h: step - 0.14, valign: 'top' });
+        });
       }
       if (footnote) T(s, footnote, { x: 5.9, y: 6.0, w: 6.8, h: 0.7, fontSize: 15, italic: true, color: C.text2 });
     },

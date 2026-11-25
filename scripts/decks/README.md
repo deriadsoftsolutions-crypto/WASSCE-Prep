@@ -31,13 +31,17 @@ A spec exports `{ file, title, footer, build({ L }, { images }) }`. `build` call
 - `cards` (2 to 4 cards)
 - `table`
 - `rows` (icon rows)
-- `activity` (tasks, timer, example code and output)
+- `activity` (tasks, timer, and either example code and output, or a `sheet` worksheet/chart for discussion lessons)
 - `quiz` (exit check)
 - `summary` (with homework)
 
 Every layout takes `notes`, which become the speaker notes (teaching script, timings, book pages). Code panels shrink their text to fit. Still check the rendered pictures in `public/teaching/<key>/slides/` before committing.
 
 Icons are PNG files in `scripts/decks/icons/` (white, for coloured circles). Book figures used by decks are in `scripts/decks/images/`.
+
+## Printable worksheets
+
+Scripts in `scripts/worksheets/` make printable PDFs with reportlab, for example `python3 scripts/worksheets/society-1-chart.py` (the Activity 1.1 impact analysis chart).
 
 ## Tests
 
