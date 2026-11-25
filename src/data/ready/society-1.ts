@@ -4,6 +4,7 @@ import { build, mcq, short, type ReadyAssignment, type ReadyLesson, type ReadyTe
 const T = '/teaching/society-1';
 const DECK = `${T}/Robots-and-Society-1-Impact-Analysis.pptx`;
 const CHART = `${T}/impact-analysis-chart.pdf`;
+const ELLIQ = `${T}/elli-q-scenario.pdf`;
 
 export const lesson: ReadyLesson = {
   key: 'society-1',
@@ -14,6 +15,7 @@ export const lesson: ReadyLesson = {
   topicId: 1,
   materials: [
     { unitId: 'u2-1-1', year: 2, title: 'Robots and society 1 slides: weighing the good and the bad', description: 'PowerPoint', kind: 'file', url: DECK, fileName: 'Robots-and-Society-1-Impact-Analysis.pptx', mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', audience: 'learners', published: true },
+    { unitId: 'u2-1-1', year: 2, title: 'Elli Q scenario (printable)', description: 'PDF, worked example for the impact analysis', kind: 'file', url: ELLIQ, fileName: 'elli-q-scenario.pdf', mime: 'application/pdf', audience: 'learners', published: true },
     { unitId: 'u2-1-1', year: 2, title: 'Activity 1.1 impact analysis chart (printable)', description: 'PDF, one per group', kind: 'file', url: CHART, fileName: 'impact-analysis-chart.pdf', mime: 'application/pdf', audience: 'learners', published: true },
   ],
   blocks: [
@@ -58,6 +60,7 @@ Since 2019, drones have delivered blood and vaccines to health centres across Gh
 Designers who follow these steps build robots that are useful **and** responsible.` },
     { type: 'check', question: 'A designer asks: "Will this robot become outdated quickly and end up as electronic waste?" Which step of the impact analysis is this?', options: ['Step 1: define the scenario', 'Step 2: identify potential impacts', 'Step 3: reduce the negative impacts', 'Step 4: think about the long term'], correct: 3, explanation: 'Obsolescence and e-waste are long-term impacts, so this is step 4.' },
 
+    { type: 'link', label: 'Elli Q scenario (PDF to read or print)', url: ELLIQ },
     { type: 'text', md: `## 4. Worked example: Elli Q, a companion robot for elderly people
 **Step 1: scenario and role.** Elli Q keeps elderly people who live alone company and helps with daily tasks.
 
