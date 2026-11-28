@@ -17,8 +17,8 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 export function outsideNotice(a: { classIds?: string[]; classKey?: string }, l: Me, kind = 'test'): string {
   if (isForMe(a, l) || l.className === 'Teacher') return '';
   const label = audienceLabel(audienceOf(a), cachedClasses());
-  return feedbackHTML('info', `This ${kind} was set for ${label}, not for your class.`,
-    `<p style="margin:6px 0 0">You can still do it for practice. Your teacher will see that you are in ${esc(l.className)}.</p>`);
+  return feedbackHTML('info', `You are exploring ${kind === 'assignment' ? 'an' : 'a'} ${kind} set for ${label}.`,
+    `<p style="margin:6px 0 0">It is not part of your own classwork, but you can do it for extra practice. If you submit it, your teacher will see that you are in ${esc(l.className)}. <a href="/assignments">Back to my classwork</a></p>`);
 }
 
 

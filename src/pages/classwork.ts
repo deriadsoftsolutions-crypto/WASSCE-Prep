@@ -73,7 +73,16 @@ export async function classworkPage(el: HTMLElement) {
   const mine = [...await Promise.all(tst.mine.map((a) => testRow(a, teacher ? forWhom(a) : ''))), ...await Promise.all(asg.mine.map((a) => assignmentRow(a, teacher ? forWhom(a) : '')))];
   const todo = mine.filter((r) => !r.done).sort((a, b) => a.sort - b.sort);
   const finished = mine.filter((r) => r.done);
-  const others = [...await Promise.all(tst.others.map((a) => testRow(a, forWhom(a)))), ...await Promise.all(asg.others.map((a) => assignmentRow(a, forWhom(a))))];
+  // Explore: tests (then assignments) set for other classes, grouped by the class they were set for.
+  const otherItems = [...tst.others.map((a) => ({ a, test: true })), ...asg.others.map((a) => ({ a, test: false }))];
+  const groups = new Map<string, Row[]>();
+  await Promise.all(otherItems.map(async ({ a, test }) => {
+    const label = audienceLabel(audienceOf(a), classes);
+    const row = test ? await testRow(a as Assessment) : await assignmentRow(a as Assignment);
+    groups.set(label, [...(groups.get(label) ?? []), row]);
+  }));
+  const others = [...groups.values()].flat();
+  const groupOrder = [...groups.keys()].sort((x, y) => x.localeCompare(y, undefined, { numeric: true }));
   const topics = topicsData as { id: number; short?: string; title: string }[];
   const lessonRows: Row[] = lessons.map((x) => ({
     href: `/lessons/${x.id}`, icon: 'book', title: x.title, done: done.has(x.id), sort: 0,
@@ -98,7 +107,9 @@ export async function classworkPage(el: HTMLElement) {
     <section aria-labelledby="cw-done"><h2 id="cw-done">Done</h2>
       ${finished.length ? rowsHTML(finished) : empty('Work you hand in and tests you take appear here, with your marks.')}</section>
 
-    ${others.length ? `<details class="card cw-others"><summary><b>Set for other classes (${others.length})</b></summary>
-      <p class="muted small" style="margin:8px 0 10px">This work was set for other classes. You may try it for practice. If you hand it in, your teacher sees that you are not in that class.</p>
-      ${rowsHTML(others)}</details>` : ''}`;
+    ${others.length ? `<details class="cw-others" data-explore>
+      <summary><span class="cw-explore-btn">${icon('test', 22)} Explore tests for other classes <span class="pill">${others.length}</span></span></summary>
+      <p class="muted small" style="margin:10px 0 4px">Tests and assignments your teacher set for other classes. Try them for extra practice. They are not part of your own classwork; if you submit one, your teacher sees that you are exploring from ${esc(l.className)}.</p>
+      ${groupOrder.map((g) => `<h3 class="cw-group">For ${esc(g)}</h3>${rowsHTML(groups.get(g)!.sort((x, y) => Number(x.icon !== 'test') - Number(y.icon !== 'test') || x.title.localeCompare(y.title, undefined, { numeric: true })))}`).join('')}
+    </details>` : ''}`;
 }

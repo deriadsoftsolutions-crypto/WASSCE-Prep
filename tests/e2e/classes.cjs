@@ -77,10 +77,10 @@ const SHOTS = require('os').tmpdir() + '/classes-shots'; require('fs').mkdirSync
   await A.p.goto(BASE + '/assignments'); await A.p.waitForSelector('#cw-todo');
   const aTodo = await A.p.locator('section:has(#cw-todo)').innerText();
   check('Ama: only the STEM 2 test in To do', !/EduBot/.test(aTodo) && /Robots and society 1 check/.test(aTodo));
-  check('Ama: EduBot under other classes', /Set for other classes \(1\)/.test(await A.p.locator('.cw-others').innerText()));
+  check('Ama: explore option lists EduBot under For 2 Sci A', /Explore tests for other classes\s*1/.test(await A.p.locator('.cw-others').innerText()) && /For 2 Sci A[\s\S]*EduBot/.test(await A.p.locator('.cw-others').textContent()));
   await A.p.screenshot({ path: SHOTS + '/classwork-phone.png', fullPage: true });
   await A.p.click('.cw-others summary'); await A.p.click('.cw-others a:has-text("EduBot")'); await A.p.waitForSelector('[data-text]');
-  check('notice on other-class assignment', /set for 2 Sci A, not for your class/.test(await A.p.locator('main').innerText()));
+  check('notice on other-class assignment', /exploring an assignment set for 2 Sci A/.test(await A.p.locator('main').innerText()));
   await A.p.fill('[data-text]', 'My EduBot answers.'); await A.p.click('[data-submit]'); await A.p.waitForTimeout(2000);
   // 7. Teacher sees the flag
   await T.p.reload(); await T.p.click('[data-tab=overview]'); await T.p.waitForSelector('[data-ovoutside] .card', { timeout: 20000 });

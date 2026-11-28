@@ -922,3 +922,14 @@ details > summary { min-height: var(--tap); padding: 10px 0; box-sizing: border-
 .due-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
 .due-row > .pill { justify-self: end; max-width: 10.5rem; white-space: normal; text-align: center; line-height: 1.25; padding-top: 4px; padding-bottom: 4px; }
 @media (max-width: 420px) { .due-row { gap: 10px; padding: 12px; } }
+
+/* Classwork: Explore tests for other classes */
+.cw-others > summary { list-style: none; }
+.cw-others > summary::-webkit-details-marker { display: none; }
+.cw-explore-btn { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 18px; border: 1.5px solid var(--ink); border-radius: var(--radius); font-weight: 700; background: var(--surface); }
+.cw-others > summary:hover .cw-explore-btn { background: var(--surface-2); }
+.cw-others[open] .cw-explore-btn { background: var(--primary-soft); }
+.cw-group { font-size: 1rem; margin: 14px 0 6px; }
+.cw-others { margin-top: 28px; }
+.cw-explore-btn { width: 100%; justify-content: flex-start; }
+.cw-explore-btn .pill { margin-left: auto; }
