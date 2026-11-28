@@ -183,6 +183,13 @@ service cloud.firestore {
       allow read: if isTeacher();
     }
 
+    // The learners' catalog: one document listing everything published, so a learner's page costs one
+    // read instead of one per item (free plan: 50,000 reads a day). The teacher's device rewrites it.
+    match /catalog/{id} {
+      allow read: if signedIn();
+      allow write: if isTeacher();
+    }
+
     // Lessons: written by teachers, readable by everyone signed in.
     match /lessons/{id} {
       allow read: if signedIn();

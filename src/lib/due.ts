@@ -20,6 +20,8 @@ let cache: { at: number; learnerId: string; items: DueItem[] } | null = null;
 
 export function refreshDue() {
   cache = null;
+  // The learner's own work changed: the next list asks the server for just that change.
+  if (usingFirebase) void import('../firebase/mywork').then((m) => m.myWorkChanged()).catch(() => undefined);
   window.dispatchEvent(new CustomEvent('classwork-changed'));
 }
 
@@ -27,23 +29,24 @@ export async function dueWork(): Promise<DueItem[]> {
   const l = learner();
   if (!usingFirebase || !l) return [];
   if (cache && cache.learnerId === l.id && Date.now() - cache.at < 60_000) return cache.items;
-  const [asg, tst] = await Promise.all([import('../firebase/assignments'), import('../firebase/assessments')]);
+  const [asg, tst, { myWork }] = await Promise.all([import('../firebase/assignments'), import('../firebase/assessments'), import('../firebase/mywork')]);
   // Only work set for the learner's own class counts as "to do" (work for other classes is optional).
   const [assignments, tests] = await Promise.all([
     asg.assignmentsFor(l).then((x) => x.mine).catch(() => []),
     tst.assessmentsFor(l).then((x) => x.mine).catch(() => []),
   ]);
   const items: DueItem[] = [];
+  const work = await myWork();
   await Promise.all([
     ...tests.filter((t) => tst.statusOf(t) === 'open').map(async (t) => {
-      if (await tst.myAttempt(t.id).catch(() => null)) return;
+      if (work.attempts[t.id]) return;
       items.push({
         kind: 'test', id: t.id, title: t.title, href: `/tests/${t.id}`, dueAt: t.closesAt,
         detail: `Test, ${t.questionCount} question${t.questionCount === 1 ? '' : 's'}${t.timeLimitMin ? `, ${t.timeLimitMin} minutes` : ''}`,
       });
     }),
     ...assignments.map(async (a) => {
-      if (await asg.mySubmission(a.id).catch(() => null)) return;
+      if (work.submissions[a.id]) return;
       items.push({ kind: 'assignment', id: a.id, title: a.title, href: `/assignments/${a.id}`, dueAt: a.dueAt, detail: 'Assignment' });
     }),
   ]);

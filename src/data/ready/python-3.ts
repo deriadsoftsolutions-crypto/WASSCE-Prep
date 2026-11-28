@@ -162,6 +162,7 @@ const check = build([
 
 export const test: ReadyTest = {
   key: 'python-3-check',
+  lessonKey: 'python-3',
   year: 3,
   unitId: 'u3-3-2',
   title: 'Python 3 check: making decisions',
@@ -175,6 +176,7 @@ export const test: ReadyTest = {
 
 export const practical: ReadyAssignment = {
   key: 'python-3-decisions',
+  lessonKey: 'python-3',
   year: 3,
   unitId: 'u3-3-2',
   title: 'Python 3 practical: the robot decision maker',

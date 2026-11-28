@@ -1,4 +1,7 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import {
+  doc, setDoc,
+} from 'firebase/firestore';
+import { getDoc } from './reads';
 import { db } from './app';
 import type { Settings } from '../lib/settings';
 

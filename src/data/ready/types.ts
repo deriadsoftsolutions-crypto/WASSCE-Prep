@@ -14,7 +14,10 @@ export interface ReadyLesson extends Placed {
   materials: Omit<Material, 'id' | 'createdAt' | 'order'>[];
 }
 
-export interface ReadyTest extends Placed {
+/** Tests and assignments name the ready-made lesson they follow, so the unit's lesson player shows them after it. */
+interface FollowsLesson { lessonKey?: string }
+
+export interface ReadyTest extends Placed, FollowsLesson {
   /** When to use it, shown to the teacher in the picker */
   when: string;
   instructions: string;
@@ -25,7 +28,7 @@ export interface ReadyTest extends Placed {
   answers: Record<string, KeyEntry>;
 }
 
-export interface ReadyAssignment extends Placed {
+export interface ReadyAssignment extends Placed, FollowsLesson {
   when: string;
   instructions: string;
   maxMarks: number;

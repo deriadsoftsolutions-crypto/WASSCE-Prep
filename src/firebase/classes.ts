@@ -5,7 +5,10 @@
  * `aliases` are older login codes of learners who were moved into this class, so they can still sign in.
  * Anyone can read the list (sign-up needs it before signing in); only teachers can change it.
  */
-import { arrayUnion, collection, doc, getDocs, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import {
+  arrayUnion, collection, doc, setDoc, updateDoc, writeBatch,
+} from 'firebase/firestore';
+import { getDocs } from './reads';
 import { db } from './app';
 import { classIdFor, sortClasses, type ClassInfo } from '../lib/audience';
 import type { LearnerInfo } from './assignments';
@@ -38,7 +41,7 @@ export async function listClasses(fresh = false): Promise<SchoolClass[]> {
     throw e;
   }
 }
-export const forgetClasses = () => { memo = null; };
+export const forgetClasses = () => { memo = null; void import('./catalog').then((c) => c.catalogDirty()); };
 
 /** Teacher: add a class. The id comes from the name and must not clash with another class. */
 export async function addClass(name: string, year: 1 | 2 | 3): Promise<SchoolClass> {
@@ -106,4 +109,10 @@ export function unmatched(learners: LearnerInfo[], classes: SchoolClass[]): { l:
     const k = classIdFor(l.className);
     return { l, guess: classes.find((c) => !c.retired && (c.id === k || (c.aliases ?? []).includes(k))) ?? null };
   });
+}
+
+/** Signed-in pages: class names from the catalog (no extra reads); falls back to the classes collection. */
+export async function classNames(): Promise<ClassInfo[]> {
+  const { getCatalog } = await import('./catalog');
+  return (await getCatalog())?.classes ?? listClasses();
 }

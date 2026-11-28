@@ -114,8 +114,8 @@ export async function homePage(el: HTMLElement) {
   // This year's published units, and the first one with lessons still to finish.
   let units: Unit[] = [];
   if (usingFirebase && l?.year) {
-    const { listUnits } = await import('../firebase/units');
-    units = (await listUnits().catch(() => [] as Unit[])).filter((u) => u.year === l.year && u.published);
+    const { learnerUnits } = await import('../firebase/units');
+    units = (await learnerUnits().catch(() => [] as Unit[])).filter((u) => u.year === l.year && u.published);
   }
   const unitLeft = (u: Unit) => lessons.filter((x) => x.unitId === u.id && !doneLessons.has(x.id)).length;
   const unitTotal = (u: Unit) => lessons.filter((x) => x.unitId === u.id).length;

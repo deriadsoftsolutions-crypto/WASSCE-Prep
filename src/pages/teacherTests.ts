@@ -4,7 +4,10 @@ import { listLearners, type LearnerInfo } from '../firebase/assignments';
 import { listClasses, type SchoolClass } from '../firebase/classes';
 import { legacyClassFields, audienceOf, yearToken } from '../lib/audience';
 import { audiencePickerHTML, readAudience, wireAudiencePicker } from './audiencePicker';
-import { audienceCell, filterBarHTML, isOutside, matchesFilter, outsidePill, peopleFor, wireFilter } from './teacherShared';
+import { audienceCell, filterBarHTML, isOutside, matchesFilter, outsidePill, peopleFor, placementSelectHTML, readPlacement, readyPlacement, wireFilter } from './teacherShared';
+import { listLessons, type Lesson } from '../firebase/lessons';
+import { listUnits, type Unit } from '../firebase/units';
+import { READY_LESSONS } from '../data/ready';
 import {
   allAttempts, allowRetake, autoScore, deleteAssessment, getKey, getQuestions, listAssessments, releaseResult, saveAssessment, statusOf,
   type Assessment, type Attempt, type KeyEntry, type QType, type Question, type Result, type ShowResults,
@@ -32,9 +35,11 @@ export async function mountTeacherTests(host: HTMLElement) {
   let tests: Assessment[] = [];
   let learners: LearnerInfo[] = [];
   let classes: SchoolClass[] = [];
+  let lessons: Lesson[] = [];
+  let units: Unit[] = [];
   let data: Awaited<ReturnType<typeof allAttempts>> = { starts: [], attempts: [], results: [] };
   const load = async () => {
-    [tests, learners, data, classes] = await Promise.all([listAssessments(), listLearners(), allAttempts(), listClasses().catch(() => [] as SchoolClass[])]);
+    [tests, learners, data, classes, lessons, units] = await Promise.all([listAssessments(), listLearners(), allAttempts(), listClasses().catch(() => [] as SchoolClass[]), listLessons().catch(() => [] as Lesson[]), listUnits().catch(() => [] as Unit[])]);
   };
   const inClass = (a: Assessment) => peopleFor(a, learners);
   const learnerById = (id: string) => learners.find((l) => l.id === id);
@@ -77,7 +82,7 @@ export async function mountTeacherTests(host: HTMLElement) {
         void (async () => {
           try {
             const id = await saveAssessment({
-              title: r.title, instructions: r.instructions, classIds: [yearToken(r.year)], ...legacyClassFields([yearToken(r.year)], classes), opensAt: null, closesAt: null,
+              title: r.title, instructions: r.instructions, classIds: [yearToken(r.year)], ...legacyClassFields([yearToken(r.year)], classes), ...readyPlacement(r, lessons, READY_LESSONS.find((x) => x.key === r.lessonKey)?.title), opensAt: null, closesAt: null,
               timeLimitMin: r.timeLimitMin, showResults: r.showResults, portfolioSection: r.portfolioSection, published: false,
             }, r.questions, r.answers);
             toast(`Added as a draft for all of STEM ${r.year}. Choose the class and dates, then publish.`);
@@ -118,6 +123,7 @@ export async function mountTeacherTests(host: HTMLElement) {
           <label class="field"><span>Title</span><input name="title" maxlength="120" value="${esc(a?.title ?? '')}" /></label>
           <label class="field"><span>Instructions (optional)</span><textarea name="instructions" rows="3">${esc(a?.instructions ?? '')}</textarea></label>
           ${audiencePickerHTML(a ? audienceOf(a) : [], classes)}
+          ${placementSelectHTML(units, lessons, a?.unitId, a?.lessonId)}
           <div class="grid-2">
             <label class="field"><span>Opens (optional, blank = straight away)</span><input name="opens" type="datetime-local" value="${toLocal(a?.opensAt ?? null)}" /></label>
             <label class="field"><span>Closes (optional)</span><input name="closes" type="datetime-local" value="${toLocal(a?.closesAt ?? null)}" /></label>
@@ -288,7 +294,7 @@ export async function mountTeacherTests(host: HTMLElement) {
         try {
           await saveAssessment({
             id: a?.id, createdAt: a?.createdAt, title, instructions: String(fd.get('instructions') ?? '').trim(),
-            classIds: aud, ...legacyClassFields(aud, classes), opensAt, closesAt,
+            classIds: aud, ...legacyClassFields(aud, classes), ...readPlacement(form, lessons), opensAt, closesAt,
             timeLimitMin: Math.max(0, Math.round(Number(fd.get('limit')) || 0)), showResults: String(fd.get('show')) as ShowResults,
             portfolioSection: fd.get('psec') === 'semester' ? 'semester' : 'tests',
             published: fd.get('published') === 'on',

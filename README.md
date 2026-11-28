@@ -162,6 +162,23 @@ Lessons, tests and assignments have a **Who is it for?** choice: all classes, al
 
 Data: `classes/{id}` `{ name, year, retired, aliases, createdAt }` (anyone can read; teachers write). Items store `classIds` (class ids and `year:N`; empty = all classes); older items with a single `classKey` are read the same way. Learners store `classId` and `loginKey`. Helpers: `src/lib/audience.ts`.
 
+## Staying on the free plans (Firebase reads)
+
+Cloudflare's free plan is not the limit (the whole site is about 150 files, 26 MB; learners' uploads go to R2's free 10 GB). The limit to watch is **Firebase's 50,000 document reads a day** for the whole school. Every document a page fetches is one read, so learner pages are built to read almost nothing:
+
+- **The catalog** (`catalog/public`, `src/firebase/catalog.ts`): one document listing everything published (lessons without their text, tests, assignments, units, learner materials, class names). Learners keep one live copy while the site is open: one read when it opens, then one read each time the teacher changes something, so new work appears within seconds. The teacher's device updates the one item after every save or delete, and rebuilds the whole catalog once each time the Teacher page opens (so it repairs itself).
+- **A learner's own work** (`src/firebase/mywork.ts`): hand-ins, marks, test starts, answers and results are kept on the device; only records newer than the newest one kept are fetched (about five reads), with a full re-read every six hours.
+- **Practice results**: shown from the device, and only results newer than the newest one kept are fetched; a full re-check once a week.
+- **Lesson text** is kept on the device until the teacher changes the lesson; "am I a teacher?" is remembered for the browser session.
+
+Measured with the emulator (`tests/e2e/reads.cjs`, a learner with 60 practice results, 8 lessons, 9 tests and 9 assignments published): **before, about 270 reads every time the learner opened the site and looked around; after, about 5** (the first visit on a new device downloads that learner's history once). In emulator builds the running count is in `window.__fsReads`, and every read goes through `src/firebase/reads.ts`. When adding a learner page, read from the catalog and `myWork()`, not from the collections.
+
+## Unit lesson player
+
+From a unit page, **Start the lesson player** (`/study/:unitId`) opens the unit's running order on the left: each lesson, followed by the quick test and practical set with it (Teacher Manual key assessments after those), then any unit assessments, with ticks and progress rings. The right shows the current step: a lesson's slides (the slide pictures, so no video data), its text and quick checks, or a test or assignment to open. **Previous** and **Next** walk the order; the place is remembered. On phones the running order folds into a bar at the top.
+
+Tests and assignments have **Where it appears in the lesson player** (after a lesson, or at the end of a unit). Ready-made ones are placed automatically after the lesson they belong to, if that lesson has been added.
+
 ## Assignments (file uploads with Cloudflare R2)
 
 Teachers set assignments on `/teacher` > **Assignments** (title, instructions, class, due date, marks, typed answer and/or files). Learners see them on **Assignments** (only those for their class), type an answer and/or attach up to 5 files (photos, PDF, Word, PowerPoint, Excel, text; 10 MB each; large photos are shrunk on the device first), and submit. They can change their work until it is marked. The teacher opens each learner's files, gives a mark and a comment, and the learner sees it straight away.

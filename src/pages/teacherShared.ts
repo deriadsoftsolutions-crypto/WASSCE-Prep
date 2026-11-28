@@ -59,3 +59,31 @@ export function wireFilter(host: HTMLElement, redraw: () => void) {
 /** A pill marking a learner who is not in the class(es) the work was set for. */
 export const outsidePill = (className: string) =>
   `<span class="pill" style="background:var(--accent-soft)" title="This learner is not in the class this work was set for">From ${esc(className || 'another class')}, not this class</span>`;
+
+/* ---------- Where a test or assignment appears in a unit's lesson player ---------- */
+type UnitLite = { id: string; year: number; code: string; subStrand: string };
+type LessonLite = { id: string; title: string; unitId?: string; createdAt: number };
+
+export function placementSelectHTML(units: UnitLite[], lessons: LessonLite[], unitId = '', lessonId = ''): string {
+  const cur = lessonId ? `lesson:${lessonId}` : unitId ? `unit:${unitId}` : '';
+  const used = units.filter((u) => lessons.some((l) => l.unitId === u.id) || u.id === unitId);
+  return `<label class="field"><span>Where it appears in the lesson player</span><select name="place">
+    <option value="">Not in a unit's lesson player</option>
+    ${used.map((u) => `<optgroup label="STEM ${u.year}, ${esc(u.code)} ${esc(u.subStrand)}">
+      ${lessons.filter((l) => l.unitId === u.id).sort((a, b) => a.createdAt - b.createdAt).map((l) => `<option value="lesson:${esc(l.id)}" ${cur === `lesson:${l.id}` ? 'selected' : ''}>After: ${esc(l.title)}</option>`).join('')}
+      <option value="unit:${esc(u.id)}" ${cur === `unit:${u.id}` ? 'selected' : ''}>At the end of the unit</option></optgroup>`).join('')}
+  </select></label>`;
+}
+
+export function readPlacement(form: HTMLElement, lessons: LessonLite[]): { unitId: string; lessonId: string } {
+  const v = (form.querySelector('select[name=place]') as HTMLSelectElement | null)?.value ?? '';
+  if (v.startsWith('lesson:')) { const l = lessons.find((x) => x.id === v.slice(7)); return { unitId: l?.unitId ?? '', lessonId: l?.id ?? '' }; }
+  if (v.startsWith('unit:')) return { unitId: v.slice(5), lessonId: '' };
+  return { unitId: '', lessonId: '' };
+}
+
+/** A ready-made test or assignment: the unit it belongs to and the lesson already added from its ready-made lesson. */
+export function readyPlacement(r: { unitId: string; lessonKey?: string }, lessons: (LessonLite & { readyKey?: string })[], readyLessonTitle?: string): { unitId: string; lessonId: string } {
+  const l = lessons.find((x) => (r.lessonKey && x.readyKey === r.lessonKey) || (!!readyLessonTitle && x.title === readyLessonTitle));
+  return { unitId: r.unitId, lessonId: l?.id ?? '' };
+}

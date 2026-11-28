@@ -98,6 +98,7 @@ async function boot() {
   route('/assignments/:id', assignmentPage, 'assignments');
   route('/tests/:id', testPage, 'assignments');
   route('/lessons/:id', lessonPage, 'assignments');
+  route('/study/:id', async (el, p) => (await import('./pages/study')).studyPage(el, p), 'learn');
   route('/view', async (el) => (await import('./pages/viewer')).viewerPage(el), 'learn');
   route('/python', async (el) => (await import('./pages/python')).pythonPage(el), 'learn');
   route('/profile', async (el) => (await import('./pages/profile')).profilePage(el), 'progress');

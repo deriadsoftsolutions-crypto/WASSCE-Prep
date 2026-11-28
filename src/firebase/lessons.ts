@@ -4,8 +4,12 @@
  * Learners mark a lesson finished through the storage adapter (attempt kind 'lesson', item "lesson:<id>"),
  * so it appears in the teacher's results and CSV like everything else.
  */
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import {
+  collection, deleteDoc, doc, setDoc,
+} from 'firebase/firestore';
+import { getDoc, getDocs } from './reads';
 import { auth, db } from './app';
+import { catalogPut, getCatalog } from './catalog';
 import { isForMe, type Me } from '../lib/audience';
 
 export type Block =
@@ -29,6 +33,8 @@ export interface Lesson {
   className: string;
   /** Who it is for: class ids and 'year:N' tokens; empty = all classes (lib/audience). */
   classIds?: string[];
+  /** Key of the ready-made lesson it came from (links its ready-made test and practical to it). */
+  readyKey?: string;
   summary: string;
   blocks: Block[];
   published: boolean;
@@ -49,22 +55,25 @@ export async function getLesson(id: string): Promise<Lesson | null> {
 
 /** Published lessons for this learner: set for their class (or all classes) and for their STEM year. `all` = every published lesson (teacher preview). */
 export async function lessonsFor(me: Me, all = false): Promise<Lesson[]> {
-  return (await listLessons()).filter((l) => l.published && (all || (isForMe(l, me) && (!l.year || !me.year || l.year === me.year))));
+  const cat = all ? null : await getCatalog();
+  return (cat ? (cat.lessons as Lesson[]) : await listLessons()).filter((l) => l.published && (all || (isForMe(l, me) && (!l.year || !me.year || l.year === me.year))));
 }
 
 export async function saveLesson(l: Omit<Lesson, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: number }): Promise<string> {
   const ref = l.id ? doc(db, 'lessons', l.id) : doc(collection(db, 'lessons'));
   const data: Omit<Lesson, 'id'> = {
-    title: l.title, topicId: l.topicId, year: l.year ?? 0, unitId: l.unitId ?? '', classKey: l.classKey, className: l.className, classIds: l.classIds ?? (l.classKey ? [l.classKey] : []), summary: l.summary,
+    title: l.title, topicId: l.topicId, year: l.year ?? 0, unitId: l.unitId ?? '', classKey: l.classKey, className: l.className, classIds: l.classIds ?? (l.classKey ? [l.classKey] : []), ...(l.readyKey ? { readyKey: l.readyKey } : {}), summary: l.summary,
     blocks: JSON.parse(JSON.stringify(l.blocks)), published: l.published,
     createdAt: l.createdAt ?? Date.now(), updatedAt: Date.now(),
   };
   await setDoc(ref, data);
+  await catalogPut('lessons', ref.id, { ...data, id: ref.id }); // learners see it within seconds (firebase/catalog.ts)
   return ref.id;
 }
 
 export async function deleteLesson(id: string) {
   await deleteDoc(doc(db, 'lessons', id));
+  await catalogPut('lessons', id, null);
 }
 
 /** "https://youtu.be/abc", "https://www.youtube.com/watch?v=abc", or just the id -> "abc" */
@@ -86,4 +95,21 @@ export async function uploadLessonImage(file: File): Promise<string> {
   const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
   if (!res.ok || !body.url) throw new Error(body.error || `Upload failed (${res.status}).`);
   return body.url;
+}
+
+/**
+ * A learner opening a lesson: the lesson is kept on the device and only read again when the
+ * teacher has changed it (the catalog says when it was last updated), so re-reading costs nothing.
+ */
+export async function getLessonForLearner(id: string): Promise<Lesson | null> {
+  const key = `wassce.lesson.${id}`;
+  const summary = (await getCatalog())?.lessons.find((l) => l.id === id);
+  try {
+    const kept = JSON.parse(localStorage.getItem(key) ?? 'null') as Lesson | null;
+    if (kept && summary && kept.updatedAt === summary.updatedAt) return kept;
+    if (kept && !summary && !navigator.onLine) return kept;
+  } catch { /* ignore */ }
+  const l = await getLesson(id);
+  if (l) try { localStorage.setItem(key, JSON.stringify(l)); } catch { /* storage full: fine */ }
+  return l;
 }

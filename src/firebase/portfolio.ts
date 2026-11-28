@@ -9,7 +9,10 @@
  *   settings/portfolio                       due date per year, period label for the cover page
  * Automatic items are worked out from results each time, never copied (src/lib/portfolioCore.ts).
  */
-import { addDoc, collection, collectionGroup, deleteDoc, doc, getDoc, getDocs, setDoc, Timestamp } from 'firebase/firestore';
+import {
+  addDoc, collection, collectionGroup, deleteDoc, doc, setDoc, Timestamp,
+} from 'firebase/firestore';
+import { getDoc, getDocs } from './reads';
 import { db } from './app';
 import { deleteFile, listAssignments, type Assignment, type Feedback, type Submission } from './assignments';
 import { listAssessments, type Attempt as TestAttempt, type Result } from './assessments';

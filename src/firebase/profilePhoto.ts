@@ -3,7 +3,10 @@
  * A learner can only set a pending photo (a small JPEG data URL); a teacher approves or rejects it.
  * Only the learner and teachers can read it (see firestore.rules).
  */
-import { collectionGroup, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import {
+  collectionGroup, doc, setDoc,
+} from 'firebase/firestore';
+import { getDoc, getDocs } from './reads';
 import { db } from './app';
 import { cropBox } from '../lib/avatar';
 

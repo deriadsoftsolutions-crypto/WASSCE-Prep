@@ -81,7 +81,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
         const r = READY_LESSONS.find((x) => x.key === rk)!;
         (t.closest('[data-addready]') as HTMLButtonElement).disabled = true;
         try {
-          const id = await saveLesson({ title: r.title, summary: r.summary, topicId: r.topicId, year: r.year, unitId: r.unitId, classIds: [], ...legacyClassFields([], classes), blocks: r.blocks, published: false });
+          const id = await saveLesson({ title: r.title, summary: r.summary, topicId: r.topicId, year: r.year, unitId: r.unitId, classIds: [], ...legacyClassFields([], classes), readyKey: r.key, blocks: r.blocks, published: false });
           const existing = await listMaterials(true).catch(() => []);
           let order = existing.filter((m) => m.unitId === r.unitId).reduce((n, m) => Math.max(n, m.order), 0);
           for (const m of r.materials) {
@@ -293,7 +293,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
         try {
           await saveLesson({
             id: lesson?.id, createdAt: lesson?.createdAt, title, summary: String(fd.get('summary') ?? '').trim(),
-            topicId: Number(fd.get('topic')) || 0, year: Number(fd.get('year')) || 0, unitId: String(fd.get('unit') ?? ''), classIds: aud, ...legacyClassFields(aud, classes), blocks,
+            topicId: Number(fd.get('topic')) || 0, year: Number(fd.get('year')) || 0, unitId: String(fd.get('unit') ?? ''), classIds: aud, ...legacyClassFields(aud, classes), readyKey: lesson?.readyKey, blocks,
             published: fd.get('published') === 'on',
           });
           toast('Lesson saved.');

@@ -13,9 +13,11 @@
  * Start and submit times come from Firestore's server clock, so a changed tablet clock cannot buy extra time.
  */
 import {
-  collection, collectionGroup, doc, getDoc, getDocs, serverTimestamp, setDoc, Timestamp, writeBatch,
+  collection, collectionGroup, doc, serverTimestamp, setDoc, Timestamp, writeBatch,
 } from 'firebase/firestore';
+import { getDoc, getDocs } from './reads';
 import { auth, db } from './app';
+import { catalogPut, getCatalog } from './catalog';
 import { splitForMe, type Me } from '../lib/audience';
 import { evaluate } from '../lib/mathparse';
 
@@ -55,6 +57,9 @@ export interface Assessment {
   className: string;
   /** Who it is for: class ids and 'year:N' tokens; empty = all classes (lib/audience). */
   classIds?: string[];
+  /** Curriculum unit (units/{id}) and the lesson it follows, for the unit's lesson player; '' = none. */
+  unitId?: string;
+  lessonId?: string;
   opensAt: number | null;
   closesAt: number | null;
   /** 0 = no time limit */
@@ -102,6 +107,7 @@ function fromDoc(id: string, d: Record<string, unknown>): Assessment {
     title: String(d.title ?? ''), instructions: String(d.instructions ?? ''),
     classKey: String(d.classKey ?? ''), className: String(d.className ?? ''),
     ...(Array.isArray(d.classIds) ? { classIds: d.classIds as string[] } : {}),
+    unitId: String(d.unitId ?? ''), lessonId: String(d.lessonId ?? ''),
     opensAt: ms(d.opensAt), closesAt: ms(d.closesAt),
     timeLimitMin: Number(d.timeLimitMin ?? 0), showResults: (d.showResults as ShowResults) ?? 'immediately',
     portfolioSection: d.portfolioSection === 'semester' ? 'semester' : 'tests', published: !!d.published, totalMarks: Number(d.totalMarks ?? 0), questionCount: Number(d.questionCount ?? 0),
@@ -167,17 +173,25 @@ export async function saveAssessment(
   key: Record<string, KeyEntry>,
 ): Promise<string> {
   const ref = a.id ? doc(db, 'assessments', a.id) : doc(collection(db, 'assessments'));
+  const createdAt = a.createdAt ?? Date.now();
   const batch = writeBatch(db);
   batch.set(ref, {
-    title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, classIds: a.classIds ?? (a.classKey ? [a.classKey] : []),
+    title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, classIds: a.classIds ?? (a.classKey ? [a.classKey] : []), unitId: a.unitId ?? '', lessonId: a.lessonId ?? '',
     opensAt: ts(a.opensAt), closesAt: ts(a.closesAt), timeLimitMin: Math.max(0, Math.round(a.timeLimitMin)),
     showResults: a.showResults, portfolioSection: a.portfolioSection ?? 'tests', published: a.published,
     totalMarks: questions.reduce((s, q) => s + q.marks, 0), questionCount: questions.length,
-    createdAt: ts(a.createdAt ?? Date.now()),
+    createdAt: ts(createdAt),
   });
   batch.set(doc(db, 'assessments', ref.id, 'content', 'questions'), { questions: JSON.parse(JSON.stringify(questions)) });
   batch.set(doc(db, 'assessments', ref.id, 'content', 'key'), { answers: JSON.parse(JSON.stringify(key)) });
   await batch.commit();
+  // Learners see it within seconds (firebase/catalog.ts); times stay as numbers there, as learner pages expect.
+  await catalogPut('tests', ref.id, {
+    id: ref.id, title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, classIds: a.classIds ?? (a.classKey ? [a.classKey] : []),
+    unitId: a.unitId ?? '', lessonId: a.lessonId ?? '', opensAt: a.opensAt, closesAt: a.closesAt, timeLimitMin: Math.max(0, Math.round(a.timeLimitMin)),
+    showResults: a.showResults, portfolioSection: a.portfolioSection ?? 'tests', published: a.published,
+    totalMarks: questions.reduce((s, q) => s + q.marks, 0), questionCount: questions.length, createdAt,
+  });
   return ref.id;
 }
 
@@ -187,6 +201,7 @@ export async function deleteAssessment(id: string) {
   batch.delete(doc(db, 'assessments', id, 'content', 'key'));
   batch.delete(doc(db, 'assessments', id));
   await batch.commit();
+  await catalogPut('tests', id, null);
 }
 
 export async function allAttempts(): Promise<{ starts: { learnerId: string; assessmentId: string; startedAt: number }[]; attempts: Attempt[]; results: Result[] }> {
@@ -215,7 +230,13 @@ export async function allowRetake(learnerId: string, assessmentId: string) {
 
 /** Published tests, split into those set for this learner's class and those for other classes. */
 export async function assessmentsFor(me: Me): Promise<{ mine: Assessment[]; others: Assessment[] }> {
-  return splitForMe((await listAssessments()).filter((a) => a.published), me);
+  const cat = await getCatalog();
+  return splitForMe((cat ? cat.tests : await listAssessments()).filter((a) => a.published), me);
+}
+
+/** A learner opening a test: its settings from the catalog (no read), or from the server for drafts. */
+export async function getAssessmentForLearner(id: string): Promise<Assessment | null> {
+  return (await getCatalog())?.tests.find((a) => a.id === id) ?? getAssessment(id);
 }
 
 const uid = () => {

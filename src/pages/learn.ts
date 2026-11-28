@@ -6,7 +6,7 @@ import { learner } from '../lib/session';
 import { storage, usingFirebase } from '../storage';
 import { feedbackHTML } from '../lib/ui';
 import { CONFIG } from '../config';
-import { STRANDS, getUnit, listMaterials, listUnits, materialHref, materialKindLabel, type Material, type Unit } from '../firebase/units';
+import { STRANDS, getUnit, learnerMaterials, learnerUnit, learnerUnits, listMaterials, listUnits, materialHref, materialKindLabel, type Material, type Unit } from '../firebase/units';
 import { finishedLessons, lessonCardsHTML } from './lessons';
 import { lessonsFor, type Lesson } from '../firebase/lessons';
 import { ledHTML, masteryLevel } from './home';
@@ -43,7 +43,7 @@ export async function learnPage(el: HTMLElement) {
   const teacher = await isTeacherNow();
   let units: Unit[] = [], materials: Material[] = [];
   try {
-    [units, materials] = await Promise.all([listUnits(), listMaterials(teacher)]);
+    [units, materials] = await Promise.all([teacher ? listUnits() : learnerUnits(), teacher ? listMaterials(true) : learnerMaterials()]);
   } catch {
     el.innerHTML = '<h1>Learn</h1><p class="mark-bad">Could not load the units. Check your internet connection.</p>';
     return;
@@ -110,7 +110,7 @@ export async function unitPage(el: HTMLElement, params: Record<string, string>) 
   el.innerHTML = '<div class="skel"><span></span><span class="tall"></span><span class="tall"></span></div>';
   const teacher = await isTeacherNow();
   const [unit, materials, lessons, done] = await Promise.all([
-    getUnit(params.id).catch(() => null), listMaterials(teacher).catch(() => [] as Material[]), classLessons(teacher), finishedLessons(),
+    (teacher ? getUnit(params.id) : learnerUnit(params.id)).catch(() => null), (teacher ? listMaterials(true) : learnerMaterials()).catch(() => [] as Material[]), classLessons(teacher), finishedLessons(),
   ]);
   if (!unit || (!unit.published && !teacher)) { el.innerHTML = '<h1>Unit not found</h1><p><a href="/learn">Back to Learn</a></p>'; return; }
   const l = learner()!;
@@ -127,6 +127,15 @@ export async function unitPage(el: HTMLElement, params: Record<string, string>) 
         <h1>${esc(unit.title)}</h1>
       </div>
     </div>
+    ${ls.length ? (() => {
+      const fin = ls.filter((x) => done.has(x.id)).length;
+      let resume = false; try { resume = !!localStorage.getItem(`wassce.study.${l.id}.${unit.id}`); } catch { /* ignore */ }
+      return `<a class="card sp-start" href="/study/${esc(unit.id)}">
+        <span class="sp-start-icon">${icon('play', 26)}</span>
+        <span style="flex:1;min-width:0"><b style="font-size:1.15rem">${resume ? 'Continue' : 'Start'} the lesson player</b><br>
+          <span class="muted">${ls.length} lesson${ls.length === 1 ? '' : 's'} with their tests and practicals, in order · ${fin} of ${ls.length} finished</span></span>
+        <span class="btn btn-primary">${resume ? 'Continue' : 'Start'}</span></a>`;
+    })() : ''}
     <div class="grid-2">
       <div class="card">
         <h2>What this unit is about</h2>

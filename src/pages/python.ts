@@ -205,10 +205,10 @@ export function pythonPage(el: HTMLElement) {
 
   /* ---------------- Hand in to an assignment ---------------- */
   async function setUpHandIn() {
-    const { assignmentsFor, getAssignment, myFeedback, mySubmission, fetchFileText, isPythonFile } = await import('../firebase/assignments');
+    const { assignmentsFor, getAssignmentForLearner, myFeedback, mySubmission, fetchFileText, isPythonFile } = await import('../firebase/assignments');
     const banner = el.querySelector('[data-forbanner]') as HTMLElement;
     if (forId) {
-      const a = await getAssignment(forId).catch(() => null);
+      const a = await getAssignmentForLearner(forId).catch(() => null);
       if (a) {
         banner.hidden = false;
         banner.innerHTML = `<b>Writing for: ${esc(a.title)}</b><br><span class="muted small">Your code is saved on this device as you type. When it works, press Run, then Hand in.</span> <a href="/assignments/${a.id}">Open the assignment</a>`;

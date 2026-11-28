@@ -183,6 +183,7 @@ const check = build([
 
 export const test: ReadyTest = {
   key: 'society-1-check',
+  lessonKey: 'society-1',
   year: 2,
   unitId: 'u2-1-1',
   title: 'Robots and society 1 check: impacts and coexistence',
@@ -196,6 +197,7 @@ export const test: ReadyTest = {
 
 export const presentation: ReadyAssignment = {
   key: 'society-1-presentation',
+  lessonKey: 'society-1',
   year: 2,
   unitId: 'u2-1-1',
   title: 'Robots and society 1: group impact analysis presentation',
@@ -227,6 +229,7 @@ Marking (20 marks)
 
 export const article: ReadyAssignment = {
   key: 'society-1-article',
+  lessonKey: 'society-1',
   year: 2,
   unitId: 'u2-1-1',
   title: 'Robots and society 1: newspaper article',
@@ -258,6 +261,7 @@ Marking (20 marks)
 
 export const edubot: ReadyAssignment = {
   key: 'society-1-edubot',
+  lessonKey: 'society-1',
   year: 2,
   unitId: 'u2-1-1',
   title: 'Robots and society 1: EduBot scenario questions',

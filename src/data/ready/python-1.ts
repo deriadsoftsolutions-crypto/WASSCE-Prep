@@ -190,6 +190,7 @@ const lessonCheck = build([
 
 export const test: ReadyTest = {
     key: 'python-1-check',
+    lessonKey: 'python-1',
     year: 3,
     unitId: 'u3-3-2',
     title: 'Python 1 check: variables, data types and operations',
@@ -203,6 +204,7 @@ export const test: ReadyTest = {
 
 export const practical: ReadyAssignment = {
     key: 'python-1-reporter',
+    lessonKey: 'python-1',
     year: 3,
     unitId: 'u3-3-2',
     title: 'Python 1 practical: Robot System Status Reporter',

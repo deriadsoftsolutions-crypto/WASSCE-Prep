@@ -2,7 +2,10 @@ import { inputsFromOutput, looksLikePython, mountPyRunner } from '../lib/pyRunne
 import { listClasses, type SchoolClass } from '../firebase/classes';
 import { legacyClassFields, audienceOf, yearToken } from '../lib/audience';
 import { audiencePickerHTML, readAudience, wireAudiencePicker } from './audiencePicker';
-import { audienceCell, filterBarHTML, isOutside, matchesFilter, outsidePill, peopleFor, wireFilter } from './teacherShared';
+import { audienceCell, filterBarHTML, isOutside, matchesFilter, outsidePill, peopleFor, placementSelectHTML, readPlacement, readyPlacement, wireFilter } from './teacherShared';
+import { listLessons, type Lesson } from '../firebase/lessons';
+import { listUnits, type Unit } from '../firebase/units';
+import { READY_LESSONS } from '../data/ready';
 import { esc, fmtDate } from '../lib/dom';
 import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import {
@@ -24,9 +27,11 @@ export async function mountTeacherAssignments(host: HTMLElement) {
   let subs: Submission[] = [];
   let feedback: Feedback[] = [];
   let classes: SchoolClass[] = [];
+  let lessons: Lesson[] = [];
+  let units: Unit[] = [];
 
   const load = async () => {
-    [assignments, learners, { subs, feedback }, , classes] = await Promise.all([listAssignments(), listLearners(), allSubmissions(), allPhotos().catch(() => []), listClasses().catch(() => [] as SchoolClass[])]);
+    [assignments, learners, { subs, feedback }, , classes, lessons, units] = await Promise.all([listAssignments(), listLearners(), allSubmissions(), allPhotos().catch(() => []), listClasses().catch(() => [] as SchoolClass[]), listLessons().catch(() => [] as Lesson[]), listUnits().catch(() => [] as Unit[])]);
   };
   const inClass = (a: Assignment) => peopleFor(a, learners);
   const learnerById = (id: string) => learners.find((l) => l.id === id);
@@ -72,6 +77,7 @@ export async function mountTeacherAssignments(host: HTMLElement) {
           <label class="field"><span>Title</span><input name="title" maxlength="120" required value="${esc(a?.title ?? '')}" /></label>
           <label class="field"><span>Instructions</span><textarea name="instructions" rows="7" placeholder="What should learners do? Links are clickable.">${esc(a?.instructions ?? '')}</textarea></label>
           ${audiencePickerHTML(a ? audienceOf(a) : [], classes)}
+          ${placementSelectHTML(units, lessons, a?.unitId, a?.lessonId)}
           <div class="grid-2">
             <label class="field"><span>Due date and time (optional)</span><input name="due" type="datetime-local" value="${dueLocal}" /></label>
             <label class="field"><span>Total marks</span><input name="marks" type="number" min="1" max="200" value="${a?.maxMarks ?? 10}" /></label>
@@ -108,7 +114,7 @@ export async function mountTeacherAssignments(host: HTMLElement) {
       try {
         await saveAssignment({
           id: a?.id, createdAt: a?.createdAt, title, instructions: String(fd.get('instructions') ?? '').trim(),
-          classIds: aud, ...legacyClassFields(aud, classes), dueAt: due ? new Date(due).getTime() : null, maxMarks: marks,
+          classIds: aud, ...legacyClassFields(aud, classes), ...readPlacement(form, lessons), dueAt: due ? new Date(due).getTime() : null, maxMarks: marks,
           allowText, allowFiles, portfolioSection: fd.get('psec') === 'projects' ? 'projects' : 'assignments', published: fd.get('published') === 'on',
         });
         toast('Assignment saved.');
@@ -263,7 +269,7 @@ export async function mountTeacherAssignments(host: HTMLElement) {
       void (async () => {
         try {
           const id = await saveAssignment({
-            title: r.title, instructions: r.instructions, classIds: [yearToken(r.year)], ...legacyClassFields([yearToken(r.year)], classes), dueAt: null, maxMarks: r.maxMarks,
+            title: r.title, instructions: r.instructions, classIds: [yearToken(r.year)], ...legacyClassFields([yearToken(r.year)], classes), ...readyPlacement(r, lessons, READY_LESSONS.find((x) => x.key === r.lessonKey)?.title), dueAt: null, maxMarks: r.maxMarks,
             allowText: r.allowText, allowFiles: r.allowFiles, portfolioSection: r.portfolioSection, published: false,
           });
           toast(`Added as a draft for all of STEM ${r.year}. Choose the class, add a due date, then publish.`);

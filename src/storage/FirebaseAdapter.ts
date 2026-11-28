@@ -12,9 +12,9 @@
  * queued and sent when the connection returns, so we never wait on the server.
  */
 import {
-  collection, collectionGroup, doc, getDoc, getDocs, onSnapshot, setDoc, writeBatch,
-  type DocumentReference, type Unsubscribe,
+  collection, collectionGroup, doc, getDocsFromCache, onSnapshot, query, setDoc, where, writeBatch, type DocumentReference, type Unsubscribe,
 } from 'firebase/firestore';
+import { getDoc, getDocs, tally } from '../firebase/reads';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, db } from '../firebase/app';
 import { cacheProfile, cachedProfile, ensureProfile, isTeacher, signOut } from '../firebase/account';
@@ -53,24 +53,57 @@ export class FirebaseAdapter implements StorageAdapter {
     if (u) this.watch(u.uid);
   }
 
+  /**
+   * The learner's practice results. They only ever grow, and re-sending all of them on every visit
+   * would cost one read each (hundreds by the end of the year). So: show what the device already has,
+   * listen only for results newer than the newest one kept, and re-check the whole list once a week
+   * (which also catches a reset done on another device). See firebase/reads.ts for the read budget.
+   */
   private watch(uid: string) {
     if (this.own?.uid === uid) return this.own;
     let resolve!: () => void;
     const ready = new Promise<void>((r) => (resolve = r));
-    const state = { uid, list: [] as Attempt[], ready, unsub: (() => {}) as Unsubscribe };
-    state.unsub = onSnapshot(
-      collection(db, 'learners', uid, 'attempts'),
-      (snap) => {
-        state.list = snap.docs.map((d) => ({ ...(d.data() as Attempt), id: d.id }));
-        resolve();
-        changed();
-      },
-      (err) => {
-        console.warn('Attempts listener error', err);
-        resolve();
-      },
-    );
+    const state = { uid, list: [] as Attempt[], ready, first: true, unsub: (() => {}) as Unsubscribe };
     this.own = state;
+    const SYNC = `wassce.attempts.sync.${uid}`;
+    const col = collection(db, 'learners', uid, 'attempts');
+    void (async () => {
+      let sync: { fullAt: number; mark: number } | null = null;
+      try { sync = JSON.parse(localStorage.getItem(SYNC) ?? 'null'); } catch { /* ignore */ }
+      let kept: Attempt[] = [];
+      try { kept = (await getDocsFromCache(col)).docs.map((d) => ({ ...(d.data() as Attempt), id: d.id })); } catch { /* no device cache */ }
+      const full = !sync || !kept.length || Date.now() - sync.fullAt > 7 * 86_400_000;
+      if (!full) { state.list = kept; resolve(); changed(); }
+      const q = full ? col : query(col, where('timestamp', '>=', sync!.mark));
+      if (this.own !== state) return; // signed out meanwhile
+      state.unsub = onSnapshot(
+        q,
+        { includeMetadataChanges: true },
+        (snap) => {
+          // Billed: on the server's first answer, every document the query matches; after that, only changes.
+          if (!snap.metadata.fromCache) { tally(`learners/${uid}/attempts`, state.first ? Math.max(1, snap.size) : snap.docChanges().length); state.first = false; }
+          const fresh = snap.docs.map((d) => ({ ...(d.data() as Attempt), id: d.id }));
+          if (full) state.list = fresh;
+          else {
+            const byId = new Map(state.list.map((x) => [x.id, x]));
+            for (const ch of snap.docChanges()) {
+              if (ch.type === 'removed') byId.delete(ch.doc.id); else byId.set(ch.doc.id, { ...(ch.doc.data() as Attempt), id: ch.doc.id });
+            }
+            state.list = [...byId.values()];
+          }
+          if (!snap.metadata.fromCache) {
+            const mark = Math.max(sync?.mark ?? 0, ...fresh.map((x) => x.timestamp ?? 0));
+            try { localStorage.setItem(SYNC, JSON.stringify({ fullAt: full ? Date.now() : sync!.fullAt, mark })); } catch { /* ignore */ }
+          }
+          resolve();
+          changed();
+        },
+        (err) => {
+          console.warn('Attempts listener error', err);
+          resolve();
+        },
+      );
+    })();
     return state;
   }
 
@@ -130,6 +163,11 @@ export class FirebaseAdapter implements StorageAdapter {
       else done.catch((e) => console.error(e));
     }
     this.classCache = null;
+    // The learner's own list: drop the deleted results here (the listener only hears about newer ones).
+    if (this.own && (!learnerId || learnerId === this.own.uid)) {
+      const gone = new Set(list.map((a) => a.id));
+      this.own.list = this.own.list.filter((a) => !gone.has(a.id));
+    }
     changed();
   }
 

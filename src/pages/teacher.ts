@@ -107,6 +107,8 @@ async function renderDashboard(el: HTMLElement) {
   else if (tab === 'curriculum') await mountTeacherCurriculum(body, () => (el.querySelector('[data-tab="lessons"]') as HTMLElement | null)?.click());
   else await renderOverview(body);
   if (usingFirebase) void menuCounts(el);
+  // Keep the learners' catalog (one document listing everything published) current: see firebase/catalog.ts.
+  if (usingFirebase) void import('../firebase/catalog').then((c) => c.ensureCatalog());
 }
 
 /** Live counts in the side menu: tests open now, submissions waiting for a mark. */
@@ -328,7 +330,7 @@ async function firebaseGate(el: HTMLElement) {
   await auth.authStateReady();
   const u = auth.currentUser;
   if (!u) return renderTeacherLogin(el);
-  if (await acct.isTeacher()) return renderDashboard(el);
+  if (await acct.isTeacher(true)) return renderDashboard(el);
 
   const isLearner = (u.email ?? '').endsWith('@learners.wassce-prep.app');
   el.innerHTML = `

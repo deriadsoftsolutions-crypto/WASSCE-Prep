@@ -15,6 +15,7 @@ const keyWrittenQs = build([
 
 export const keyWritten: ReadyTest = {
     key: 'python-key-written',
+    lessonKey: 'python-2',
     year: 3,
     unitId: 'u3-3-2',
     title: 'Key assessment (Teacher Manual): data management strategy for a humanitarian robot',
@@ -28,6 +29,7 @@ export const keyWritten: ReadyTest = {
 
 export const keyPractical: ReadyAssignment = {
     key: 'python-key-practical',
+    lessonKey: 'python-2',
     year: 3,
     unitId: 'u3-3-2',
     title: 'Key assessment (Teacher Manual): Advanced Robot Data Analyser',

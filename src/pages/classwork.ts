@@ -12,9 +12,10 @@ import { learner } from '../lib/session';
 import { dueLabel } from '../lib/due';
 import { audienceLabel, audienceOf, type ClassInfo } from '../lib/audience';
 import { isTeacher } from '../firebase/account';
-import { assignmentsFor, myFeedback, mySubmission, type Assignment } from '../firebase/assignments';
-import { assessmentsFor, myAttempt, myResult, myStart, statusOf, type Assessment } from '../firebase/assessments';
-import { listClasses } from '../firebase/classes';
+import { assignmentsFor, type Assignment } from '../firebase/assignments';
+import { myWork } from '../firebase/mywork';
+import { assessmentsFor, statusOf, type Assessment } from '../firebase/assessments';
+import { classNames } from '../firebase/classes';
 import { finishedLessons, myLessons } from './lessons';
 import topicsData from '../data/topics.json';
 
@@ -24,7 +25,8 @@ const pill = (text: string, kind: '' | 'ok' | 'accent' | 'urgent' | 'bad' = '') 
   `<span class="pill ${kind === 'bad' ? '' : kind}" ${kind === 'bad' ? 'style="background:var(--bad-soft);color:var(--bad)"' : ''}>${esc(text)}</span>`;
 
 async function testRow(a: Assessment, extra = ''): Promise<Row> {
-  const [att, res, start] = await Promise.all([myAttempt(a.id).catch(() => null), myResult(a.id).catch(() => null), myStart(a.id).catch(() => null)]);
+  const w = await myWork();
+  const [att, res, start] = [w.attempts[a.id] ?? null, w.results[a.id] ?? null, w.starts[a.id] ?? null];
   const st = statusOf(a);
   const meta = `Test · ${a.questionCount} questions · ${a.totalMarks} marks${a.timeLimitMin ? ` · ${a.timeLimitMin} min` : ''}${extra}`;
   const base = { href: `/tests/${a.id}`, icon: 'test', title: a.title, meta };
@@ -38,7 +40,8 @@ async function testRow(a: Assessment, extra = ''): Promise<Row> {
 }
 
 async function assignmentRow(a: Assignment, extra = ''): Promise<Row> {
-  const [s, f] = await Promise.all([mySubmission(a.id).catch(() => null), myFeedback(a.id).catch(() => null)]);
+  const w = await myWork();
+  const [s, f] = [w.submissions[a.id] ?? null, w.feedback[a.id] ?? null];
   const base = { href: `/assignments/${a.id}`, icon: 'clip', title: a.title, meta: `Assignment · ${a.maxMarks} marks${extra}` };
   if (f) return { ...base, pill: pill(`Marked ${f.mark} / ${f.maxMarks}`, 'ok'), done: true, sort: 0 };
   if (s) return { ...base, pill: pill('Handed in', 'ok'), done: true, sort: 0 };
@@ -51,8 +54,17 @@ const rowsHTML = (rows: Row[]) => `<div class="due-list">${rows.map((r) => `<a c
 
 const empty = (text: string) => `<div class="card"><p style="margin:0" class="muted">${text}</p></div>`;
 
-export async function classworkPage(el: HTMLElement) {
-  el.innerHTML = '<h1>Classwork</h1><p class="muted">Loading...</p>';
+/** Classwork, kept up to date: when the teacher publishes or changes work, the page redraws itself. */
+export async function classworkPage(el: HTMLElement): Promise<() => void> {
+  await drawClasswork(el);
+  let busy = false;
+  const redraw = () => { if (busy || !el.isConnected) return; busy = true; void drawClasswork(el).finally(() => { busy = false; }); };
+  window.addEventListener('classwork-changed', redraw);
+  return () => window.removeEventListener('classwork-changed', redraw);
+}
+
+async function drawClasswork(el: HTMLElement) {
+  if (!el.querySelector('#cw-todo')) el.innerHTML = '<h1>Classwork</h1><p class="muted">Loading...</p>';
   const l = learner()!;
   const teacher = await isTeacher().catch(() => false);
   let asg: { mine: Assignment[]; others: Assignment[] };
@@ -61,7 +73,7 @@ export async function classworkPage(el: HTMLElement) {
   let done: Map<string, number>;
   let classes: ClassInfo[] = [];
   try {
-    [asg, tst, lessons, done, classes] = await Promise.all([assignmentsFor(l), assessmentsFor(l), myLessons(), finishedLessons(), listClasses().catch(() => [])]);
+    [asg, tst, lessons, done, classes] = await Promise.all([assignmentsFor(l), assessmentsFor(l), myLessons(), finishedLessons(), classNames().catch(() => [])]);
   } catch {
     el.innerHTML = '<h1>Classwork</h1><p class="mark-bad">Could not load your classwork. Check your internet connection.</p>';
     return;

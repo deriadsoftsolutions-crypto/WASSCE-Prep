@@ -4,8 +4,12 @@
  *   materials/{id}   { unitId, year, title, description, kind, url, fileName, mime, size, audience, published, order, createdAt }
  * Materials marked audience 'teachers' (e.g. teacher versions of the manuals) are hidden from learners by the rules.
  */
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, where, writeBatch } from 'firebase/firestore';
+import {
+  collection, deleteDoc, doc, query, setDoc, where, writeBatch,
+} from 'firebase/firestore';
+import { getDoc, getDocs } from './reads';
 import { auth, db } from './app';
+import { catalogPut, getCatalog } from './catalog';
 import curriculum from '../data/curriculum.json';
 
 export const STRANDS = curriculum.strands as Record<string, string>;
@@ -64,10 +68,12 @@ export async function getUnit(id: string): Promise<Unit | null> {
 export async function saveUnit(u: Unit): Promise<void> {
   const { id, ...data } = u;
   await setDoc(doc(db, 'units', id), JSON.parse(JSON.stringify(data)));
+  await catalogPut('units', id, { ...data, id }); // learners see it within seconds (firebase/catalog.ts)
 }
 
 /** Teacher: create the NaCCA units as unpublished drafts. Existing units are left alone. */
 export async function seedUnits(): Promise<number> {
+  // New units start as drafts, so learners' catalog does not change.
   const existing = new Set((await listUnits()).map((u) => u.id));
   const batch = writeBatch(db);
   let n = 0;
@@ -97,11 +103,13 @@ export async function saveMaterial(m: Omit<Material, 'id'> & { id?: string }): P
   const { id: _omit, ...data } = m;
   void _omit;
   await setDoc(ref, JSON.parse(JSON.stringify(data)));
+  await catalogPut('materials', ref.id, { ...data, id: ref.id }); // learners see it within seconds (firebase/catalog.ts)
   return ref.id;
 }
 
 export async function deleteMaterial(id: string) {
   await deleteDoc(doc(db, 'materials', id));
+  await catalogPut('materials', id, null);
 }
 
 /** Teacher: upload a notes file, slides or a short video. Returns its address. */
@@ -146,3 +154,17 @@ export function materialKindLabel(m: Material): string {
 
 /** Address to open a material at, including the page for a book section. */
 export const materialHref = (m: Material) => (m.page ? `${m.url}#page=${m.page}` : m.url);
+
+/* ---------- Learners: from the catalog (one read for everything), else from the collections ---------- */
+export async function learnerUnits(): Promise<Unit[]> {
+  const cat = await getCatalog();
+  return cat ? [...cat.units].sort((a, b) => a.year - b.year || a.order - b.order) : listUnits();
+}
+export async function learnerMaterials(): Promise<Material[]> {
+  const cat = await getCatalog();
+  return cat ? [...cat.materials].sort((a, b) => a.order - b.order || a.createdAt - b.createdAt) : listMaterials(false);
+}
+export async function learnerUnit(id: string): Promise<Unit | null> {
+  const cat = await getCatalog();
+  return cat ? cat.units.find((u) => u.id === id) ?? null : getUnit(id);
+}

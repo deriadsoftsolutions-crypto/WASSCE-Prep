@@ -3,7 +3,7 @@ import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import { learner } from '../lib/session';
 import { navigate } from '../router';
 import {
-  autoScore, getAssessment, getKey, getQuestions, myAttempt, myResult, myStart, startAssessment, statusOf, submitAttempt,
+  autoScore, getAssessmentForLearner, getKey, getQuestions, myAttempt, myResult, myStart, startAssessment, statusOf, submitAttempt,
   type Assessment, type Attempt, type KeyEntry, type Question, type Response, type Result,
 } from '../firebase/assessments';
 import { richText } from './assignments';
@@ -28,7 +28,7 @@ export async function testPage(el: HTMLElement, params: Record<string, string>):
   el.innerHTML = '<p class="muted">Loading...</p>';
   const id = params.id;
   const [a, attempt, result, start] = await Promise.all([
-    getAssessment(id).catch(() => null), myAttempt(id).catch(() => null), myResult(id).catch(() => null), myStart(id).catch(() => null),
+    getAssessmentForLearner(id).catch(() => null), myAttempt(id).catch(() => null), myResult(id).catch(() => null), myStart(id).catch(() => null),
   ]);
   if (!a || !a.published) { el.innerHTML = '<h1>Test not found</h1><p><a href="/assignments">Back to classwork</a></p>'; return; }
   const head = `<a class="crumb" href="/assignments">← Classwork</a>
@@ -61,6 +61,7 @@ export async function testPage(el: HTMLElement, params: Record<string, string>):
       btn.disabled = true;
       try {
         await startAssessment(id);
+        refreshDue(); // the start is new work for the lists
         navigate(`/tests/${id}`, true);
       } catch (ex) {
         console.error(ex);

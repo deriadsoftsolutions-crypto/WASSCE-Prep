@@ -146,6 +146,7 @@ const check = build([
 
 export const test: ReadyTest = {
   key: 'python-2-check',
+  lessonKey: 'python-2',
   year: 3,
   unitId: 'u3-3-2',
   title: 'Python 2 check: lists',
@@ -159,6 +160,7 @@ export const test: ReadyTest = {
 
 export const practical: ReadyAssignment = {
   key: 'python-2-report',
+  lessonKey: 'python-2',
   year: 3,
   unitId: 'u3-3-2',
   title: 'Python 2 practical: the complete robot status report',

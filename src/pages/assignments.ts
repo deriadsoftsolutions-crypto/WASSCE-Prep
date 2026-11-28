@@ -8,7 +8,7 @@ import { isForMe } from '../lib/audience';
 import { outsideNotice } from './tests';
 import { icon } from '../lib/icons';
 import {
-  deleteFile, fmtSize, getAssignment, myFeedback, mySubmission, openFile, shrinkImage, submit, uploadFile,
+  deleteFile, fmtSize, getAssignmentForLearner, myFeedback, mySubmission, openFile, shrinkImage, submit, uploadFile,
   type Assignment, type Submission, type SubmittedFile,
 } from '../firebase/assignments';
 
@@ -33,10 +33,10 @@ function needsFirebase(el: HTMLElement): boolean {
   return true;
 }
 
-export async function assignmentsPage(el: HTMLElement) {
+export async function assignmentsPage(el: HTMLElement): Promise<(() => void) | void> {
   if (needsFirebase(el)) return;
   const { classworkPage } = await import('./classwork');
-  await classworkPage(el);
+  return classworkPage(el);
 }
 
 export async function assignmentPage(el: HTMLElement, params: Record<string, string>) {
@@ -44,7 +44,7 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
   el.innerHTML = '<p class="muted">Loading...</p>';
   const l = learner()!;
   const [a, existing, fb] = await Promise.all([
-    getAssignment(params.id).catch(() => null), mySubmission(params.id).catch(() => null), myFeedback(params.id).catch(() => null),
+    getAssignmentForLearner(params.id).catch(() => null), mySubmission(params.id).catch(() => null), myFeedback(params.id).catch(() => null),
   ]);
   if (!a || !a.published) { el.innerHTML = '<h1>Assignment not found</h1><p><a href="/assignments">Back to assignments</a></p>'; return; }
 

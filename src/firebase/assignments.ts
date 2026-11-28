@@ -8,9 +8,11 @@
  * Files live in Cloudflare R2 and are reached through /api/upload and /api/file.
  */
 import {
-  collection, collectionGroup, deleteDoc, doc, getDoc, getDocs, setDoc,
+  collection, collectionGroup, deleteDoc, doc, setDoc,
 } from 'firebase/firestore';
+import { getDoc, getDocs } from './reads';
 import { auth, db } from './app';
+import { catalogPut, getCatalog } from './catalog';
 import { isForMe, splitForMe, type Me } from '../lib/audience';
 
 export interface Assignment {
@@ -21,6 +23,9 @@ export interface Assignment {
   classKey: string;
   /** Who it is for: class ids and 'year:N' tokens; empty = all classes (lib/audience). */
   classIds?: string[];
+  /** Curriculum unit (units/{id}) and the lesson it follows, for the unit's lesson player; '' = none. */
+  unitId?: string;
+  lessonId?: string;
   /** Class name as the teacher typed it, for display. */
   className: string;
   /** Due date as milliseconds, or null for no due date. */
@@ -74,22 +79,30 @@ export async function getAssignment(id: string): Promise<Assignment | null> {
 
 /** Published assignments, split into those set for this learner's class and those for other classes. */
 export async function assignmentsFor(me: Me): Promise<{ mine: Assignment[]; others: Assignment[] }> {
-  return splitForMe((await listAssignments()).filter((a) => a.published), me);
+  const cat = await getCatalog();
+  return splitForMe((cat ? cat.assignments : await listAssignments()).filter((a) => a.published), me);
+}
+
+/** A learner opening an assignment: from the catalog (no read), or from the server for drafts the teacher previews. */
+export async function getAssignmentForLearner(id: string): Promise<Assignment | null> {
+  return (await getCatalog())?.assignments.find((a) => a.id === id) ?? getAssignment(id);
 }
 
 export async function saveAssignment(a: Omit<Assignment, 'id' | 'createdAt'> & { id?: string; createdAt?: number }): Promise<string> {
   const ref = a.id ? doc(db, 'assignments', a.id) : doc(collection(db, 'assignments'));
   const data: Omit<Assignment, 'id'> = {
-    title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, classIds: a.classIds ?? (a.classKey ? [a.classKey] : []), dueAt: a.dueAt,
+    title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, classIds: a.classIds ?? (a.classKey ? [a.classKey] : []), unitId: a.unitId ?? '', lessonId: a.lessonId ?? '', dueAt: a.dueAt,
     maxMarks: a.maxMarks, allowText: a.allowText, allowFiles: a.allowFiles, portfolioSection: a.portfolioSection ?? 'assignments', published: a.published,
     createdAt: a.createdAt ?? Date.now(),
   };
   await setDoc(ref, data);
+  await catalogPut('assignments', ref.id, { ...data, id: ref.id }); // learners see it within seconds (firebase/catalog.ts)
   return ref.id;
 }
 
 export async function deleteAssignment(id: string) {
   await deleteDoc(doc(db, 'assignments', id));
+  await catalogPut('assignments', id, null);
 }
 
 /* ---------- Submissions and feedback ---------- */

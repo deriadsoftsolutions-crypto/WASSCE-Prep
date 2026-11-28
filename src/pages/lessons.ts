@@ -8,7 +8,7 @@ import { markdown } from '../lib/markdown';
 import { learner, saveResult } from '../lib/session';
 import { storage, usingFirebase } from '../storage';
 import { ACTIVITIES } from '../activities';
-import { getLesson, lessonsFor, type Block, type Lesson } from '../firebase/lessons';
+import { getLessonForLearner, lessonsFor, type Block, type Lesson } from '../firebase/lessons';
 
 const topics = topicsData as Topic[];
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -82,15 +82,13 @@ export async function lessonPage(el: HTMLElement, params: Record<string, string>
   const l = learner();
   if (!usingFirebase || !l) { el.innerHTML = '<h1>Lesson</h1><p class="muted">Sign in to read lessons.</p>'; return; }
   el.innerHTML = '<div class="skel"><span></span><span class="tall"></span><span></span><span class="tall"></span></div>';
-  const [lesson, done, list] = await Promise.all([getLesson(params.id).catch(() => null), finishedLessons(), myLessons()]);
+  const [lesson, done, list] = await Promise.all([getLessonForLearner(params.id).catch(() => null), finishedLessons(), myLessons()]);
   if (!lesson || (!lesson.published && l.className !== 'Teacher')) {
     el.innerHTML = '<h1>Lesson not found</h1><p><a href="/assignments">Back to classwork</a></p>';
     return;
   }
   const idx = list.findIndex((x) => x.id === lesson.id);
   const next = idx >= 0 ? list.slice(idx + 1).find((x) => x.topicId === lesson.topicId) : undefined;
-  const checks = lesson.blocks.map((b, i) => ({ b, i })).filter((x) => x.b.type === 'check');
-  const answers = new Map<number, boolean>();
   const finishedAt = done.get(lesson.id);
 
   el.innerHTML = `
@@ -101,6 +99,23 @@ export async function lessonPage(el: HTMLElement, params: Record<string, string>
         <h1>${esc(lesson.title)}</h1>
       </div>
     </div>
+    ${lesson.unitId ? `<p style="margin:-6px 0 12px"><a class="btn btn-sm" href="/study/${esc(lesson.unitId)}?at=l:${esc(lesson.id)}">${icon('play', 16)} Open in the unit's lesson player</a></p>` : ''}
+    <div data-lessonbody></div>
+    <div class="row" style="margin-top:12px">
+      ${next ? `<a class="btn" href="/lessons/${next.id}">Next lesson: ${esc(next.title)}</a>` : ''}
+      ${lesson.topicId ? `<a class="btn" href="/topic/${lesson.topicId}">Practise topic ${lesson.topicId}</a>` : ''}
+    </div>`;
+  mountLessonBody(el.querySelector('[data-lessonbody]') as HTMLElement, lesson, finishedAt);
+}
+
+/**
+ * The body of a lesson (summary, blocks, quick checks and the "Mark as finished" card), wired up.
+ * Used by the lesson page and the unit lesson player. `onFinished` runs after the learner finishes it.
+ */
+export function mountLessonBody(host: HTMLElement, lesson: Lesson, finishedAt: number | undefined, onFinished?: () => void) {
+  const checks = lesson.blocks.map((b, i) => ({ b, i })).filter((x) => x.b.type === 'check');
+  const answers = new Map<number, boolean>();
+  host.innerHTML = `
     <article class="lesson">
       ${lesson.summary ? `<p class="lesson-summary">${esc(lesson.summary)}</p>` : ''}
       ${lesson.blocks.map(blockHTML).join('')}
@@ -110,13 +125,9 @@ export async function lessonPage(el: HTMLElement, params: Record<string, string>
         ? `<p style="margin:0" class="mark-ok">${icon('check', 18)} You finished this lesson on ${fmtDate(finishedAt)}.</p>`
         : `<p style="margin:0 0 10px">${checks.length ? `Try the ${checks.length === 1 ? 'quick check' : `${checks.length} quick checks`} above, then` : 'When you have read it all,'} tap the button.</p>
            <button class="btn btn-primary btn-big" data-finish-btn type="button">Mark as finished</button>`}</div>
-      <div class="row" style="margin-top:12px">
-        ${next ? `<a class="btn" href="/lessons/${next.id}">Next lesson: ${esc(next.title)}</a>` : ''}
-        ${lesson.topicId ? `<a class="btn" href="/topic/${lesson.topicId}">Practise topic ${lesson.topicId}</a>` : ''}
-      </div>
     </div>`;
 
-  el.addEventListener('click', async (e) => {
+  host.addEventListener('click', async (e) => {
     const t = e.target as HTMLElement;
     const play = t.closest<HTMLElement>('[data-play]');
     if (play) {
@@ -158,8 +169,10 @@ export async function lessonPage(el: HTMLElement, params: Record<string, string>
         score: checks.length ? correct : 1, max: checks.length || 1,
         details: { title: lesson.title, checks: checks.length, answered: answers.size, correct },
       });
-      (el.querySelector('[data-finish]') as HTMLElement).innerHTML = `<p style="margin:0" class="mark-ok">${icon('check', 18)} Lesson finished.${checks.length ? ` Quick checks: ${correct} of ${checks.length} right.` : ''}</p>`;
+      (host.querySelector('[data-finish]') as HTMLElement).innerHTML = `<p style="margin:0" class="mark-ok">${icon('check', 18)} Lesson finished.${checks.length ? ` Quick checks: ${correct} of ${checks.length} right.` : ''}</p>`;
       toast('Lesson finished. Well done!');
+      onFinished?.();
     }
   });
 }
+
