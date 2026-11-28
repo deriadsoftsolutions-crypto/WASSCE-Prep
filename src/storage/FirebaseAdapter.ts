@@ -139,14 +139,15 @@ export class FirebaseAdapter implements StorageAdapter {
     if (!u) return null;
     const cached = cachedProfile(u.uid);
     if (cached) {
-      void ensureProfile(cached);
+      // The teacher may have moved the learner to another class: update the screen when that is found.
+      void ensureProfile(cached).then((next) => { if (next) window.dispatchEvent(new CustomEvent('profile-updated', { detail: next })); });
       return cached;
     }
     try {
       const snap = await getDoc(doc(db, 'learners', u.uid));
       if (snap.exists()) {
-        const d = snap.data() as { name: string; className: string; createdAt: number; year?: 1 | 2 | 3 };
-        const l: Learner = { id: u.uid, name: d.name, className: d.className, createdAt: d.createdAt, year: d.year };
+        const d = snap.data() as { name: string; className: string; createdAt: number; year?: 1 | 2 | 3; classId?: string };
+        const l: Learner = { id: u.uid, name: d.name, className: d.className, createdAt: d.createdAt, year: d.year, ...(d.classId ? { classId: d.classId } : {}) };
         cacheProfile(l);
         return l;
       }
@@ -165,6 +166,8 @@ export class FirebaseAdapter implements StorageAdapter {
     }
     // Sign-up and sign-in happen in src/firebase/account.ts. Here we only update the profile.
     cacheProfile(learner);
-    await setDoc(doc(db, 'learners', learner.id), JSON.parse(JSON.stringify({ name: learner.name, className: learner.className, year: learner.year, createdAt: learner.createdAt, role: 'learner' })), { merge: true });
+    // A learner in a fixed class cannot change their class or year (the teacher does that); only older accounts can.
+    const fields = learner.classId ? { name: learner.name } : { name: learner.name, className: learner.className, year: learner.year, createdAt: learner.createdAt, role: 'learner' };
+    await setDoc(doc(db, 'learners', learner.id), JSON.parse(JSON.stringify(fields)), { merge: true });
   }
 }

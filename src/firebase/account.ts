@@ -21,22 +21,49 @@ export function cachedProfile(uid: string): Learner | null {
   try { const r = localStorage.getItem(PROFILE_KEY(uid)); return r ? (JSON.parse(r) as Learner) : null; } catch { return null; }
 }
 
-export async function learnerSignUp(name: string, className: string, pin: string, year: 1 | 2 | 3): Promise<Learner> {
-  const cred = await createUserWithEmailAndPassword(auth, learnerEmail(name, className), pin);
+/** The part of a learner's login that comes from their class (letters and digits, at most 16). */
+const classCode = (className: string) => slug(className).replace(/-/g, '').slice(0, 16);
+
+/**
+ * Sign up. With fixed classes, `cls` is the chosen class (its id is the login code);
+ * if the teacher has not set up classes yet, `cls` is just the typed class name.
+ */
+export async function learnerSignUp(name: string, cls: string | { id: string; name: string; year: 1 | 2 | 3 }, pin: string, year: 1 | 2 | 3): Promise<Learner> {
+  const fixed = typeof cls === 'object' ? cls : null;
+  const className = fixed ? fixed.name : (cls as string);
+  const code = fixed ? fixed.id : classCode(className);
+  const cred = await createUserWithEmailAndPassword(auth, `${slug(name).slice(0, 40)}.${code}@${LEARNER_EMAIL_DOMAIN}`, pin);
   await updateProfile(cred.user, { displayName: name });
-  const l: Learner = { id: cred.user.uid, name, className, createdAt: Date.now(), year };
+  const y = fixed ? fixed.year : year;
+  const l: Learner = { id: cred.user.uid, name, className, createdAt: Date.now(), year: y, ...(fixed ? { classId: fixed.id } : {}) };
   cacheProfile(l);
   // Wait (briefly) for the profile to be saved, so it is not lost if the page changes straight away.
   // Offline, the write stays queued and is sent later; ensureProfile() also repairs it on the next start.
   await Promise.race([
-    setDoc(doc(db, 'learners', l.id), { name, className, year, createdAt: l.createdAt, role: 'learner' }).catch(console.error),
+    setDoc(doc(db, 'learners', l.id), { name, className, year: y, createdAt: l.createdAt, role: 'learner', ...(fixed ? { classId: fixed.id, loginKey: fixed.id } : {}) }).catch(console.error),
     new Promise((r) => setTimeout(r, 4000)),
   ]);
   return l;
 }
 
-export async function learnerSignIn(name: string, className: string, pin: string): Promise<void> {
-  await signInWithEmailAndPassword(auth, learnerEmail(name, className), pin);
+/**
+ * Sign in. `codes` are the login codes to try, in order: the class id, then its aliases
+ * (learners the teacher moved into the class keep the code they signed up with).
+ */
+export async function learnerSignIn(name: string, cls: string | { id: string; aliases?: string[] }, pin: string): Promise<void> {
+  const codes = typeof cls === 'object' ? [cls.id, ...(cls.aliases ?? [])] : [classCode(cls)];
+  let last: unknown = null;
+  for (const code of [...new Set(codes)]) {
+    try {
+      await signInWithEmailAndPassword(auth, `${slug(name).slice(0, 40)}.${code}@${LEARNER_EMAIL_DOMAIN}`, pin);
+      return;
+    } catch (e) {
+      last = e;
+      // Only a "not recognised" error means: try the next code. Network trouble, too many tries: stop.
+      if (!/invalid-credential|user-not-found|wrong-password|invalid-login-credentials/.test((e as { code?: string }).code ?? '')) throw e;
+    }
+  }
+  throw last;
 }
 
 export async function teacherSignIn(email: string, password: string) {
@@ -96,7 +123,7 @@ export function authErrorMessage(e: unknown): string {
     case 'auth/wrong-password':
     case 'auth/user-not-found':
     case 'auth/invalid-login-credentials':
-      return 'Name, class or PIN not recognised. Type your name and class exactly as when you signed up.';
+      return 'Name, class or PIN not recognised. Type your name exactly as when you signed up, and choose your class.';
     case 'auth/weak-password':
       return 'Your PIN must be 6 digits.';
     case 'auth/invalid-email':
@@ -111,12 +138,24 @@ export function authErrorMessage(e: unknown): string {
 }
 
 let profileChecked = '';
-/** Make sure learners/{uid} exists on the server (the teacher's class lists come from it). Once per session. */
-export async function ensureProfile(l: Learner) {
-  if (profileChecked === l.id || !l.className || l.className === 'Teacher') return;
+/**
+ * Make sure learners/{uid} exists on the server (the teacher's class lists come from it), and pick up
+ * changes the teacher made (a new class or year). Once per session. Returns the updated profile, if it changed.
+ */
+export async function ensureProfile(l: Learner): Promise<Learner | null> {
+  if (profileChecked === l.id || !l.className || l.className === 'Teacher') return null;
   profileChecked = l.id;
   try {
     const ref = doc(db, 'learners', l.id);
-    if (!(await getDoc(ref)).exists()) await setDoc(ref, JSON.parse(JSON.stringify({ name: l.name, className: l.className, year: l.year, createdAt: l.createdAt, role: 'learner' })));
-  } catch { profileChecked = ''; }
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, JSON.parse(JSON.stringify({ name: l.name, className: l.className, year: l.year, createdAt: l.createdAt, role: 'learner', classId: l.classId })));
+      return null;
+    }
+    const d = snap.data() as { className?: string; year?: 1 | 2 | 3; classId?: string };
+    if ((d.className ?? l.className) === l.className && (d.year ?? l.year) === l.year && (d.classId ?? l.classId) === l.classId) return null;
+    const next: Learner = { ...l, className: d.className ?? l.className, year: d.year ?? l.year, ...(d.classId ? { classId: d.classId } : {}) };
+    cacheProfile(next);
+    return next;
+  } catch { profileChecked = ''; return null; }
 }

@@ -1,6 +1,10 @@
 import { esc, fmtDate, fmtTime } from '../lib/dom';
 import { confirmDialog, downloadText, feedbackHTML, modal, toast } from '../lib/ui';
-import { classKey, classesOf, listLearners, type LearnerInfo } from '../firebase/assignments';
+import { listLearners, type LearnerInfo } from '../firebase/assignments';
+import { listClasses, type SchoolClass } from '../firebase/classes';
+import { legacyClassFields, audienceOf, yearToken } from '../lib/audience';
+import { audiencePickerHTML, readAudience, wireAudiencePicker } from './audiencePicker';
+import { audienceCell, filterBarHTML, isOutside, matchesFilter, outsidePill, peopleFor, wireFilter } from './teacherShared';
 import {
   allAttempts, allowRetake, autoScore, deleteAssessment, getKey, getQuestions, listAssessments, releaseResult, saveAssessment, statusOf,
   type Assessment, type Attempt, type KeyEntry, type QType, type Question, type Result, type ShowResults,
@@ -27,11 +31,13 @@ export async function mountTeacherTests(host: HTMLElement) {
   host.innerHTML = '<p class="muted">Loading tests...</p>';
   let tests: Assessment[] = [];
   let learners: LearnerInfo[] = [];
+  let classes: SchoolClass[] = [];
   let data: Awaited<ReturnType<typeof allAttempts>> = { starts: [], attempts: [], results: [] };
   const load = async () => {
-    [tests, learners, data] = await Promise.all([listAssessments(), listLearners(), allAttempts()]);
+    [tests, learners, data, classes] = await Promise.all([listAssessments(), listLearners(), allAttempts(), listClasses().catch(() => [] as SchoolClass[])]);
   };
-  const inClass = (a: Assessment) => learners.filter((l) => !a.classKey || classKey(l.className) === a.classKey);
+  const inClass = (a: Assessment) => peopleFor(a, learners);
+  const learnerById = (id: string) => learners.find((l) => l.id === id);
   const statusLabel: Record<string, string> = { draft: 'Draft', upcoming: 'Upcoming', open: 'Open', closed: 'Closed' };
 
   /* ---------------- List ---------------- */
@@ -41,19 +47,21 @@ export async function mountTeacherTests(host: HTMLElement) {
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
         <h2 style="margin:0">Tests</h2><div class="row"><button class="btn" data-ready type="button">+ Add ready-made test</button><button class="btn btn-primary" data-new type="button">+ New test</button></div></div>
       <div data-readybox></div>
+      ${tests.length ? filterBarHTML(classes, { shown: tests.filter((a) => matchesFilter(a, classes)).length, total: tests.length }) : ''}
       ${tests.length ? `<div class="table-wrap"><table class="data">
-        <thead><tr><th class="left">Title</th><th>Class</th><th>Status</th><th>Questions</th><th>Submitted</th><th>Released</th><th></th></tr></thead>
-        <tbody>${tests.map((a) => `<tr>
+        <thead><tr><th class="left">Title</th><th>For</th><th>Status</th><th>Questions</th><th>Submitted</th><th>Released</th><th></th></tr></thead>
+        <tbody>${tests.filter((a) => matchesFilter(a, classes)).map((a) => `<tr>
           <td class="left"><b>${esc(a.title)}</b><div class="muted small">${a.opensAt ? `Opens ${fmtDate(a.opensAt)}` : 'Opens now'}${a.closesAt ? ` · closes ${fmtDate(a.closesAt)}` : ''}${a.timeLimitMin ? ` · ${a.timeLimitMin} min` : ''}</div></td>
-          <td>${esc(a.className || 'All classes')}</td>
+          <td>${audienceCell(a, classes)}</td>
           <td><span class="pill ${statusOf(a) === 'open' ? 'ok' : ''}">${statusLabel[statusOf(a)]}</span></td>
           <td>${a.questionCount} (${a.totalMarks} mark${a.totalMarks === 1 ? '' : 's'})</td>
-          <td>${data.attempts.filter((x) => x.assessmentId === a.id).length} / ${inClass(a).length}</td>
+          <td>${(() => { const all = data.attempts.filter((x) => x.assessmentId === a.id); const n = all.filter((x) => isOutside(a, learnerById(x.learnerId))).length; return `${all.length - n} / ${inClass(a).length}${n ? `<div class="small" style="color:var(--muted)">${n} from other classes</div>` : ''}`; })()}</td>
           <td>${data.results.filter((x) => x.assessmentId === a.id).length}</td>
           <td><div class="row" style="flex-wrap:nowrap;justify-content:center">
             <button class="btn btn-sm btn-primary" data-results="${a.id}" type="button">Results</button>
             <button class="btn btn-sm" data-edit="${a.id}" type="button">Edit</button></div></td></tr>`).join('')}</tbody></table></div>`
         : '<div class="card"><p style="margin:0">No tests yet. Tap <b>New test</b>. You can type your own questions or add Paper 1 questions with one tap.</p></div>'}`;
+    wireFilter(host, renderList);
     host.onclick = (e) => {
       const t = e.target as HTMLElement;
       if (t.closest('[data-new]')) return void renderEditor();
@@ -69,10 +77,10 @@ export async function mountTeacherTests(host: HTMLElement) {
         void (async () => {
           try {
             const id = await saveAssessment({
-              title: r.title, instructions: r.instructions, classKey: '', className: '', opensAt: null, closesAt: null,
+              title: r.title, instructions: r.instructions, classIds: [yearToken(r.year)], ...legacyClassFields([yearToken(r.year)], classes), opensAt: null, closesAt: null,
               timeLimitMin: r.timeLimitMin, showResults: r.showResults, portfolioSection: r.portfolioSection, published: false,
             }, r.questions, r.answers);
-            toast('Test added as a draft. Check it, choose a class and dates, then publish.');
+            toast(`Added as a draft for all of STEM ${r.year}. Choose the class and dates, then publish.`);
             await load();
             renderEditor(tests.find((x) => x.id === id));
           } catch (ex) {
@@ -100,8 +108,6 @@ export async function mountTeacherTests(host: HTMLElement) {
       const [qs, key] = await Promise.all([getQuestions(a.id), getKey(a.id)]);
       items = qs.map((q) => ({ q, k: key?.[q.id] ?? {} }));
     }
-    const classes = classesOf(learners);
-    const custom = a && a.className && !classes.some((c) => classKey(c) === a.classKey);
     const started = a ? data.starts.filter((s) => s.assessmentId === a.id).length : 0;
 
     host.innerHTML = `
@@ -111,12 +117,8 @@ export async function mountTeacherTests(host: HTMLElement) {
         <form data-form class="stack" novalidate>
           <label class="field"><span>Title</span><input name="title" maxlength="120" value="${esc(a?.title ?? '')}" /></label>
           <label class="field"><span>Instructions (optional)</span><textarea name="instructions" rows="3">${esc(a?.instructions ?? '')}</textarea></label>
+          ${audiencePickerHTML(a ? audienceOf(a) : [], classes)}
           <div class="grid-2">
-            <label class="field"><span>Class</span><select name="cls">
-              <option value="">All classes</option>
-              ${classes.map((c) => `<option value="${esc(c)}" ${a && classKey(c) === a.classKey ? 'selected' : ''}>${esc(c)}</option>`).join('')}
-              <option value="__other" ${custom ? 'selected' : ''}>Other (type below)</option></select></label>
-            <label class="field" data-otherwrap ${custom ? '' : 'hidden'}><span>Class name</span><input name="other" value="${esc(custom ? a!.className : '')}" /></label>
             <label class="field"><span>Opens (optional, blank = straight away)</span><input name="opens" type="datetime-local" value="${toLocal(a?.opensAt ?? null)}" /></label>
             <label class="field"><span>Closes (optional)</span><input name="closes" type="datetime-local" value="${toLocal(a?.closesAt ?? null)}" /></label>
             <label class="field"><span>Time limit in minutes (0 = none)</span><input name="limit" type="number" min="0" max="300" value="${a?.timeLimitMin ?? 0}" /></label>
@@ -150,9 +152,7 @@ export async function mountTeacherTests(host: HTMLElement) {
 
     const qsHost = host.querySelector('[data-qs]') as HTMLElement;
     const form = host.querySelector('[data-form]') as HTMLFormElement;
-    form.querySelector('select[name=cls]')!.addEventListener('change', (e) => {
-      (form.querySelector('[data-otherwrap]') as HTMLElement).hidden = (e.target as HTMLSelectElement).value !== '__other';
-    });
+    wireAudiencePicker(form, classes);
 
     const drawQs = () => {
       (host.querySelector('[data-total]') as HTMLElement).textContent = `(${items.length} · ${items.reduce((s, x) => s + x.q.marks, 0)} marks)`;
@@ -267,11 +267,9 @@ export async function mountTeacherTests(host: HTMLElement) {
         const fd = new FormData(form);
         const err = (m: string) => { (host.querySelector('[data-err]') as HTMLElement).innerHTML = feedbackHTML('bad', m); };
         const title = String(fd.get('title') ?? '').trim();
-        const sel = String(fd.get('cls') ?? '');
-        const className = sel === '__other' ? String(fd.get('other') ?? '').trim() : sel;
+        const aud = readAudience(form, classes);
         const opensAt = fromLocal(String(fd.get('opens') ?? '')), closesAt = fromLocal(String(fd.get('closes') ?? ''));
         if (!title) return err('Give the test a title.');
-        if (sel === '__other' && !className) return err('Type the class name.');
         if (opensAt && closesAt && closesAt <= opensAt) return err('The closing time must be after the opening time.');
         if (!items.length) return err('Add at least one question.');
         for (const [i, { q, k }] of items.entries()) {
@@ -290,7 +288,7 @@ export async function mountTeacherTests(host: HTMLElement) {
         try {
           await saveAssessment({
             id: a?.id, createdAt: a?.createdAt, title, instructions: String(fd.get('instructions') ?? '').trim(),
-            className, classKey: classKey(className), opensAt, closesAt,
+            classIds: aud, ...legacyClassFields(aud, classes), opensAt, closesAt,
             timeLimitMin: Math.max(0, Math.round(Number(fd.get('limit')) || 0)), showResults: String(fd.get('show')) as ShowResults,
             portfolioSection: fd.get('psec') === 'semester' ? 'semester' : 'tests',
             published: fd.get('published') === 'on',
@@ -341,7 +339,7 @@ export async function mountTeacherTests(host: HTMLElement) {
       host.innerHTML = `
         <button class="btn btn-sm" data-back type="button">← All tests</button>
         <div class="page-head" style="margin-top:12px"><h2 style="margin:0">${esc(a.title)}</h2>
-          <span class="muted">${esc(a.className || 'All classes')} · ${a.questionCount} questions · ${a.totalMarks} marks</span></div>
+          <span class="muted">${audienceCell(a, classes)} · ${a.questionCount} questions · ${a.totalMarks} marks</span></div>
         <div class="stats" style="margin-bottom:12px">
           <div class="stat">Submitted<b>${submitted.length} / ${people.length}</b></div>
           <div class="stat">Class average<b>${submitted.length ? `${Math.round(avg * 10) / 10} / ${a.totalMarks}` : '-'}</b></div>
@@ -356,7 +354,7 @@ export async function mountTeacherTests(host: HTMLElement) {
           <tbody>${people.map((p) => {
             const at = attemptOf(p.id), st = startOf(p.id), r = resultOf(p.id);
             const status = at ? `Submitted ${fmtDate(at.submittedAt)}` : st ? (statusOf(a) === 'closed' ? 'Started, not submitted' : 'In progress') : 'Not started';
-            return `<tr><td class="left"><b>${esc(p.name)}</b><div class="muted small">${esc(p.className)}</div></td>
+            return `<tr><td class="left"><b>${esc(p.name)}</b><div class="muted small">${esc(p.className)}</div>${isOutside(a, learnerById(p.id) ?? p) ? outsidePill(p.className) : ''}</td>
               <td class="small">${status}</td>
               <td>${at && at.startedAt ? fmtTime((at.submittedAt - at.startedAt) / 1000) : '-'}</td>
               <td>${at ? `${sum(autoFor(at))}` : '-'}</td>

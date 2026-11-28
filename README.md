@@ -150,6 +150,18 @@ Each topic's score (the rings on the home page, My Progress and the T1 to T10 co
 
 Anything not tried yet counts as 0.
 
+## Classes
+
+On `/teacher` > **Classes** the teacher adds the school's classes (for example `2 Sci A`), each in a STEM year. Learners then **choose their class from a list** when they sign up and sign in, and their STEM year comes from the class (they cannot change it themselves; the teacher moves them). Until any classes exist, learners type their class as before.
+
+- **Rename or change year**: at the start of a school year, rename `2 Sci A` (STEM 2) to `3 Sci A` (STEM 3). Its learners move with it and still sign in as before: a class keeps the short code (`2scia`) that is part of its learners' logins.
+- **Learners to place in a class**: learners who signed up by typing their class are listed with a suggested class; **Place** (or **Place all with a suggestion**) puts them in a fixed class. They keep their name and PIN and from then on sign in by choosing that class (their old login code is kept as an alias of the class).
+- **Retire** hides a class from sign-up; nothing is deleted.
+
+Lessons, tests and assignments have a **Who is it for?** choice: all classes, all of a STEM year, or particular classes (ready-made items start as "All STEM n"). Learners see work for their class under **Classwork** (To do, Lessons, Done). Work set for other classes is folded away under **Set for other classes**: learners may still do it, with a notice, and the teacher sees it marked "From 2 Sci B, not this class" in marking and results, and listed under **Work from other classes** on the Overview. The Lessons, Tests and Assignments lists can be filtered by STEM year or class.
+
+Data: `classes/{id}` `{ name, year, retired, aliases, createdAt }` (anyone can read; teachers write). Items store `classIds` (class ids and `year:N`; empty = all classes); older items with a single `classKey` are read the same way. Learners store `classId` and `loginKey`. Helpers: `src/lib/audience.ts`.
+
 ## Assignments (file uploads with Cloudflare R2)
 
 Teachers set assignments on `/teacher` > **Assignments** (title, instructions, class, due date, marks, typed answer and/or files). Learners see them on **Assignments** (only those for their class), type an answer and/or attach up to 5 files (photos, PDF, Word, PowerPoint, Excel, text; 10 MB each; large photos are shrunk on the device first), and submit. They can change their work until it is marked. The teacher opens each learner's files, gives a mark and a comment, and the learner sees it straight away.
@@ -290,7 +302,7 @@ When a learner changes STEM year they start a new portfolio; the previous year's
 
 ## Learner profile and photos
 
-Tapping their name at the top opens **My profile** (`/profile`). It holds the learner's photo, name, class and STEM year (**Change my year**), this year's portfolio status, **Change my PIN** and **Sign out**.
+Tapping their name at the top opens **My profile** (`/profile`). It holds the learner's photo, name, class and STEM year (older accounts not yet in a fixed class can **Change my year**; otherwise the teacher moves them), this year's portfolio status, **Change my PIN** and **Sign out**.
 
 - **Photo:** **Take a photo** or **Choose a photo**. The tablet crops it to a square and shrinks it to 256 by 256 pixels (well under 60 KB) before sending. It waits for approval. On `/teacher` > **Photos** (the menu shows how many are waiting, and so does Overview) you **Approve** or **Reject** with a reason the learner sees. An approved photo stays until a new one is approved, and you can **Take down** any approved photo. Only the learner and teachers can ever see photos; they appear on the learner's name button and beside their name in your Portfolios and assignment marking lists.
 - **Change my PIN:** the learner types their current PIN and the new 6-digit PIN twice. A forgotten PIN still needs the console steps above.

@@ -4,7 +4,11 @@ import { esc, fmtDate } from '../lib/dom';
 import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import { storage } from '../storage';
 import { ACTIVITIES } from '../activities';
-import { classKey, classesOf, listLearners, type LearnerInfo } from '../firebase/assignments';
+import { listLearners, type LearnerInfo } from '../firebase/assignments';
+import { listClasses, type SchoolClass } from '../firebase/classes';
+import { legacyClassFields, audienceOf } from '../lib/audience';
+import { audiencePickerHTML, readAudience, wireAudiencePicker } from './audiencePicker';
+import { audienceCell, filterBarHTML, matchesFilter, peopleFor, wireFilter } from './teacherShared';
 import { listMaterials, listUnits, saveMaterial, type Unit } from '../firebase/units';
 import { READY_LESSONS } from '../data/ready';
 import { mountReadyPicker } from './readyPicker';
@@ -22,10 +26,12 @@ export async function mountTeacherLessons(host: HTMLElement) {
   host.innerHTML = '<div class="skel"><span class="tall"></span><span></span><span></span></div>';
   let lessons: Lesson[] = [];
   let learners: LearnerInfo[] = [];
+  let classes: SchoolClass[] = [];
   let units: Unit[] = [];
   let finished = new Map<string, Set<string>>();
   const load = async () => {
-    const [ls, lr, attempts, us] = await Promise.all([listLessons(), listLearners(), storage.getAttempts({ kind: 'lesson' }), listUnits().catch(() => [] as Unit[])]);
+    const [ls, lr, attempts, us, cl] = await Promise.all([listLessons(), listLearners(), storage.getAttempts({ kind: 'lesson' }), listUnits().catch(() => [] as Unit[]), listClasses().catch(() => [] as SchoolClass[])]);
+    classes = cl;
     lessons = ls; learners = lr; units = us.sort((a, b) => a.year - b.year || a.order - b.order);
     finished = new Map();
     for (const a of attempts) {
@@ -34,7 +40,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
       finished.get(id)!.add(a.learnerId);
     }
   };
-  const audience = (l: Lesson) => learners.filter((x) => !l.classKey || classKey(x.className) === l.classKey).length;
+  const audience = (l: Lesson) => peopleFor(l, learners).filter((x) => !l.year || !x.year || x.year === l.year).length;
   const topicLabel = (id: number) => (id ? `${id}. ${topics.find((t) => t.id === id)?.short ?? ''}` : 'General');
 
   const unitLabel = (l: Lesson) => { const u = units.find((x) => x.id === l.unitId); return u ? `STEM ${u.year}, ${u.code}` : l.year ? `STEM ${l.year}` : 'Any year'; };
@@ -46,18 +52,20 @@ export async function mountTeacherLessons(host: HTMLElement) {
       <div class="row" style="justify-content:space-between;margin-bottom:12px">
         <h2 style="margin:0">Lessons</h2><div class="row"><button class="btn" data-ready type="button">+ Add ready-made lesson</button><button class="btn btn-primary" data-new type="button">+ New lesson</button></div></div>
       <div data-readybox></div>
+      ${lessons.length ? filterBarHTML(classes, { shown: lessons.filter((l) => matchesFilter(l, classes)).length, total: lessons.length }) : ''}
       ${lessons.length ? `<div class="table-wrap"><table class="data">
-        <thead><tr><th class="left">Lesson</th><th>Unit</th><th>Topic</th><th>Class</th><th>Finished</th><th></th></tr></thead>
-        <tbody>${lessons.map((l) => `<tr>
+        <thead><tr><th class="left">Lesson</th><th>Unit</th><th>Topic</th><th>For</th><th>Finished</th><th></th></tr></thead>
+        <tbody>${lessons.filter((l) => matchesFilter(l, classes)).map((l) => `<tr>
           <td class="left"><b>${esc(l.title)}</b>${l.published ? '' : ' <span class="pill">Draft</span>'}<div class="muted small">${l.blocks.length} block${l.blocks.length === 1 ? '' : 's'}, updated ${fmtDate(l.updatedAt)}</div></td>
           <td>${esc(unitLabel(l))}</td>
           <td>${esc(topicLabel(l.topicId))}</td>
-          <td>${esc(l.className || 'All classes')}</td>
+          <td>${audienceCell(l, classes)}</td>
           <td>${finished.get(l.id)?.size ?? 0} / ${audience(l)}</td>
           <td><div class="row" style="flex-wrap:nowrap;justify-content:center">
             <a class="btn btn-sm" href="/lessons/${l.id}">View</a>
             <button class="btn btn-sm btn-primary" data-edit="${l.id}" type="button">Edit</button></div></td></tr>`).join('')}</tbody></table></div>`
         : '<div class="card"><p style="margin:0">No lessons yet. Tap <b>New lesson</b> to write your first one: text, pictures, a video, an activity and a quick check.</p></div>'}`;
+    wireFilter(host, renderList);
     host.onclick = async (e) => {
       const t = e.target as HTMLElement;
       if (t.closest('[data-new]')) return renderEditor();
@@ -73,7 +81,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
         const r = READY_LESSONS.find((x) => x.key === rk)!;
         (t.closest('[data-addready]') as HTMLButtonElement).disabled = true;
         try {
-          const id = await saveLesson({ title: r.title, summary: r.summary, topicId: r.topicId, year: r.year, unitId: r.unitId, className: '', classKey: '', blocks: r.blocks, published: false });
+          const id = await saveLesson({ title: r.title, summary: r.summary, topicId: r.topicId, year: r.year, unitId: r.unitId, classIds: [], ...legacyClassFields([], classes), blocks: r.blocks, published: false });
           const existing = await listMaterials(true).catch(() => []);
           let order = existing.filter((m) => m.unitId === r.unitId).reduce((n, m) => Math.max(n, m.order), 0);
           for (const m of r.materials) {
@@ -99,12 +107,10 @@ export async function mountTeacherLessons(host: HTMLElement) {
   const renderEditor = (lesson?: Lesson) => {
     host.onclick = null;
     let blocks: Block[] = lesson ? JSON.parse(JSON.stringify(lesson.blocks)) : [{ type: 'text', md: '' }];
-    const classes = classesOf(learners);
     let preUnit = '';
     if (!lesson) { try { preUnit = sessionStorage.getItem(NEW_LESSON_KEY) ?? ''; sessionStorage.removeItem(NEW_LESSON_KEY); } catch { /* ignore */ } }
     const curUnit = lesson?.unitId ?? preUnit;
     const curYear = lesson?.year ?? units.find((u) => u.id === curUnit)?.year ?? 0;
-    const custom = lesson && lesson.className && !classes.some((c) => classKey(c) === lesson.classKey);
 
     host.innerHTML = `
       <div class="card">
@@ -121,12 +127,8 @@ export async function mountTeacherLessons(host: HTMLElement) {
             <label class="field"><span>WASSCE practice topic</span><select name="topic">
               <option value="0">General (no topic)</option>
               ${topics.map((t) => `<option value="${t.id}" ${lesson?.topicId === t.id ? 'selected' : ''}>${t.id}. ${esc(t.short)}</option>`).join('')}</select></label>
-            <label class="field"><span>Class</span><select name="cls">
-              <option value="">All classes</option>
-              ${classes.map((c) => `<option value="${esc(c)}" ${lesson && classKey(c) === lesson.classKey ? 'selected' : ''}>${esc(c)}</option>`).join('')}
-              <option value="__other" ${custom ? 'selected' : ''}>Other (type below)</option></select></label>
-            <label class="field" data-otherwrap ${custom ? '' : 'hidden'}><span>Class name</span><input name="other" value="${esc(custom ? lesson!.className : '')}" /></label>
           </div>
+          ${audiencePickerHTML(lesson ? audienceOf(lesson) : [], classes)}
           <label class="switch"><input type="checkbox" name="published" ${lesson?.published ? 'checked' : ''} /> Published (learners can see it; leave off while you write)</label>
         </form>
       </div>
@@ -151,9 +153,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
       const y = (e.target as HTMLSelectElement).selectedOptions[0]?.dataset.y;
       if (y) (form.querySelector('select[name=year]') as HTMLSelectElement).value = y;
     });
-    form.querySelector('select[name=cls]')!.addEventListener('change', (e) => {
-      (form.querySelector('[data-otherwrap]') as HTMLElement).hidden = (e.target as HTMLSelectElement).value !== '__other';
-    });
+    wireAudiencePicker(form, classes);
 
     const activityOptions = (sel?: string) => topics.map((t) => `<optgroup label="${t.id}. ${esc(t.short)}">${t.activities.map((a) =>
       `<option value="${t.id}|${esc(a)}" ${sel === `${t.id}|${a}` ? 'selected' : ''}>${esc(ACTIVITIES[a]?.title ?? a)}</option>`).join('')}</optgroup>`).join('');
@@ -273,10 +273,8 @@ export async function mountTeacherLessons(host: HTMLElement) {
         const fd = new FormData(form);
         const err = (m: string) => { (host.querySelector('[data-err]') as HTMLElement).innerHTML = feedbackHTML('bad', m); };
         const title = String(fd.get('title') ?? '').trim();
-        const sel = String(fd.get('cls') ?? '');
-        const className = sel === '__other' ? String(fd.get('other') ?? '').trim() : sel;
+        const aud = readAudience(form, classes);
         if (!title) return err('Give the lesson a title.');
-        if (sel === '__other' && !className) return err('Type the class name.');
         // Drop empty blocks; check the rest.
         blocks = blocks.filter((b) => !(b.type === 'text' && !b.md.trim()) && !(b.type === 'image' && !b.url));
         for (const [i, b] of blocks.entries()) {
@@ -295,7 +293,7 @@ export async function mountTeacherLessons(host: HTMLElement) {
         try {
           await saveLesson({
             id: lesson?.id, createdAt: lesson?.createdAt, title, summary: String(fd.get('summary') ?? '').trim(),
-            topicId: Number(fd.get('topic')) || 0, year: Number(fd.get('year')) || 0, unitId: String(fd.get('unit') ?? ''), className, classKey: classKey(className), blocks,
+            topicId: Number(fd.get('topic')) || 0, year: Number(fd.get('year')) || 0, unitId: String(fd.get('unit') ?? ''), classIds: aud, ...legacyClassFields(aud, classes), blocks,
             published: fd.get('published') === 'on',
           });
           toast('Lesson saved.');

@@ -3,42 +3,24 @@ import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import { learner } from '../lib/session';
 import { navigate } from '../router';
 import {
-  assessmentsFor, autoScore, getAssessment, getKey, getQuestions, myAttempt, myResult, myStart, startAssessment, statusOf, submitAttempt,
+  autoScore, getAssessment, getKey, getQuestions, myAttempt, myResult, myStart, startAssessment, statusOf, submitAttempt,
   type Assessment, type Attempt, type KeyEntry, type Question, type Response, type Result,
 } from '../firebase/assessments';
 import { richText } from './assignments';
 import { refreshDue } from '../lib/due';
-import { icon } from '../lib/icons';
+import { audienceLabel, audienceOf, isForMe, type Me } from '../lib/audience';
+import { cachedClasses } from '../firebase/classes';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-function windowText(a: Assessment): string {
-  const parts: string[] = [];
-  if (a.opensAt) parts.push(`Opens ${fmtDate(a.opensAt)}`);
-  if (a.closesAt) parts.push(`Closes ${fmtDate(a.closesAt)}`);
-  parts.push(a.timeLimitMin ? `${a.timeLimitMin} minutes` : 'No time limit');
-  return parts.join(' · ');
+/** A gentle notice on work set for another class: the learner may still do it, and the teacher is told. */
+export function outsideNotice(a: { classIds?: string[]; classKey?: string }, l: Me, kind = 'test'): string {
+  if (isForMe(a, l) || l.className === 'Teacher') return '';
+  const label = audienceLabel(audienceOf(a), cachedClasses());
+  return feedbackHTML('info', `This ${kind} was set for ${label}, not for your class.`,
+    `<p style="margin:6px 0 0">You can still do it for practice. Your teacher will see that you are in ${esc(l.className)}.</p>`);
 }
 
-/** HTML list of tests for the Classwork page. */
-export async function testsListHTML(className: string, all = false): Promise<string> {
-  const list = await assessmentsFor(className, all);
-  if (!list.length) return `<div class="card"><p style="margin:0">${all ? 'No published tests yet.' : 'No tests for your class yet.'}</p></div>`;
-  const rows = await Promise.all(list.map(async (a) => {
-    const [att, res, start] = await Promise.all([myAttempt(a.id).catch(() => null), myResult(a.id).catch(() => null), myStart(a.id).catch(() => null)]);
-    const st = statusOf(a);
-    const pill = res ? `<span class="pill ok">Result: ${res.total} / ${res.max}</span>`
-      : att ? '<span class="pill ok">Submitted</span>'
-      : start && st === 'open' ? '<span class="pill accent">In progress</span>'
-      : st === 'open' ? '<span class="pill accent">Open now</span>'
-      : st === 'upcoming' ? '<span class="pill">Upcoming</span>'
-      : '<span class="pill" style="background:var(--bad-soft);color:var(--bad)">Closed</span>';
-    return `<a class="topic-card" href="/tests/${a.id}" style="flex-direction:column;align-items:flex-start">
-      <div class="row" style="width:100%"><b style="font-size:1.15rem;display:inline-flex;gap:8px;align-items:center">${icon('test', 22)} ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
-      <div class="muted small">${all ? `${esc(a.className || 'All classes')} · ` : ''}${a.questionCount} questions · ${a.totalMarks} marks · ${esc(windowText(a))}</div></a>`;
-  }));
-  return `<div class="qlist">${rows.join('')}</div>`;
-}
 
 export async function testPage(el: HTMLElement, params: Record<string, string>): Promise<(() => void) | void> {
   const l = learner();
@@ -60,6 +42,7 @@ export async function testPage(el: HTMLElement, params: Record<string, string>):
 
   if (!start) {
     el.innerHTML = `${head}
+      ${outsideNotice(a, l)}
       <div class="card stack">
         ${a.instructions ? `<p style="margin:0">${richText(a.instructions)}</p>` : ''}
         <ul style="margin:0">
@@ -131,7 +114,7 @@ async function renderTaking(el: HTMLElement, head: string, a: Assessment, starte
     btn.textContent = 'Submitting...';
     try {
       await Promise.race([
-        submitAttempt({ assessmentId: a.id, learnerName: name, className, responses, startedAt }),
+        submitAttempt({ assessmentId: a.id, learnerName: name, className, responses, startedAt, outsideClass: !!learner() && !isForMe(a, learner()!) }),
         new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 20_000)),
       ]);
       clearInterval(timer);

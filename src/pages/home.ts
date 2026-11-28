@@ -123,6 +123,7 @@ export async function homePage(el: HTMLElement) {
   // A new lesson that belongs to a unit is reached through that unit; a lone new lesson stays a step of its own.
   const nextUnit = nu ? { u: nu, left: unitLeft(nu) } : null;
   const isStem3 = !l?.year || l.year === 3;
+  const practice = isStem3 ? topics : topics.filter((t) => units.some((u) => u.wassceTopics.includes(t.id)));
 
   const weeks = Math.max(0, Math.ceil((new Date(CONFIG.WASSCE_DATE).getTime() - Date.now()) / (7 * 86_400_000)));
   const days = new Set(attempts.filter((a) => a.timestamp >= Date.now() - 7 * 86_400_000).map((a) => new Date(a.timestamp).toDateString())).size;
@@ -166,9 +167,9 @@ export async function homePage(el: HTMLElement) {
 
     ${usingFirebase && due.length ? `
     <section aria-labelledby="due">
-      <div class="section-head"><h2 id="due">Due soon</h2><a href="/assignments">All classwork</a></div>
+      <div class="section-head"><h2 id="due">To do <span class="muted small">(${due.length})</span></h2><a href="/assignments">${due.length > 3 ? `See all ${due.length}` : 'All classwork'}</a></div>
       <div class="due-list">
-        ${due.slice(0, 4).map((d) => {
+        ${due.slice(0, 3).map((d) => {
           const lab = dueLabel(d);
           return `<a class="due-row" href="${d.href}">
             ${icon(d.kind === 'test' ? 'test' : 'clip', 26)}
@@ -194,10 +195,10 @@ export async function homePage(el: HTMLElement) {
       </div>
     </section>` : ''}
 
-    <section aria-labelledby="topics">
-      <div class="section-head"><h2 id="topics">WASSCE practice topics</h2><a href="/wassce">WASSCE Prep</a></div>
+    ${practice.length ? `<section aria-labelledby="topics">
+      <div class="section-head"><h2 id="topics">Practise next</h2><a href="/wassce">All ${practice.length} WASSCE topics</a></div>
       <div class="tiles">
-        ${(isStem3 ? topics : topics.filter((t) => units.some((u) => u.wassceTopics.includes(t.id)))).map((t) => {
+        ${practice.slice().sort((a, b) => masteryLevel(prog, a.id) - masteryLevel(prog, b.id) || (prog?.topics[a.id]?.percent ?? 0) - (prog?.topics[b.id]?.percent ?? 0) || a.id - b.id).slice(0, 3).map((t) => {
           const lv = masteryLevel(prog, t.id);
           return `<a class="tile" href="/topic/${t.id}">
             <span class="num">${t.id}</span>
@@ -206,5 +207,5 @@ export async function homePage(el: HTMLElement) {
           </a>`;
         }).join('')}
       </div>
-    </section>`;
+    </section>` : ''}`;
 }

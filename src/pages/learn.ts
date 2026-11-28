@@ -19,7 +19,7 @@ const fmtSize = (n?: number) => (!n ? '' : n < 1024 * 1024 ? `${Math.max(1, Math
 /** Lessons for the learner's class in every year (for browsing units of any year). */
 async function classLessons(teacher: boolean): Promise<Lesson[]> {
   const l = learner();
-  return l ? lessonsFor(l.className, teacher).catch(() => [] as Lesson[]) : [];
+  return l ? lessonsFor({ ...l, year: null }, teacher).catch(() => [] as Lesson[]) : [];
 }
 
 async function isTeacherNow(): Promise<boolean> {

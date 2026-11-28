@@ -3,6 +3,7 @@ import type { Attempt, AttemptKind, Learner } from '../types';
 import { esc } from './dom';
 import { addRevealToggles, confirmDialog, modal, toast } from './ui';
 import * as acct from '../firebase/account';
+import { cachedClasses, listClasses, type SchoolClass } from '../firebase/classes';
 
 let current: Learner | null = null;
 let asking: Promise<Learner> | null = null;
@@ -20,6 +21,11 @@ function setCurrent(l: Learner | null) {
   current = l;
   window.dispatchEvent(new CustomEvent('learner-changed'));
 }
+// The teacher moved this learner to another class (picked up from the server): show it straight away.
+window.addEventListener('profile-updated', (e) => {
+  const next = (e as CustomEvent<Learner>).detail;
+  if (current && next && next.id === current.id) setCurrent(next);
+});
 
 function makeId(name: string, className: string): string {
   return `${name}|${className}`.toLowerCase().replace(/\s+/g, ' ').trim();
@@ -70,7 +76,7 @@ function signInDialog(): Promise<Learner> {
           <button type="button" class="tab" role="tab" data-mode="new" aria-selected="false">I'm new here</button>
         </div>
         <label class="field"><span>Your full name</span><input name="name" required maxlength="40" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="e.g. Ama Mensah" /></label>
-        <label class="field"><span>Class</span><input name="cls" required maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. 2 Sci A" /></label>
+        <div data-clswrap><label class="field"><span>Class</span><input name="cls" required maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. 2 Sci A" /></label></div>
         <fieldset class="field" data-yearwrap hidden style="border:0;padding:0;margin:0 0 12px"><legend style="font-weight:600;margin-bottom:6px">Your year</legend>
           <div class="row">${[1, 2, 3].map((y) => `<label class="switch" style="border:1.5px solid var(--ink);border-radius:6px;padding:0 14px"><input type="radio" name="year" value="${y}" /> STEM ${y}</label>`).join('')}</div></fieldset>
         <label class="field"><span data-pinlabel>Your 6-digit PIN</span><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" /></label>
@@ -85,11 +91,29 @@ function signInDialog(): Promise<Learner> {
     const err = form.querySelector('[data-err]') as HTMLElement;
     const submit = form.querySelector('[data-submit]') as HTMLButtonElement;
 
+    // Fixed classes (set up by the teacher): choose from a list. Until there are any, learners type their class.
+    let classes: SchoolClass[] = [];
+    const clsWrap = form.querySelector('[data-clswrap]') as HTMLElement;
+    const drawClasses = () => {
+      const shown = classes.filter((c) => mode === 'in' || !c.retired);
+      if (!shown.length) return;
+      const prev = (form.querySelector('[name=cls]') as HTMLInputElement | HTMLSelectElement | null)?.value ?? '';
+      clsWrap.innerHTML = `<label class="field"><span>Your class</span><select name="cls" required>
+        <option value="">Choose your class</option>
+        ${[1, 2, 3].map((y) => { const inY = shown.filter((c) => c.year === y); return inY.length ? `<optgroup label="STEM ${y}">${inY.map((c) => `<option value="${esc(c.id)}" ${c.id === prev ? 'selected' : ''}>${esc(c.name)}${c.retired ? ' (old class)' : ''}</option>`).join('')}</optgroup>` : ''; }).join('')}
+      </select></label>`;
+    };
+    const fixedClasses = () => classes.length > 0;
+    classes = cachedClasses();
+    drawClasses();
+    void listClasses(true).then((list) => { classes = list; drawClasses(); setMode(mode); }).catch(() => undefined);
+
     const setMode = (md: typeof mode) => {
       mode = md;
       form.querySelectorAll('[data-mode]').forEach((t) => t.setAttribute('aria-selected', String((t as HTMLElement).dataset.mode === md)));
       (form.querySelector('[data-confirm]') as HTMLElement).hidden = md !== 'new';
-      (form.querySelector('[data-yearwrap]') as HTMLElement).hidden = md !== 'new';
+      (form.querySelector('[data-yearwrap]') as HTMLElement).hidden = md !== 'new' || fixedClasses();
+      if (fixedClasses()) drawClasses();
       (form.querySelector('[data-pinlabel]') as HTMLElement).textContent = md === 'new' ? 'Choose a 6-digit PIN (keep it secret, remember it)' : 'Your 6-digit PIN';
       submit.textContent = md === 'new' ? 'Create my account' : 'Sign in';
       err.innerHTML = '';
@@ -105,19 +129,20 @@ function signInDialog(): Promise<Learner> {
       const fd = new FormData(form);
       const name = String(fd.get('name') ?? '').trim().replace(/\s+/g, ' ');
       const className = String(fd.get('cls') ?? '').trim().replace(/\s+/g, ' ');
+      const chosen = fixedClasses() ? classes.find((c) => c.id === className) ?? null : null;
       const pin = String(fd.get('pin') ?? '');
       const fail = (msg: string) => { err.innerHTML = `<p class="mark-bad" style="margin:0">${esc(msg)}</p>`; };
       if (name.split(' ').length < 2) return fail('Please type your first name and surname.');
-      if (!className) return fail('Please type your class, for example 2 Sci A.');
+      if (!className) return fail(fixedClasses() ? 'Please choose your class.' : 'Please type your class, for example 2 Sci A.');
       if (!/^\d{6}$/.test(pin)) return fail('Your PIN must be exactly 6 digits.');
       if (mode === 'new' && pin !== String(fd.get('pin2') ?? '')) return fail('The two PINs do not match.');
       const year = Number(fd.get('year')) as 1 | 2 | 3;
-      if (mode === 'new' && ![1, 2, 3].includes(year)) return fail('Choose your year: STEM 1, STEM 2 or STEM 3.');
+      if (mode === 'new' && !chosen && ![1, 2, 3].includes(year)) return fail('Choose your year: STEM 1, STEM 2 or STEM 3.');
       submit.disabled = true;
       submit.textContent = 'Please wait...';
       try {
-        if (mode === 'new') await acct.learnerSignUp(name, className, pin, year);
-        else await acct.learnerSignIn(name, className, pin);
+        if (mode === 'new') await acct.learnerSignUp(name, chosen ?? className, pin, year);
+        else await acct.learnerSignIn(name, chosen ?? className, pin);
         const l = await storage.getLearner();
         if (!l) throw new Error('Not signed in');
         m.close();

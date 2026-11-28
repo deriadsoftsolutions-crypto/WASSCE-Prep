@@ -6,7 +6,7 @@
  */
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { auth, db } from './app';
-import { classKey } from './assignments';
+import { isForMe, type Me } from '../lib/audience';
 
 export type Block =
   | { type: 'text'; md: string }
@@ -27,6 +27,8 @@ export interface Lesson {
   unitId?: string;
   classKey: string;
   className: string;
+  /** Who it is for: class ids and 'year:N' tokens; empty = all classes (lib/audience). */
+  classIds?: string[];
   summary: string;
   blocks: Block[];
   published: boolean;
@@ -45,15 +47,15 @@ export async function getLesson(id: string): Promise<Lesson | null> {
   return s.exists() ? { ...(s.data() as Lesson), id: s.id } : null;
 }
 
-export async function lessonsFor(className: string, all = false, year?: number): Promise<Lesson[]> {
-  const k = classKey(className);
-  return (await listLessons()).filter((l) => l.published && (all || ((l.classKey === '' || l.classKey === k) && (!l.year || !year || l.year === year))));
+/** Published lessons for this learner: set for their class (or all classes) and for their STEM year. `all` = every published lesson (teacher preview). */
+export async function lessonsFor(me: Me, all = false): Promise<Lesson[]> {
+  return (await listLessons()).filter((l) => l.published && (all || (isForMe(l, me) && (!l.year || !me.year || l.year === me.year))));
 }
 
 export async function saveLesson(l: Omit<Lesson, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; createdAt?: number }): Promise<string> {
   const ref = l.id ? doc(db, 'lessons', l.id) : doc(collection(db, 'lessons'));
   const data: Omit<Lesson, 'id'> = {
-    title: l.title, topicId: l.topicId, year: l.year ?? 0, unitId: l.unitId ?? '', classKey: l.classKey, className: l.className, summary: l.summary,
+    title: l.title, topicId: l.topicId, year: l.year ?? 0, unitId: l.unitId ?? '', classKey: l.classKey, className: l.className, classIds: l.classIds ?? (l.classKey ? [l.classKey] : []), summary: l.summary,
     blocks: JSON.parse(JSON.stringify(l.blocks)), published: l.published,
     createdAt: l.createdAt ?? Date.now(), updatedAt: Date.now(),
   };

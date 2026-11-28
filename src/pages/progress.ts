@@ -34,11 +34,14 @@ export async function progressPage(el: HTMLElement) {
       : prog.totalAttempts ? '<div class="feedback ok" style="margin-bottom:16px"><strong>Great work!</strong>No topic is below 60%. Try a full mock to test yourself.</div>' : ''}
     <div class="card">
       <h2>Scores per topic</h2>
-      <p class="muted small">Each topic score is the average of three kinds of work: the topic quiz on the topic page (questions you have got right), your best Paper 1 mock result on that topic's questions, and your best score on each of the topic's activities. Anything not tried yet counts as 0. The Paper 1 line shows all your answers to that topic's objective questions, from topic quizzes and mocks together.</p>
+      <details class="muted small" style="margin:-4px 0 8px"><summary style="cursor:pointer">How is each score worked out?</summary>
+        <p style="margin:6px 0 0">Each topic score is the average of three kinds of work: the topic quiz on the topic page (questions you have got right), your best Paper 1 mock result on that topic's questions, and your best score on each of the topic's activities. Anything not tried yet counts as 0. The Paper 1 line shows all your answers to that topic's objective questions, from topic quizzes and mocks together.</p></details>
       ${topics.map((t) => {
         const tp = prog.topics[t.id];
         const weak = weakIds.has(t.id);
-        const items = topicItemIds(t).map((id) => {
+        const ids = topicItemIds(t);
+        const tried = ids.filter((id) => tp.items[id]).length;
+        const items = ids.map((id) => {
           const it = tp.items[id];
           const name = id.startsWith('quiz:') ? 'Topic quiz' : id.startsWith('mock:') ? 'Paper 1 mock' : ACTIVITIES[id.slice(9)]?.title.replace(/\s*\(.*\)$/, '') ?? id;
           const value = !it ? 'not tried'
@@ -49,7 +52,8 @@ export async function progressPage(el: HTMLElement) {
         return `<div class="prog-row ${weak ? 'weak' : ''}">
           <div><a href="/topic/${t.id}" style="font-weight:700;display:inline-flex;gap:8px;align-items:center">${topicIcon(t.id, 20)} ${t.id}. ${esc(t.short)}</a>
             <div class="muted small">Paper 1: ${tp.mcqTotal ? `${tp.mcqCorrect} / ${tp.mcqTotal} correct` : 'none yet'}</div></div>
-          <div><div class="bar ${weak ? 'weak' : ''}"><span style="width:${tp.percent}%"></span></div><div style="margin-top:6px">${items}</div></div>
+          <div><div class="bar ${weak ? 'weak' : ''}"><span style="width:${tp.percent}%"></span></div>
+            <details class="prog-more"><summary>${tried ? `${tried} of ${ids.length} parts tried` : `Not started: ${ids.length} parts to try`}</summary><div style="margin-top:6px">${items}</div></details></div>
           <div style="font-weight:800;font-size:1.2rem;text-align:right">${tp.percent}%</div>
         </div>`;
       }).join('')}

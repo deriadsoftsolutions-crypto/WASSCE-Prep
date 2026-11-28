@@ -3,13 +3,12 @@ import { feedbackHTML, toast } from '../lib/ui';
 import { learner } from '../lib/session';
 import { usingFirebase } from '../storage';
 import { navigate } from '../router';
-import { testsListHTML } from './tests';
-import { finishedLessons, lessonCardsHTML, myLessons } from './lessons';
 import { refreshDue } from '../lib/due';
+import { isForMe } from '../lib/audience';
+import { outsideNotice } from './tests';
 import { icon } from '../lib/icons';
-import { isTeacher } from '../firebase/account';
 import {
-  assignmentsFor, deleteFile, fmtSize, getAssignment, myFeedback, mySubmission, openFile, shrinkImage, submit, uploadFile,
+  deleteFile, fmtSize, getAssignment, myFeedback, mySubmission, openFile, shrinkImage, submit, uploadFile,
   type Assignment, type Submission, type SubmittedFile,
 } from '../firebase/assignments';
 
@@ -36,43 +35,8 @@ function needsFirebase(el: HTMLElement): boolean {
 
 export async function assignmentsPage(el: HTMLElement) {
   if (needsFirebase(el)) return;
-  el.innerHTML = '<h1>Classwork</h1><p class="muted">Loading...</p>';
-  const l = learner()!;
-  let list: Assignment[];
-  let testsHTML: string;
-  let lessonsList: Awaited<ReturnType<typeof myLessons>> = [];
-  let doneLessons = new Map<string, number>();
-  const teacher = await isTeacher().catch(() => false);
-  try {
-    [list, testsHTML, lessonsList, doneLessons] = await Promise.all([assignmentsFor(l.className, teacher), testsListHTML(l.className, teacher), myLessons(), finishedLessons()]);
-  } catch {
-    el.innerHTML = '<h1>Classwork</h1><p class="mark-bad">Could not load your classwork. Check your internet connection.</p>';
-    return;
-  }
-  const status = await Promise.all(list.map(async (a) => {
-    const [s, f] = await Promise.all([mySubmission(a.id).catch(() => null), myFeedback(a.id).catch(() => null)]);
-    return { s, f };
-  }));
-  el.innerHTML = `
-    <div class="page-head"><h1>Classwork</h1><span class="muted">${esc(l.className)}</span></div>
-    ${teacher ? feedbackHTML('info', 'You are signed in as the teacher.', '<p style="margin:6px 0">Learners only see the tests and assignments set for their own class. Below is everything that is published, so you can preview it. To create, edit or mark work, use the Teacher page.</p><a class="btn btn-primary" href="/teacher">Go to the Teacher page</a>') : ''}
-    <h2>Lessons</h2>
-    ${lessonsList.length ? lessonCardsHTML(lessonsList, doneLessons) : `<div class="card"><p style="margin:0">${teacher ? 'No published lessons yet.' : 'No lessons for your class yet.'}</p></div>`}
-    <h2 style="margin-top:24px">Tests</h2>
-    ${testsHTML}
-    <h2 style="margin-top:24px">Assignments</h2>
-    ${list.length ? `<div class="qlist">${list.map((a, i) => {
-      const { s, f } = status[i];
-      const overdue = !!a.dueAt && a.dueAt < Date.now();
-      const pill = f ? `<span class="pill ok">Marked: ${f.mark} / ${f.maxMarks}</span>`
-        : s ? '<span class="pill ok">Submitted</span>'
-        : overdue ? '<span class="pill" style="background:var(--bad-soft);color:var(--bad)">Not submitted</span>'
-        : '<span class="pill accent">To do</span>';
-      return `<a class="topic-card" href="/assignments/${a.id}" style="flex-direction:column;align-items:flex-start">
-        <div class="row" style="width:100%"><b style="font-size:1.15rem;display:inline-flex;gap:8px;align-items:center">${icon('clip', 22)} ${esc(a.title)}</b><span class="spacer"></span>${pill}</div>
-        <div class="muted small">${esc(dueText(a))} · ${a.maxMarks} marks</div>
-      </a>`;
-    }).join('')}</div>` : `<div class="card"><p style="margin:0">${teacher ? 'No published assignments yet.' : 'No assignments for your class yet.'}</p></div>`}`;
+  const { classworkPage } = await import('./classwork');
+  await classworkPage(el);
 }
 
 export async function assignmentPage(el: HTMLElement, params: Record<string, string>) {
@@ -99,6 +63,7 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
     <a class="crumb" href="/assignments">← Classwork</a>
     <div class="page-head"><h1>${esc(a.title)}</h1><span class="pill">${a.maxMarks} marks</span></div>
     <p class="muted" style="margin-top:-8px">${esc(dueText(a))}</p>
+    ${outsideNotice(a, l, 'assignment')}
     ${fb ? feedbackHTML(fb.mark >= fb.maxMarks * 0.5 ? 'ok' : 'info', `Your teacher marked this: ${fb.mark} / ${fb.maxMarks}`,
       fb.comment ? `<p style="margin:6px 0 0">${richText(fb.comment)}</p>` : '') : ''}
     <div class="card"><h2>Instructions</h2><p style="margin:0">${richText(a.instructions) || '<span class="muted">No instructions.</span>'}</p></div>
@@ -191,7 +156,7 @@ export async function assignmentPage(el: HTMLElement, params: Record<string, str
       btn.disabled = true;
       const s: Submission = {
         assignmentId: a.id, learnerId: l.id, learnerName: l.name, className: l.className,
-        text: state.text.trim(), files: state.files, submittedAt: Date.now(), late: !!a.dueAt && Date.now() > a.dueAt,
+        text: state.text.trim(), files: state.files, submittedAt: Date.now(), late: !!a.dueAt && Date.now() > a.dueAt, outsideClass: !isForMe(a, l),
       };
       try {
         await submit(s);

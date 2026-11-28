@@ -227,7 +227,7 @@ export function pythonPage(el: HTMLElement) {
       const m = modal('<p class="muted">Loading your assignments...</p>');
       let open: Assignment[] = [];
       try {
-        const list = (await assignmentsFor(me!.className)).filter((a) => a.allowFiles);
+        const list = (await assignmentsFor(me!)).mine.filter((a) => a.allowFiles);
         const marked = await Promise.all(list.map((a) => myFeedback(a.id).catch(() => null)));
         open = list.filter((_, i) => !marked[i]);
       } catch { /* shown below */ }

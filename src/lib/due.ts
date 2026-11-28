@@ -28,9 +28,10 @@ export async function dueWork(): Promise<DueItem[]> {
   if (!usingFirebase || !l) return [];
   if (cache && cache.learnerId === l.id && Date.now() - cache.at < 60_000) return cache.items;
   const [asg, tst] = await Promise.all([import('../firebase/assignments'), import('../firebase/assessments')]);
+  // Only work set for the learner's own class counts as "to do" (work for other classes is optional).
   const [assignments, tests] = await Promise.all([
-    asg.assignmentsFor(l.className).catch(() => []),
-    tst.assessmentsFor(l.className).catch(() => []),
+    asg.assignmentsFor(l).then((x) => x.mine).catch(() => []),
+    tst.assessmentsFor(l).then((x) => x.mine).catch(() => []),
   ]);
   const items: DueItem[] = [];
   await Promise.all([

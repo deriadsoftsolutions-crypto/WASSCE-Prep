@@ -47,9 +47,11 @@ export async function profilePage(el: HTMLElement) {
       </div>
     </section>
     <section class="card">
-      <h2>My year</h2>
-      <p style="margin-top:-4px">You are in <b>STEM ${year}</b>. The site shows lessons, materials and your portfolio for this year.</p>
-      <button class="btn" data-act="year" type="button">Change my year</button>
+      <h2>My class and year</h2>
+      ${l.classId
+        ? `<p style="margin:-4px 0 0">You are in <b>${esc(l.className)}</b>, <b>STEM ${year}</b>. The site shows lessons, classwork and your portfolio for your class and year. If this is wrong, ask your teacher to move you.</p>`
+        : `<p style="margin-top:-4px">You are in <b>STEM ${year}</b>. The site shows lessons, materials and your portfolio for this year.</p>
+      <button class="btn" data-act="year" type="button">Change my year</button>`}
     </section>
     <section class="card">
       <h2>My portfolio</h2>
@@ -95,7 +97,7 @@ export async function profilePage(el: HTMLElement) {
     const t = e.target as HTMLElement;
     const act = t.closest<HTMLElement>('[data-act]')?.dataset.act;
     if (act === 'signout') return void signOutOrSwitch();
-    if (act === 'year') { await askYear(l.year); return void profilePage(el); }
+    if (act === 'year' && !l.classId) { await askYear(l.year); return void profilePage(el); }
     if (!t.closest('[data-pinsave]')) return;
     const fd = new FormData(el.querySelector('[data-pinform]') as HTMLFormElement);
     const [cur, n1, n2] = ['cur', 'new1', 'new2'].map((k) => String(fd.get(k) ?? '').trim());

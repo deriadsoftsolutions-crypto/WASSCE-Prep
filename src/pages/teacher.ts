@@ -15,6 +15,7 @@ import { mountTeacherLessons } from './teacherLessons';
 import { mountTeacherCurriculum } from './teacherCurriculum';
 import { mountTeacherPortfolios } from './teacherPortfolios';
 import { mountTeacherPhotos } from './teacherPhotos';
+import { mountTeacherClasses } from './teacherClasses';
 
 const topics = topicsData as Topic[];
 const UNLOCK_KEY = 'wassce.teacher.unlocked';
@@ -66,7 +67,7 @@ async function renderDashboard(el: HTMLElement) {
   let tab = 'overview';
   try { tab = sessionStorage.getItem(TAB_KEY) ?? 'overview'; } catch { /* ignore */ }
   if (!usingFirebase) tab = 'overview';
-  const tabs = [['overview', 'Overview'], ['curriculum', 'Curriculum'], ['lessons', 'Lessons'], ['tests', 'Tests'], ['assignments', 'Assignments'], ['portfolios', 'Portfolios'], ['photos', 'Photos']];
+  const tabs = [['overview', 'Overview'], ['classes', 'Classes'], ['curriculum', 'Curriculum'], ['lessons', 'Lessons'], ['tests', 'Tests'], ['assignments', 'Assignments'], ['portfolios', 'Portfolios'], ['photos', 'Photos']];
   const me = learner();
   el.innerHTML = `
     <div class="t-layout">
@@ -102,6 +103,7 @@ async function renderDashboard(el: HTMLElement) {
   else if (tab === 'lessons') await mountTeacherLessons(body);
   else if (tab === 'portfolios') await mountTeacherPortfolios(body);
   else if (tab === 'photos') await mountTeacherPhotos(body, () => void menuCounts(el));
+  else if (tab === 'classes') await mountTeacherClasses(body, () => void menuCounts(el));
   else if (tab === 'curriculum') await mountTeacherCurriculum(body, () => (el.querySelector('[data-tab="lessons"]') as HTMLElement | null)?.click());
   else await renderOverview(body);
   if (usingFirebase) void menuCounts(el);
@@ -123,9 +125,44 @@ async function menuCounts(el: HTMLElement) {
     const { allPhotos } = await import('../firebase/profilePhoto');
     const waiting = (await allPhotos()).filter((p) => p.pending).length;
     set('photos', waiting ? `${waiting} waiting` : '', true);
+    const [{ listClasses, unmatched }, { listLearners }] = await Promise.all([import('../firebase/classes'), import('../firebase/assignments')]);
+    const [cls, ls] = await Promise.all([listClasses(), listLearners()]);
+    const toPlace = cls.length ? unmatched(ls, cls).length : 0;
+    set('classes', !cls.length ? 'set up' : toPlace ? `${toPlace} to place` : '', true);
+    void outsideNotice(el, ls, cls);
     const ov = el.querySelector<HTMLElement>('[data-ovphotos]');
     if (ov) ov.innerHTML = waiting ? `<div class="card" style="margin-bottom:16px"><p style="margin:0"><b>${waiting} profile photo${waiting === 1 ? '' : 's'}</b> waiting for your approval. <button type="button" class="btn btn-sm" data-tab="photos">Review photos</button></p></div>` : '';
   } catch { /* counts are optional */ }
+}
+
+/** Overview notice: work handed in, or tests taken, by learners outside the class it was set for. */
+async function outsideNotice(el: HTMLElement, learners: import('../firebase/assignments').LearnerInfo[], classes: import('../lib/audience').ClassInfo[]) {
+  const box = el.querySelector<HTMLElement>('[data-ovoutside]');
+  if (!box) return;
+  const [asg, tst, aud] = await Promise.all([import('../firebase/assignments'), import('../firebase/assessments'), import('../lib/audience')]);
+  const [assignments, tests, { subs, feedback }, tdata] = await Promise.all([asg.listAssignments(), tst.listAssessments(), asg.allSubmissions(), tst.allAttempts()]);
+  const outside = (item: { classIds?: string[]; classKey?: string }, id: string) => {
+    const l = learners.find((x) => x.id === id);
+    return !!l && !aud.inAudience(aud.audienceOf(item), { classId: aud.learnerClassId(l), year: l.year });
+  };
+  const rows: { who: string; cls: string; what: string; forWhom: string; tab: string; when: number }[] = [];
+  for (const s of subs) {
+    const a = assignments.find((x) => x.id === s.assignmentId);
+    if (!a || !outside(a, s.learnerId) || feedback.some((f) => f.assignmentId === a.id && f.learnerId === s.learnerId)) continue;
+    rows.push({ who: s.learnerName, cls: s.className, what: a.title, forWhom: aud.audienceLabel(aud.audienceOf(a), classes), tab: 'assignments', when: s.submittedAt });
+  }
+  for (const at of tdata.attempts) {
+    const t = tests.find((x) => x.id === at.assessmentId);
+    if (!t || !outside(t, at.learnerId) || tdata.results.some((r) => r.assessmentId === t.id && r.learnerId === at.learnerId)) continue;
+    rows.push({ who: at.learnerName, cls: at.className, what: t.title, forWhom: aud.audienceLabel(aud.audienceOf(t), classes), tab: 'tests', when: at.submittedAt });
+  }
+  if (!rows.length) { box.innerHTML = ''; return; }
+  rows.sort((a, b) => b.when - a.when);
+  box.innerHTML = `<div class="card" style="margin-bottom:16px"><h3 style="margin-top:0">Work from other classes <span class="pill" style="background:var(--accent-soft)">${rows.length}</span></h3>
+    <p class="muted small" style="margin-top:-6px">These learners did work that was set for a different class. Mark it as usual, or ignore it.</p>
+    <ul style="margin:0;padding-left:20px">${rows.slice(0, 8).map((r) => `<li><b>${esc(r.who)}</b> (${esc(r.cls)}) ${r.tab === 'tests' ? 'took' : 'handed in'} <b>${esc(r.what)}</b>, set for ${esc(r.forWhom)}.</li>`).join('')}</ul>
+    ${rows.length > 8 ? `<p class="muted small">and ${rows.length - 8} more.</p>` : ''}
+    <div class="row" style="margin-top:8px">${rows.some((r) => r.tab === 'assignments') ? '<button type="button" class="btn btn-sm" data-tab="assignments">Open Assignments</button>' : ''}${rows.some((r) => r.tab === 'tests') ? '<button type="button" class="btn btn-sm" data-tab="tests">Open Tests</button>' : ''}</div></div>`;
 }
 
 async function classworkCounts() {
@@ -165,7 +202,7 @@ async function renderOverview(el: HTMLElement) {
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
 
   el.innerHTML = `
-    ${usingFirebase ? '<div data-ovphotos></div>' : ''}
+    ${usingFirebase ? '<div data-ovphotos></div><div data-ovoutside></div>' : ''}
     <div class="page-head"><h1>Overview</h1><span class="muted">${today}</span></div>
     <section class="t-summary" aria-label="Needs attention">
       ${usingFirebase ? `

@@ -1,8 +1,12 @@
 import { inputsFromOutput, looksLikePython, mountPyRunner } from '../lib/pyRunner';
+import { listClasses, type SchoolClass } from '../firebase/classes';
+import { legacyClassFields, audienceOf, yearToken } from '../lib/audience';
+import { audiencePickerHTML, readAudience, wireAudiencePicker } from './audiencePicker';
+import { audienceCell, filterBarHTML, isOutside, matchesFilter, outsidePill, peopleFor, wireFilter } from './teacherShared';
 import { esc, fmtDate } from '../lib/dom';
 import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import {
-  allSubmissions, classKey, classesOf, deleteAssignment, fetchFileText, isPythonFile, isTextFile, listAssignments, listLearners, openFile, saveAssignment, saveFeedback,
+  allSubmissions, deleteAssignment, fetchFileText, isPythonFile, isTextFile, listAssignments, listLearners, openFile, saveAssignment, saveFeedback,
   type Assignment, type Feedback, type LearnerInfo, type Submission,
 } from '../firebase/assignments';
 import { dueText, richText } from './assignments';
@@ -19,11 +23,13 @@ export async function mountTeacherAssignments(host: HTMLElement) {
   let learners: LearnerInfo[] = [];
   let subs: Submission[] = [];
   let feedback: Feedback[] = [];
+  let classes: SchoolClass[] = [];
 
   const load = async () => {
-    [assignments, learners, { subs, feedback }] = await Promise.all([listAssignments(), listLearners(), allSubmissions(), allPhotos().catch(() => [])]);
+    [assignments, learners, { subs, feedback }, , classes] = await Promise.all([listAssignments(), listLearners(), allSubmissions(), allPhotos().catch(() => []), listClasses().catch(() => [] as SchoolClass[])]);
   };
-  const inClass = (a: Assignment) => learners.filter((l) => !a.classKey || classKey(l.className) === a.classKey);
+  const inClass = (a: Assignment) => peopleFor(a, learners);
+  const learnerById = (id: string) => learners.find((l) => l.id === id);
 
   /* ---------- List ---------- */
   const renderList = () => {
@@ -33,44 +39,40 @@ export async function mountTeacherAssignments(host: HTMLElement) {
         <div class="row"><button class="btn" data-ready type="button">+ Add ready-made assignment</button><button class="btn btn-primary" data-new type="button">+ New assignment</button></div>
       </div>
       <div data-readybox></div>
+      ${assignments.length ? filterBarHTML(classes, { shown: assignments.filter((a) => matchesFilter(a, classes)).length, total: assignments.length }) : ''}
       ${assignments.length ? `<div class="table-wrap"><table class="data">
-        <thead><tr><th class="left">Title</th><th>Class</th><th>Due</th><th>Submitted</th><th>Marked</th><th></th></tr></thead>
-        <tbody>${assignments.map((a) => {
-          const s = subs.filter((x) => x.assignmentId === a.id).length;
+        <thead><tr><th class="left">Title</th><th>For</th><th>Due</th><th>Submitted</th><th>Marked</th><th></th></tr></thead>
+        <tbody>${assignments.filter((a) => matchesFilter(a, classes)).map((a) => {
+          const all = subs.filter((x) => x.assignmentId === a.id);
+          const outside = all.filter((x) => isOutside(a, learnerById(x.learnerId))).length;
+          const s = all.length - outside;
           const m = feedback.filter((x) => x.assignmentId === a.id).length;
           return `<tr>
             <td class="left"><b>${esc(a.title)}</b>${a.published ? '' : ' <span class="pill">Draft</span>'}</td>
-            <td>${esc(a.className || 'All classes')}</td>
+            <td>${audienceCell(a, classes)}</td>
             <td class="small">${a.dueAt ? fmtDate(a.dueAt) : '-'}</td>
-            <td>${s} / ${inClass(a).length}</td>
-            <td>${m} / ${s}</td>
+            <td>${s} / ${inClass(a).length}${outside ? `<div class="small" style="color:var(--muted)">${outside} from other classes</div>` : ''}</td>
+            <td>${m} / ${all.length}</td>
             <td><div class="row" style="justify-content:center;flex-wrap:nowrap">
               <button class="btn btn-sm btn-primary" data-open="${a.id}" type="button">Mark</button>
               <button class="btn btn-sm" data-edit="${a.id}" type="button">Edit</button></div></td>
           </tr>`;
         }).join('')}</tbody></table></div>`
         : '<div class="card"><p style="margin:0">No assignments yet. Tap <b>New assignment</b> to set work for your learners.</p></div>'}`;
+    wireFilter(host, renderList);
   };
 
   /* ---------- Create / edit form ---------- */
   const renderForm = (a?: Assignment) => {
-    const classes = classesOf(learners);
     const dueLocal = a?.dueAt ? new Date(a.dueAt - new Date(a.dueAt).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '';
-    const custom = a && a.className && !classes.some((c) => classKey(c) === a.classKey);
     host.innerHTML = `
       <div class="card" style="max-width:760px">
         <h2>${a ? 'Edit assignment' : 'New assignment'}</h2>
         <form class="stack" data-form novalidate>
           <label class="field"><span>Title</span><input name="title" maxlength="120" required value="${esc(a?.title ?? '')}" /></label>
           <label class="field"><span>Instructions</span><textarea name="instructions" rows="7" placeholder="What should learners do? Links are clickable.">${esc(a?.instructions ?? '')}</textarea></label>
+          ${audiencePickerHTML(a ? audienceOf(a) : [], classes)}
           <div class="grid-2">
-            <label class="field"><span>Class</span>
-              <select name="cls">
-                <option value="">All classes</option>
-                ${classes.map((c) => `<option value="${esc(c)}" ${a && classKey(c) === a.classKey ? 'selected' : ''}>${esc(c)}</option>`).join('')}
-                <option value="__other" ${custom ? 'selected' : ''}>Other (type below)</option>
-              </select></label>
-            <label class="field" data-otherwrap ${custom ? '' : 'hidden'}><span>Class name</span><input name="other" value="${esc(custom ? a!.className : '')}" placeholder="e.g. 2 Sci A" /></label>
             <label class="field"><span>Due date and time (optional)</span><input name="due" type="datetime-local" value="${dueLocal}" /></label>
             <label class="field"><span>Total marks</span><input name="marks" type="number" min="1" max="200" value="${a?.maxMarks ?? 10}" /></label>
             <label class="field"><span>Portfolio section</span><select name="psec">
@@ -89,28 +91,24 @@ export async function mountTeacherAssignments(host: HTMLElement) {
         </form>
       </div>`;
     const form = host.querySelector('[data-form]') as HTMLFormElement;
-    form.querySelector('select[name=cls]')!.addEventListener('change', (e) => {
-      (form.querySelector('[data-otherwrap]') as HTMLElement).hidden = (e.target as HTMLSelectElement).value !== '__other';
-    });
+    wireAudiencePicker(form, classes);
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const fd = new FormData(form);
       const title = String(fd.get('title') ?? '').trim();
-      const sel = String(fd.get('cls') ?? '');
-      const className = sel === '__other' ? String(fd.get('other') ?? '').trim() : sel;
+      const aud = readAudience(form, classes);
       const due = String(fd.get('due') ?? '');
       const marks = Math.round(Number(fd.get('marks')));
       const allowText = fd.get('allowText') === 'on';
       const allowFiles = fd.get('allowFiles') === 'on';
       const err = (m: string) => { (form.querySelector('[data-err]') as HTMLElement).innerHTML = `<p class="mark-bad" style="margin:0">${esc(m)}</p>`; };
       if (!title) return err('Give the assignment a title.');
-      if (sel === '__other' && !className) return err('Type the class name.');
       if (!(marks >= 1)) return err('Total marks must be at least 1.');
       if (!allowText && !allowFiles) return err('Allow typed answers, file uploads, or both.');
       try {
         await saveAssignment({
           id: a?.id, createdAt: a?.createdAt, title, instructions: String(fd.get('instructions') ?? '').trim(),
-          className, classKey: classKey(className), dueAt: due ? new Date(due).getTime() : null, maxMarks: marks,
+          classIds: aud, ...legacyClassFields(aud, classes), dueAt: due ? new Date(due).getTime() : null, maxMarks: marks,
           allowText, allowFiles, portfolioSection: fd.get('psec') === 'projects' ? 'projects' : 'assignments', published: fd.get('published') === 'on',
         });
         toast('Assignment saved.');
@@ -147,14 +145,14 @@ export async function mountTeacherAssignments(host: HTMLElement) {
     host.innerHTML = `
       <button class="btn btn-sm" data-back type="button">← All assignments</button>
       <div class="page-head" style="margin-top:12px"><h2 style="margin:0">${esc(a.title)}</h2>
-        <span class="muted">${esc(a.className || 'All classes')} · ${esc(dueText(a))} · ${a.maxMarks} marks</span></div>
+        <span class="muted">${audienceCell(a, classes)} · ${esc(dueText(a))} · ${a.maxMarks} marks</span></div>
       <details class="card"><summary><b>Instructions</b></summary><p style="margin:8px 0 0">${richText(a.instructions) || '-'}</p></details>
       ${rows.length ? rows.map((p) => {
         const s = subFor(p.id);
         const f = fbFor(p.id);
         return `<div class="card" data-learner="${esc(p.id)}">
           <div class="row">${avatarHTML(p.name, approvedPhotoOf(p.id), 32)}<b>${esc(p.name)}</b><span class="muted small">${esc(p.className)}</span><span class="spacer"></span>
-            ${s ? `<span class="pill ok">Submitted ${fmtDate(s.submittedAt)}</span>${s.late ? ' <span class="pill" style="background:var(--bad-soft);color:var(--bad)">Late</span>' : ''}` : '<span class="pill">Not submitted</span>'}
+            ${s ? `<span class="pill ok">Submitted ${fmtDate(s.submittedAt)}</span>${s.late ? ' <span class="pill" style="background:var(--bad-soft);color:var(--bad)">Late</span>' : ''}${isOutside(a, learnerById(p.id) ?? p) ? ` ${outsidePill(p.className)}` : ''}` : '<span class="pill">Not submitted</span>'}
             ${f ? `<span class="pill ok">Marked ${f.mark} / ${f.maxMarks}</span>` : ''}</div>
           ${s ? `
             ${s.text ? `<div class="model" style="margin-top:10px;white-space:pre-wrap">${richText(s.text)}</div>` : ''}
@@ -265,10 +263,10 @@ export async function mountTeacherAssignments(host: HTMLElement) {
       void (async () => {
         try {
           const id = await saveAssignment({
-            title: r.title, instructions: r.instructions, classKey: '', className: '', dueAt: null, maxMarks: r.maxMarks,
+            title: r.title, instructions: r.instructions, classIds: [yearToken(r.year)], ...legacyClassFields([yearToken(r.year)], classes), dueAt: null, maxMarks: r.maxMarks,
             allowText: r.allowText, allowFiles: r.allowFiles, portfolioSection: r.portfolioSection, published: false,
           });
-          toast('Assignment added as a draft. Check it, choose a class and a due date, then publish.');
+          toast(`Added as a draft for all of STEM ${r.year}. Choose the class, add a due date, then publish.`);
           await load();
           renderForm(assignments.find((x) => x.id === id));
         } catch (ex) {

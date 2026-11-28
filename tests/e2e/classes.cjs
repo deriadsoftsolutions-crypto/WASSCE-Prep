@@ -1,0 +1,112 @@
+// End-to-end check (needs wrangler on :8788 on an emulator build, and the Firebase emulators).
+const { chromium } = require('playwright');
+const BASE = 'http://127.0.0.1:8788';
+const FS = 'http://127.0.0.1:8080/v1/projects/roboticsclass-b0eaf/databases/(default)/documents';
+let fails = 0;
+const check = (l, ok, x = '') => { if (!ok) fails++; console.log(ok ? 'ok  ' : 'FAIL', l, x); };
+const SHOTS = require('os').tmpdir() + '/classes-shots'; require('fs').mkdirSync(SHOTS, { recursive: true });
+(async () => {
+  await fetch('http://127.0.0.1:8080/emulator/v1/projects/roboticsclass-b0eaf/databases/(default)/documents', { method: 'DELETE' });
+  await fetch('http://127.0.0.1:9099/emulator/v1/projects/roboticsclass-b0eaf/accounts', { method: 'DELETE' });
+  const b = await chromium.launch(); const errs = [];
+  const mk = async (w, h) => { const c = await b.newContext({ viewport: { width: w, height: h } }); c.setDefaultTimeout(30000); const p = await c.newPage(); p.on('pageerror', (e) => errs.push(e.message)); return { c, p }; };
+  // 1. An older learner signs up before classes exist, typing the class
+  const K = await mk(390, 844);
+  await K.p.goto(BASE); await K.p.waitForSelector('.modal form'); await K.p.click('.modal [data-mode=new]');
+  check('no classes yet: typed class box', (await K.p.locator('.modal input[name=cls]').count()) === 1);
+  await K.p.fill('.modal input[name=name]', 'Kofi Mensah'); await K.p.fill('.modal input[name=cls]', '2 Science A');
+  await K.p.fill('.modal input[name=pin]', '246810'); await K.p.fill('.modal input[name=pin2]', '246810');
+  await K.p.check('.modal input[name=year][value="2"]'); await K.p.click('.modal [data-submit]'); await K.p.waitForSelector('#learner-chip:not([hidden])');
+  // 2. Teacher sets up classes
+  const T = await mk(1280, 900);
+  await T.p.goto(BASE + '/teacher'); await T.p.click('[data-mode=new]');
+  await T.p.fill('input[name=name]', 'Mr Addoh'); await T.p.fill('input[name=email]', 't@k.test'); await T.p.fill('input[name=password]', 'robotics2026');
+  await T.p.click('[data-submit]'); await T.p.waitForSelector('[data-uid]');
+  const tuid = await T.p.locator('[data-uid]').innerText();
+  await fetch(`${FS}/teachers?documentId=${tuid}`, { method: 'POST', headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' }, body: '{"fields":{"name":{"stringValue":"x"}}}' });
+  await T.p.click('[data-act=recheck]');
+  await T.p.click('[data-tab=classes]'); await T.p.waitForSelector('[data-add]');
+  await T.p.waitForFunction(() => !document.querySelector('[data-count="classes"]').hidden, null, { timeout: 15000 }).catch(() => {});
+  check('menu says set up', /set up/.test(await T.p.locator('[data-count="classes"]').innerText()));
+  await T.p.fill('[data-add] textarea', '2 Sci A\n2 Sci B'); await T.p.selectOption('[data-add] select[name=year]', '2'); await T.p.click('[data-add] button[type=submit]');
+  await T.p.waitForSelector('[data-cid="2scib"]');
+  await T.p.fill('[data-add] textarea', '3 Sci A'); await T.p.selectOption('[data-add] select[name=year]', '3'); await T.p.click('[data-add] button[type=submit]');
+  await T.p.waitForSelector('[data-cid="3scia"]');
+  await T.p.fill('[data-add] textarea', '2 sci-a'); await T.p.click('[data-add] button[type=submit]'); await T.p.waitForSelector('[data-adderr] .mark-bad');
+  check('duplicate class refused', /too close/.test(await T.p.locator('[data-adderr]').innerText()));
+  check('Kofi waiting to be placed', /Kofi Mensah/.test(await T.p.locator('[data-todo]').innerText()) && /2 Science A/.test(await T.p.locator('[data-todo]').innerText()));
+  await T.p.selectOption('[data-todo] [data-lid] [data-target]', '2scia'); await T.p.click('[data-todo] [data-place]');
+  await T.p.waitForFunction(() => !document.querySelector('[data-todo]'));
+  check('Kofi placed in 2 Sci A', /1 learner/.test(await T.p.locator('[data-cid="2scia"]').innerText()));
+  await T.p.screenshot({ path: SHOTS + '/teacher-classes.png', fullPage: true });
+  // 3. Kofi signs in again by choosing his class (his login used the typed class)
+  await K.p.goto(BASE + '/profile'); await K.p.waitForTimeout(1500);
+  await K.p.click('main [data-act=signout]'); await K.p.click('.modal [data-a=yes]'); await K.p.waitForSelector('.modal form');
+  await K.p.waitForSelector('.modal select[name=cls]');
+  check('sign-in shows the class list grouped by year', (await K.p.locator('.modal select[name=cls] optgroup').count()) === 2);
+  await K.p.fill('.modal input[name=name]', 'Kofi Mensah'); await K.p.selectOption('.modal select[name=cls]', '2scia'); await K.p.fill('.modal input[name=pin]', '246810');
+  await K.p.click('.modal [data-submit]'); await K.p.waitForSelector('#learner-chip:not([hidden])');
+  await K.p.waitForFunction(() => /2 Sci A/.test(document.querySelector('#learner-chip').textContent), null, { timeout: 15000 }).catch(() => {});
+  check('Kofi signs in by choosing 2 Sci A', /2 Sci A/.test(await K.p.locator('#learner-chip').innerText()), await K.p.locator('#learner-chip').innerText());
+  // 4. New learner picks a class; no year question
+  const A = await mk(390, 844);
+  await A.p.goto(BASE); await A.p.waitForSelector('.modal form'); await A.p.click('.modal [data-mode=new]'); await A.p.waitForSelector('.modal select[name=cls]');
+  check('no year question when classes exist', await A.p.locator('.modal [data-yearwrap]').isHidden());
+  await A.p.screenshot({ path: SHOTS + '/signup.png' });
+  await A.p.fill('.modal input[name=name]', 'Ama Boateng'); await A.p.selectOption('.modal select[name=cls]', '2scib');
+  await A.p.fill('.modal input[name=pin]', '135790'); await A.p.fill('.modal input[name=pin2]', '135790'); await A.p.click('.modal [data-submit]'); await A.p.waitForSelector('#learner-chip:not([hidden])');
+  const ama = (await (await fetch(`${FS}/learners`, { headers: { Authorization: 'Bearer owner' } })).json()).documents.find((d) => d.fields.name.stringValue === 'Ama Boateng').fields;
+  check('Ama saved in 2 Sci B, STEM 2', ama.classId.stringValue === '2scib' && ama.className.stringValue === '2 Sci B' && ama.year.integerValue === '2');
+  await A.p.goto(BASE + '/profile'); await A.p.waitForTimeout(1500);
+  check('profile: class fixed, no year change', /You are in 2 Sci B/.test(await A.p.locator('main').innerText()) && (await A.p.locator('[data-act=year]').count()) === 0);
+  // 5. Teacher sets an assignment for 2 Sci A only, a test for all of STEM 2
+  await T.p.click('[data-tab=assignments]'); await T.p.click('[data-ready]'); await T.p.click('[data-ryear="2"]'); await T.p.click('[data-addready="society-1-edubot"]');
+  await T.p.waitForSelector('[data-aud]');
+  check('ready-made defaults to All STEM 2', await T.p.isChecked('[data-aud] input[value="year:2"]'));
+  await T.p.uncheck('[data-aud] input[value="year:2"]'); await T.p.check('[data-aud] input[value="2scia"]');
+  check('picker note', /Set for: 2 Sci A/.test(await T.p.locator('[data-aud-note]').innerText()));
+  await T.p.screenshot({ path: SHOTS + '/picker.png', fullPage: true });
+  await T.p.check('input[name=published]'); await T.p.click('button[type=submit]'); await T.p.waitForSelector('table.data');
+  check('list shows For: 2 Sci A', /2 Sci A/.test(await T.p.locator('tr', { hasText: 'EduBot' }).innerText()));
+  await T.p.click('[data-tab=tests]'); await T.p.click('[data-ready]'); await T.p.click('[data-ryear="2"]'); await T.p.click('[data-addready="society-1-check"]'); await T.p.waitForSelector('input[name=published]');
+  await T.p.check('input[name=published]'); await T.p.click('[data-save]'); await T.p.waitForSelector('table.data');
+  // 6. Classwork: Kofi has it to do; Ama sees it under other classes
+  await K.p.goto(BASE + '/assignments'); await K.p.waitForSelector('#cw-todo');
+  const kTodo = await K.p.locator('section:has(#cw-todo)').innerText();
+  check('Kofi: assignment and test in To do', /EduBot/.test(kTodo) && /Robots and society 1 check/.test(kTodo));
+  await A.p.goto(BASE + '/assignments'); await A.p.waitForSelector('#cw-todo');
+  const aTodo = await A.p.locator('section:has(#cw-todo)').innerText();
+  check('Ama: only the STEM 2 test in To do', !/EduBot/.test(aTodo) && /Robots and society 1 check/.test(aTodo));
+  check('Ama: EduBot under other classes', /Set for other classes \(1\)/.test(await A.p.locator('.cw-others').innerText()));
+  await A.p.screenshot({ path: SHOTS + '/classwork-phone.png', fullPage: true });
+  await A.p.click('.cw-others summary'); await A.p.click('.cw-others a:has-text("EduBot")'); await A.p.waitForSelector('[data-text]');
+  check('notice on other-class assignment', /set for 2 Sci A, not for your class/.test(await A.p.locator('main').innerText()));
+  await A.p.fill('[data-text]', 'My EduBot answers.'); await A.p.click('[data-submit]'); await A.p.waitForTimeout(2000);
+  // 7. Teacher sees the flag
+  await T.p.reload(); await T.p.click('[data-tab=overview]'); await T.p.waitForSelector('[data-ovoutside] .card', { timeout: 20000 });
+  check('overview notice', /Ama Boateng.*2 Sci B.*EduBot.*set for 2 Sci A/s.test(await T.p.locator('[data-ovoutside]').innerText()));
+  await T.p.screenshot({ path: SHOTS + '/overview.png', fullPage: true });
+  await T.p.click('[data-tab=assignments]'); await T.p.waitForSelector('table.data');
+  check('list counts other-class work', /1 from other classes/.test(await T.p.locator('tr', { hasText: 'EduBot' }).innerText()));
+  await T.p.selectOption('[data-tfilter]', '2scib'); await T.p.waitForTimeout(300);
+  check('filter 2 Sci B hides 2 Sci A work', (await T.p.locator('tr', { hasText: 'EduBot' }).count()) === 0);
+  await T.p.selectOption('[data-tfilter]', ''); await T.p.waitForTimeout(300);
+  await T.p.screenshot({ path: SHOTS + '/teacher-assignments.png', fullPage: true });
+  await T.p.locator('tr', { hasText: 'EduBot' }).locator('[data-open]').click(); await T.p.waitForSelector('[data-learner]');
+  check('marking: Ama flagged', /From 2 Sci B, not this class/.test(await T.p.locator('[data-learner]', { hasText: 'Ama Boateng' }).innerText()));
+  check('marking: Kofi listed (in class)', (await T.p.locator('[data-learner]', { hasText: 'Kofi Mensah' }).count()) === 1);
+  // 8. Rename 2 Sci B: Ama still signs in, sees the new name
+  await T.p.click('[data-back]'); await T.p.click('[data-tab=classes]'); await T.p.waitForSelector('[data-cid="2scib"]');
+  await T.p.locator('[data-cid="2scib"] [data-editc]').click(); await T.p.fill('[data-edit] input[name=name]', '2 Science B'); await T.p.click('[data-edit] button[type=submit]');
+  await T.p.waitForFunction(() => /2 Science B/.test(document.querySelector('[data-cid="2scib"]')?.textContent ?? ''));
+  await A.p.goto(BASE + '/profile'); await A.p.waitForTimeout(1200); await A.p.click('main [data-act=signout]'); await A.p.click('.modal [data-a=yes]');
+  await A.p.waitForSelector('.modal select[name=cls]');
+  await A.p.waitForFunction(() => /2 Science B/.test(document.querySelector('.modal select[name=cls]')?.textContent ?? ''), null, { timeout: 8000 }).catch(() => {});
+  check('renamed class in the list', /2 Science B/.test(await A.p.locator('.modal select[name=cls]').innerText()));
+  await A.p.fill('.modal input[name=name]', 'Ama Boateng'); await A.p.selectOption('.modal select[name=cls]', '2scib'); await A.p.fill('.modal input[name=pin]', '135790');
+  await A.p.click('.modal [data-submit]'); await A.p.waitForSelector('#learner-chip:not([hidden])');
+  await A.p.waitForFunction(() => /2 Science B/.test(document.querySelector('#learner-chip').textContent), null, { timeout: 15000 }).catch(() => {});
+  check('Ama signs in after rename, new name shown', /2 Science B/.test(await A.p.locator('#learner-chip').innerText()), await A.p.locator('#learner-chip').innerText());
+  check('no page errors', errs.length === 0, errs.join(' | '));
+  console.log(fails ? fails + ' FAILED' : 'ALL OK'); await b.close(); process.exit(fails ? 1 : 0);
+})().catch((e) => { console.error('TEST FAILED', e.message); process.exit(1); });

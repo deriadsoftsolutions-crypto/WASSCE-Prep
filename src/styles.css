@@ -884,3 +884,41 @@ details > summary { min-height: var(--tap); padding: 10px 0; box-sizing: border-
 .py-inline { margin-top: 10px; }
 .py-inline textarea.py-editor, .py-inline .py-out { min-height: 220px; font-size: 15px; }
 .py-inline .py-out { max-height: 50vh; }
+
+/* Teacher page, Classes */
+.class-list { display: grid; gap: 10px; }
+.class-card { margin: 0; padding: 12px 16px; }
+.class-card.retired { opacity: 0.7; }
+.class-card select { min-width: 140px; }
+
+/* Classwork page */
+.cw-summary { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: -4px 0 8px; color: var(--muted); }
+.cw-summary b { color: var(--text); font-size: 1.1rem; }
+.cw-others { margin-top: 24px; }
+.cw-others summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; }
+.cw-others .due-list { border-width: 1px; }
+
+/* "Who is it for?" picker on teacher forms */
+.aud-picker { border: 1.5px solid var(--line); border-radius: var(--radius); padding: 10px 12px 12px; margin: 0; }
+.aud-picker legend { font-weight: 600; padding: 0 4px; }
+.aud-year { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.aud-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 1.5px solid var(--line); border-radius: 999px; cursor: pointer; background: var(--surface); }
+.aud-chip:has(input:checked) { border-color: var(--accent); background: var(--ok-soft); }
+.aud-chip:has(input:disabled) { opacity: 0.5; cursor: default; }
+.aud-chip input { width: 18px; height: 18px; margin: 0; }
+.aud-all { font-weight: 600; }
+
+/* Teacher lists: who-is-it-for label and class filter */
+.aud-label { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--primary-soft); font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+.aud-label.all { background: var(--surface-2); color: var(--muted); }
+.t-filter { gap: 12px; align-items: end; margin: 0 0 12px; }
+.t-filter select { min-width: 220px; }
+
+/* Progress: per-topic parts folded away */
+.prog-more { margin-top: 6px; font-size: 0.9rem; }
+.prog-more summary { cursor: pointer; color: var(--muted); min-height: 32px; display: flex; align-items: center; }
+
+/* Work rows (Home "To do", Classwork): icon | title and details | status, on every screen size */
+.due-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
+.due-row > .pill { justify-self: end; max-width: 10.5rem; white-space: normal; text-align: center; line-height: 1.25; padding-top: 4px; padding-bottom: 4px; }
+@media (max-width: 420px) { .due-row { gap: 10px; padding: 12px; } }

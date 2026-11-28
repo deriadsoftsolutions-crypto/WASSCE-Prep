@@ -41,10 +41,28 @@ service cloud.firestore {
       allow write: if isTeacher();
     }
 
+    // The school's fixed classes. Anyone can read the list (learners choose their class before signing in);
+    // only teachers add, rename or retire classes.
+    match /classes/{id} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
     // Each learner can only see and write their own data. Teachers can read everyone.
+    // Once a learner is in a fixed class, only a teacher can change their class or year.
+    function classUnchanged() {
+      return request.resource.data.get('classId', null) == resource.data.get('classId', null)
+        && request.resource.data.get('className', null) == resource.data.get('className', null)
+        && request.resource.data.get('year', null) == resource.data.get('year', null)
+        && request.resource.data.get('loginKey', null) == resource.data.get('loginKey', null);
+    }
     match /learners/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isTeacher());
-      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if isTeacher()
+        || (signedIn() && request.auth.uid == uid
+            && (classUnchanged()
+                || (resource.data.get('classId', null) == null && request.resource.data.get('classId', null) == null)));
       allow delete: if isTeacher();
 
       match /attempts/{id} {

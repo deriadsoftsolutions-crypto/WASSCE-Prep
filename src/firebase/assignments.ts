@@ -11,13 +11,16 @@ import {
   collection, collectionGroup, deleteDoc, doc, getDoc, getDocs, setDoc,
 } from 'firebase/firestore';
 import { auth, db } from './app';
+import { isForMe, splitForMe, type Me } from '../lib/audience';
 
 export interface Assignment {
   id: string;
   title: string;
   instructions: string;
-  /** Normalised class key (e.g. "2scia"), or "" for every class. */
+  /** Normalised class key (e.g. "2scia"), or "" for every class. Older items only; see classIds. */
   classKey: string;
+  /** Who it is for: class ids and 'year:N' tokens; empty = all classes (lib/audience). */
+  classIds?: string[];
   /** Class name as the teacher typed it, for display. */
   className: string;
   /** Due date as milliseconds, or null for no due date. */
@@ -42,6 +45,8 @@ export interface Submission {
   files: SubmittedFile[];
   submittedAt: number;
   late: boolean;
+  /** Handed in by a learner who is not in the class(es) the assignment was set for. */
+  outsideClass?: boolean;
 }
 
 export interface Feedback {
@@ -67,16 +72,15 @@ export async function getAssignment(id: string): Promise<Assignment | null> {
   return s.exists() ? { ...(s.data() as Assignment), id: s.id } : null;
 }
 
-/** Assignments a learner in `className` should see. */
-export async function assignmentsFor(className: string, all = false): Promise<Assignment[]> {
-  const k = classKey(className);
-  return (await listAssignments()).filter((a) => a.published && (all || a.classKey === '' || a.classKey === k));
+/** Published assignments, split into those set for this learner's class and those for other classes. */
+export async function assignmentsFor(me: Me): Promise<{ mine: Assignment[]; others: Assignment[] }> {
+  return splitForMe((await listAssignments()).filter((a) => a.published), me);
 }
 
 export async function saveAssignment(a: Omit<Assignment, 'id' | 'createdAt'> & { id?: string; createdAt?: number }): Promise<string> {
   const ref = a.id ? doc(db, 'assignments', a.id) : doc(collection(db, 'assignments'));
   const data: Omit<Assignment, 'id'> = {
-    title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, dueAt: a.dueAt,
+    title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, classIds: a.classIds ?? (a.classKey ? [a.classKey] : []), dueAt: a.dueAt,
     maxMarks: a.maxMarks, allowText: a.allowText, allowFiles: a.allowFiles, portfolioSection: a.portfolioSection ?? 'assignments', published: a.published,
     createdAt: a.createdAt ?? Date.now(),
   };
@@ -118,13 +122,16 @@ export async function saveFeedback(fb: Feedback): Promise<void> {
   await setDoc(doc(db, 'learners', fb.learnerId, 'feedback', fb.assignmentId), fb);
 }
 
-export interface LearnerInfo { id: string; name: string; className: string; year?: number }
+export interface LearnerInfo { id: string; name: string; className: string; year?: number; classId?: string; loginKey?: string; prevYear?: number }
 
 /** Teacher: every learner account (from learners/{uid} profiles). */
 export async function listLearners(): Promise<LearnerInfo[]> {
   const snap = await getDocs(collection(db, 'learners'));
   return snap.docs
-    .map((d) => { const x = d.data() as { name?: string; className?: string; year?: number }; return { id: d.id, name: x.name ?? '', className: x.className ?? '', year: x.year }; })
+    .map((d) => {
+      const x = d.data() as { name?: string; className?: string; year?: number; classId?: string; loginKey?: string; prevYear?: number };
+      return { id: d.id, name: x.name ?? '', className: x.className ?? '', year: x.year, classId: x.classId, loginKey: x.loginKey, prevYear: x.prevYear };
+    })
     .filter((x) => x.name)
     .sort((a, b) => a.className.localeCompare(b.className, undefined, { numeric: true }) || a.name.localeCompare(b.name));
 }
@@ -226,7 +233,7 @@ export async function fetchFileText(f: SubmittedFile): Promise<string> {
  * in the learner's submission for that assignment, replacing earlier copies with the same names and keeping
  * every other file and the typed answer.
  */
-export async function handInCode(a: Assignment, learner: { id: string; name: string; className: string }, fileName: string, code: string, output: string | null): Promise<Submission> {
+export async function handInCode(a: Assignment, learner: Me & { id: string; name: string }, fileName: string, code: string, output: string | null): Promise<Submission> {
   const existing = await mySubmission(a.id);
   const base = fileName.replace(/\.py$/i, '');
   const outName = `${base}_output.txt`;
@@ -237,7 +244,7 @@ export async function handInCode(a: Assignment, learner: { id: string; name: str
   if (output) files.push(await uploadFile(a.id, new File([output], outName, { type: 'text/plain' })));
   const s: Submission = {
     assignmentId: a.id, learnerId: learner.id, learnerName: learner.name, className: learner.className,
-    text: existing?.text ?? '', files, submittedAt: Date.now(), late: !!a.dueAt && Date.now() > a.dueAt,
+    text: existing?.text ?? '', files, submittedAt: Date.now(), late: !!a.dueAt && Date.now() > a.dueAt, outsideClass: !isForMe(a, learner),
   };
   await submit(s);
   replaced.forEach((f) => void deleteFile(f.key).catch(() => undefined));

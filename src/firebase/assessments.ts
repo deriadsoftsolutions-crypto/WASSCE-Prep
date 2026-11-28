@@ -16,7 +16,7 @@ import {
   collection, collectionGroup, doc, getDoc, getDocs, serverTimestamp, setDoc, Timestamp, writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from './app';
-import { classKey } from './assignments';
+import { splitForMe, type Me } from '../lib/audience';
 import { evaluate } from '../lib/mathparse';
 
 export type QType = 'mcq' | 'number' | 'short';
@@ -53,6 +53,8 @@ export interface Assessment {
   instructions: string;
   classKey: string;
   className: string;
+  /** Who it is for: class ids and 'year:N' tokens; empty = all classes (lib/audience). */
+  classIds?: string[];
   opensAt: number | null;
   closesAt: number | null;
   /** 0 = no time limit */
@@ -76,6 +78,8 @@ export interface Attempt {
   responses: Record<string, Response>;
   startedAt: number;
   submittedAt: number;
+  /** Taken by a learner who is not in the class(es) the test was set for. */
+  outsideClass?: boolean;
 }
 
 export interface Result {
@@ -97,6 +101,7 @@ function fromDoc(id: string, d: Record<string, unknown>): Assessment {
     id,
     title: String(d.title ?? ''), instructions: String(d.instructions ?? ''),
     classKey: String(d.classKey ?? ''), className: String(d.className ?? ''),
+    ...(Array.isArray(d.classIds) ? { classIds: d.classIds as string[] } : {}),
     opensAt: ms(d.opensAt), closesAt: ms(d.closesAt),
     timeLimitMin: Number(d.timeLimitMin ?? 0), showResults: (d.showResults as ShowResults) ?? 'immediately',
     portfolioSection: d.portfolioSection === 'semester' ? 'semester' : 'tests', published: !!d.published, totalMarks: Number(d.totalMarks ?? 0), questionCount: Number(d.questionCount ?? 0),
@@ -164,7 +169,7 @@ export async function saveAssessment(
   const ref = a.id ? doc(db, 'assessments', a.id) : doc(collection(db, 'assessments'));
   const batch = writeBatch(db);
   batch.set(ref, {
-    title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className,
+    title: a.title, instructions: a.instructions, classKey: a.classKey, className: a.className, classIds: a.classIds ?? (a.classKey ? [a.classKey] : []),
     opensAt: ts(a.opensAt), closesAt: ts(a.closesAt), timeLimitMin: Math.max(0, Math.round(a.timeLimitMin)),
     showResults: a.showResults, portfolioSection: a.portfolioSection ?? 'tests', published: a.published,
     totalMarks: questions.reduce((s, q) => s + q.marks, 0), questionCount: questions.length,
@@ -208,9 +213,9 @@ export async function allowRetake(learnerId: string, assessmentId: string) {
 
 /* ---------- Learner ---------- */
 
-export async function assessmentsFor(className: string, all = false): Promise<Assessment[]> {
-  const k = classKey(className);
-  return (await listAssessments()).filter((a) => a.published && (all || a.classKey === '' || a.classKey === k));
+/** Published tests, split into those set for this learner's class and those for other classes. */
+export async function assessmentsFor(me: Me): Promise<{ mine: Assessment[]; others: Assessment[] }> {
+  return splitForMe((await listAssessments()).filter((a) => a.published), me);
 }
 
 const uid = () => {
@@ -244,10 +249,10 @@ export async function startAssessment(id: string): Promise<number> {
   return ms(s.data()?.startedAt) ?? Date.now();
 }
 
-export async function submitAttempt(a: { assessmentId: string; learnerName: string; className: string; responses: Record<string, Response>; startedAt: number }) {
+export async function submitAttempt(a: { assessmentId: string; learnerName: string; className: string; responses: Record<string, Response>; startedAt: number; outsideClass?: boolean }) {
   const u = uid();
   await setDoc(doc(db, 'learners', u, 'assessmentAttempts', a.assessmentId), {
-    assessmentId: a.assessmentId, learnerId: u, learnerName: a.learnerName, className: a.className,
+    assessmentId: a.assessmentId, learnerId: u, learnerName: a.learnerName, className: a.className, outsideClass: !!a.outsideClass,
     responses: JSON.parse(JSON.stringify(a.responses)), startedAt: Timestamp.fromMillis(a.startedAt), submittedAt: serverTimestamp(),
   });
 }

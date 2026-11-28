@@ -28,6 +28,8 @@ export interface Learner {
   createdAt: number;
   /** STEM year: 1, 2 or 3 (missing for teachers and for accounts made before years existed) */
   year?: 1 | 2 | 3;
+  /** Fixed class id (Teacher page, Classes). Missing on older accounts until the teacher matches them. */
+  classId?: string;
 }
 
 export type AttemptKind = 'topic-quiz' | 'mock' | 'activity' | 'paper2' | 'lesson';
