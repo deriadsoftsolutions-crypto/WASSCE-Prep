@@ -3,6 +3,7 @@
  * Python runs in a background worker (Pyodide). The first visit downloads about 13 MB;
  * after that it works offline. Examples are the Python 1 lesson files learners use in VS Code.
  */
+import { withInputHeader } from '../lib/pyRunner';
 import { esc } from '../lib/dom';
 import { icon } from '../lib/icons';
 import { learner } from '../lib/session';
@@ -109,7 +110,8 @@ export function pythonPage(el: HTMLElement) {
   const stopBtn = el.querySelector('[data-stop]') as HTMLButtonElement;
   let running = false;
   let lines = 0;
-  let lastRun: { ok: boolean; text: string } | null = null;
+  let lastRun: { ok: boolean; text: string; stdin: string } | null = null;
+  let runStdin = '';
 
   /** Append output exactly as Python wrote it (input() prompts have no newline). */
   const write = (text: string, cls = '') => {
@@ -127,7 +129,7 @@ export function pythonPage(el: HTMLElement) {
       else if (m.type === 'out') write(m.text ?? '');
       else if (m.type === 'echo') write(m.text ?? '', 'py-echo');
       else if (m.type === 'err') write(m.text ?? '', 'py-err');
-      else if (m.type === 'done') { ready = true; setRunning(false); status.textContent = m.ok ? `Finished in ${m.ms} ms` : 'Stopped with an error'; lastRun = { ok: !!m.ok, text: out.textContent ?? '' }; }
+      else if (m.type === 'done') { ready = true; setRunning(false); status.textContent = m.ok ? `Finished in ${m.ms} ms` : 'Stopped with an error'; lastRun = { ok: !!m.ok, text: out.textContent ?? '', stdin: runStdin }; }
       else if (m.type === 'fail') {
         setRunning(false);
         status.textContent = '';
@@ -150,6 +152,7 @@ export function pythonPage(el: HTMLElement) {
     lines = 0;
     setRunning(true);
     if (ready) status.textContent = 'Running...';
+    runStdin = stdin.value;
     worker!.postMessage({ type: 'run', code: code.value, stdin: stdin.value });
   };
   function stop() {
@@ -262,7 +265,7 @@ export function pythonPage(el: HTMLElement) {
         btn.disabled = true; btn.textContent = 'Handing in...';
         try {
           const { handInCode } = await import('../firebase/assignments');
-          await handInCode(a, me!, name, code.value, fd.get('o') === 'on' && lastRun ? lastRun.text : null);
+          await handInCode(a, me!, name, code.value, fd.get('o') === 'on' && lastRun ? withInputHeader(lastRun.stdin, lastRun.text) : null);
           try { localStorage.removeItem(`wassce.assignmentDraft.${me!.id}.${a.id}`); } catch { /* ignore */ }
           void import('../lib/due').then((d) => d.refreshDue()).catch(() => undefined);
           m.root.innerHTML = `<h2>Handed in</h2><p>${esc(name)} is in your work for <b>${esc(a.title)}</b>. You can change it and hand it in again until your teacher marks it.</p>

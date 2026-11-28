@@ -879,3 +879,8 @@ details > summary { min-height: var(--tap); padding: 10px 0; box-sizing: border-
 @media (max-width: 600px) { .ready-row { flex-wrap: wrap; } }
 /* Quick-check questions keep their line breaks (code snippets in questions). */
 .lesson-check .qtext { white-space: pre-line; }
+
+/* Python runner inside the teacher's marking view */
+.py-inline { margin-top: 10px; }
+.py-inline textarea.py-editor, .py-inline .py-out { min-height: 220px; font-size: 15px; }
+.py-inline .py-out { max-height: 50vh; }

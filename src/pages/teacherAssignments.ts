@@ -1,3 +1,4 @@
+import { inputsFromOutput, looksLikePython, mountPyRunner } from '../lib/pyRunner';
 import { esc, fmtDate } from '../lib/dom';
 import { confirmDialog, feedbackHTML, toast } from '../lib/ui';
 import {
@@ -131,7 +132,11 @@ export async function mountTeacherAssignments(host: HTMLElement) {
   };
 
   /* ---------- Submissions and marking ---------- */
+  const texts = new Map<string, string>(); // learnerId:fileIndex -> file text
+  const runners = new Map<string, () => void>(); // open Python runners in the marking view
+  const closeRunners = () => { runners.forEach((close) => close()); runners.clear(); };
   const renderMarking = (a: Assignment) => {
+    closeRunners();
     const people = inClass(a);
     const subFor = (id: string) => subs.find((s) => s.assignmentId === a.id && s.learnerId === id);
     const fbFor = (id: string) => feedback.find((f) => f.assignmentId === a.id && f.learnerId === id);
@@ -152,7 +157,8 @@ export async function mountTeacherAssignments(host: HTMLElement) {
             ${s ? `<span class="pill ok">Submitted ${fmtDate(s.submittedAt)}</span>${s.late ? ' <span class="pill" style="background:var(--bad-soft);color:var(--bad)">Late</span>' : ''}` : '<span class="pill">Not submitted</span>'}
             ${f ? `<span class="pill ok">Marked ${f.mark} / ${f.maxMarks}</span>` : ''}</div>
           ${s ? `
-            ${s.text ? `<div class="model" style="margin-top:10px">${richText(s.text)}</div>` : ''}
+            ${s.text ? `<div class="model" style="margin-top:10px;white-space:pre-wrap">${richText(s.text)}</div>` : ''}
+            ${s.text && looksLikePython(s.text) ? `<div class="row" style="margin-top:6px"><button class="btn btn-sm" data-runtext type="button">${icon('play', 16)} Run the typed answer as Python</button></div><div data-runbox="text"></div>` : ''}
             ${s.files.length ? `<div class="row" style="margin-top:10px">${s.files.map((file, i) => `<button class="btn btn-sm" data-file="${i}" type="button">${icon('file', 18)} ${esc(file.name)}</button>`).join('')}</div>` : ''}
             ${s.files.some(isTextFile) ? `<div class="code-view" data-codeview="${esc(p.id)}"><p class="muted small">Loading the code...</p></div>` : ''}
             <div class="grid-2" style="margin-top:12px;align-items:end">
@@ -171,16 +177,40 @@ export async function mountTeacherAssignments(host: HTMLElement) {
         if (!isTextFile(f)) return '';
         const text = await fetchFileText(f).catch(() => null);
         if (text === null) return `<p class="mark-bad small">Could not open ${esc(f.name)}.</p>`;
+        texts.set(`${s.learnerId}:${i}`, text);
         const py = isPythonFile(f);
-        return `<div class="row" style="margin-top:8px"><b>${esc(f.name)}</b>${py ? `<button class="btn btn-sm" data-run="${i}" type="button">${icon('play', 16)} Run it</button>` : ''}</div>
-          <pre class="lesson-code ${py ? '' : 'code-out'}"><code>${esc(text)}</code></pre>`;
+        return `<div class="row" style="margin-top:8px"><b>${esc(f.name)}</b>${py ? `<button class="btn btn-sm btn-primary" data-runhere="${i}" type="button">${icon('play', 16)} Run here</button>
+            <button class="btn btn-sm" data-run="${i}" type="button">Open in Python practice</button>` : ''}</div>
+          <pre class="lesson-code ${py ? '' : 'code-out'}"><code>${esc(text)}</code></pre>${py ? `<div data-runbox="${i}"></div>` : ''}`;
       }));
       box.innerHTML = parts.join('');
     });
 
     host.onclick = async (e) => {
       const t = e.target as HTMLElement;
-      if (t.closest('[data-back]')) { host.onclick = listClick; renderList(); return; }
+      if (t.closest('[data-back]')) { closeRunners(); host.onclick = listClick; renderList(); return; }
+      // Run a learner's Python right here, in a copy the teacher can change.
+      const hereBtn = t.closest<HTMLElement>('[data-runhere], [data-runtext]');
+      if (hereBtn) {
+        const card2 = hereBtn.closest<HTMLElement>('[data-learner]')!;
+        const s2 = subFor(card2.dataset.learner!)!;
+        const which = hereBtn.dataset.runhere ?? 'text';
+        const box = card2.querySelector<HTMLElement>(`[data-runbox="${which}"]`)!;
+        const id = `${s2.learnerId}:${which}`;
+        if (runners.has(id)) { runners.get(id)!(); runners.delete(id); hereBtn.innerHTML = `${icon('play', 16)} ${which === 'text' ? 'Run the typed answer as Python' : 'Run here'}`; return; }
+        let code = s2.text; let stdin: string | undefined; let label = `${s2.learnerName}: typed answer`;
+        if (which !== 'text') {
+          const f = s2.files[Number(which)];
+          code = texts.get(id) ?? await fetchFileText(f).catch(() => '');
+          label = `${s2.learnerName}: ${f.name}`;
+          // Python practice's Hand in saves the learner's inputs at the top of <name>_output.txt.
+          const oi = s2.files.findIndex((x) => x.name === f.name.replace(/\.py$/i, '_output.txt'));
+          if (oi >= 0) stdin = inputsFromOutput(texts.get(`${s2.learnerId}:${oi}`) ?? '') ?? undefined;
+        }
+        runners.set(id, mountPyRunner(box, { code, stdin, label }));
+        hereBtn.textContent = 'Close the runner';
+        return;
+      }
       const runBtn = t.closest<HTMLElement>('[data-run]');
       if (runBtn) {
         const card2 = runBtn.closest<HTMLElement>('[data-learner]')!;
